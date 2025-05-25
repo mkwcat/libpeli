@@ -1,4 +1,4 @@
-// wsh/hw/reg/Wood.hpp
+// wsh/hw/Wood.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../../common/Types.h"
-#include "../../util/Detail.hpp"
-#include "detail/Register.hpp"
+#include "../common/Types.h"
+#include "../util/Detail.hpp"
+#include "Register.hpp"
 
-namespace wsh::hw::reg {
+namespace wsh::hw {
 
 static struct Wood {
   struct IpcMsg {
@@ -61,7 +61,7 @@ static struct Wood {
    * Address: 0x0D000000
    * Size: u32
    */
-  detail::Register<IpcMsg> IPCPPCMSG;
+  Register<IpcMsg> IPCPPCMSG;
 
   /**
    * PPC IPC control flags.
@@ -69,7 +69,7 @@ static struct Wood {
    * Address: 0x0D000004
    * Size: u32
    */
-  detail::Register<IpcCtrl> IPCPPCCTRL;
+  Register<IpcCtrl> IPCPPCCTRL;
 
   /**
    * General purpose IPC message register 2. Conventionally set by IOP.
@@ -77,7 +77,7 @@ static struct Wood {
    * Address: 0x0D000008
    * Size: u32
    */
-  detail::Register<IpcMsg> IPCIOPMSG;
+  Register<IpcMsg> IPCIOPMSG;
 
   /**
    * IOP IPC control flags. This register requires kernel access.
@@ -85,7 +85,7 @@ static struct Wood {
    * Address: 0x0D00000C
    * Size: u32
    */
-  detail::Register<IpcCtrl> IPCIOPCTRL;
+  Register<IpcCtrl> IPCIOPCTRL;
 
   _WSH_PAD(0x010, 0x030);
 
@@ -160,7 +160,7 @@ static struct Wood {
    * Address: 0x0D000030
    * Size: u32
    */
-  detail::Register<IrqBits> PPCINTSTS;
+  Register<IrqBits> PPCINTSTS;
 
   /**
    * PowerPC IRQ mask register.
@@ -168,7 +168,7 @@ static struct Wood {
    * Address: 0x0D000034
    * Size: u32
    */
-  detail::Register<IrqBits> PPCINTEN;
+  Register<IrqBits> PPCINTEN;
 
   /**
    * IOP IRQ status register.
@@ -176,7 +176,7 @@ static struct Wood {
    * Address: 0x0D000038
    * Size: u32
    */
-  detail::Register<IrqBits> IOPINTSTS;
+  Register<IrqBits> IOPINTSTS;
 
   /**
    * IOP IRQ mask register.
@@ -184,7 +184,7 @@ static struct Wood {
    * Address: 0x0D00003C
    * Size: u32
    */
-  detail::Register<IrqBits> IOPIRQINTEN;
+  Register<IrqBits> IOPIRQINTEN;
 
   _WSH_PAD(0x040, 0x400);
 
@@ -192,4 +192,4 @@ static struct Wood {
 
 static_assert(sizeof(Wood) == 0x400);
 
-} // namespace wsh::hw::reg
+} // namespace wsh::hw

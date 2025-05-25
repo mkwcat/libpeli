@@ -1,4 +1,4 @@
-// wsh/hw/reg/ProcessorInterface.hpp
+// wsh/hw/ProcessorInterface.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../../common/Types.h"
-#include "../../util/Detail.hpp"
-#include "detail/Register.hpp"
+#include "../common/Types.h"
+#include "../util/Detail.hpp"
+#include "Register.hpp"
 
-namespace wsh::hw::reg {
+namespace wsh::hw {
 
 static struct ProcessorInterface {
   enum class Interrupt {
@@ -130,7 +130,7 @@ static struct ProcessorInterface {
    * Address: 0xCC003000
    * Size: u32
    */
-  detail::Register<InterruptBits> INTSR;
+  Register<InterruptBits> INTSR;
 
   /**
    * Interrupt Mask.
@@ -138,11 +138,11 @@ static struct ProcessorInterface {
    * Address: 0xCC003004
    * Size: u32
    */
-  detail::Register<InterruptBits> INTMR;
+  Register<InterruptBits> INTMR;
 
   _WSH_PAD(0x008, 0x100);
 } *const PI = reinterpret_cast<ProcessorInterface *>(0xCC003000);
 
 static_assert(sizeof(ProcessorInterface) == 0x100);
 
-} // namespace wsh::hw::reg
+} // namespace wsh::hw

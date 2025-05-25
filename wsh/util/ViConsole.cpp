@@ -11,7 +11,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "ViConsole.hpp"
-#include "../hw/reg/VideoInterface.hpp"
+#include "../hw/VideoInterface.hpp"
 #include "../util/Address.hpp"
 #include "../util/CpuCache.hpp"
 #include <malloc.h>
@@ -56,11 +56,8 @@ ViConsole::ViConsole(bool sideways) noexcept {
  * @param clear Clear the XFB.
  */
 void ViConsole::ConfigureVideo(bool clear) noexcept {
-  using hw::reg::VI, hw::reg::VideoInterface;
-
-  bool isNtsc = hw::reg::VI->DCR.FMT == hw::reg::VI->DCR.Fmt::NTSC;
-  bool isProgressive =
-      isNtsc && (hw::reg::VI->VISEL.VISEL & 1 || hw::reg::VI->DCR.NIN);
+  bool isNtsc = hw::VI->DCR.FMT == hw::VI->DCR.Fmt::NTSC;
+  bool isProgressive = isNtsc && (hw::VI->VISEL.VISEL & 1 || hw::VI->DCR.NIN);
   m_share->xfbWidth = 608;
   m_share->xfbHeight = isNtsc ? 448 : 538;
 
@@ -78,13 +75,13 @@ void ViConsole::ConfigureVideo(bool clear) noexcept {
     FlushXfb();
   }
 
-  hw::reg::VI->VTR = VideoInterface::Vtr{
+  hw::VI->VTR = hw::VideoInterface::Vtr{
       .ACV = u16(m_share->xfbHeight >> (isProgressive ? 0 : 1)),
       .EQU = u16((isNtsc ? 12 : 10) >> (isProgressive ? 0 : 1)),
   };
 
-  hw::reg::VideoInterface::Vtoe vto;
-  hw::reg::VideoInterface::Vtoe vte;
+  hw::VideoInterface::Vtoe vto;
+  hw::VideoInterface::Vtoe vte;
   if (isProgressive) {
     vto = {
         .PSB = 38,
@@ -110,26 +107,26 @@ void ViConsole::ConfigureVideo(bool clear) noexcept {
         .PRB = 54,
     };
   }
-  hw::reg::VI->VTO = vto;
-  hw::reg::VI->VTE = vte;
+  hw::VI->VTO = vto;
+  hw::VI->VTE = vte;
 
-  hw::reg::VI->HSW = hw::reg::VideoInterface::Hsw{
+  hw::VI->HSW = hw::VideoInterface::Hsw{
       .WPL = u16(m_share->xfbWidth >> 4),
       .STD = u16(m_share->xfbWidth >> 3 >> isProgressive),
   };
 
-  hw::reg::VI->HSR = hw::reg::VideoInterface::Hsr{
+  hw::VI->HSR = hw::VideoInterface::Hsr{
       .HS_EN = true,
       .STP = u16(isNtsc ? 234 : 233),
   };
 
-  hw::reg::VI->TFBL = hw::reg::VideoInterface::Fbl{
+  hw::VI->TFBL = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
       .FBB = u32(Physical(m_share->xfb)) >> (5 + 9),
   };
 
-  hw::reg::VI->BFBL = hw::reg::VideoInterface::Fbl{
+  hw::VI->BFBL = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
       .FBB = u32(Physical(m_share->xfb +

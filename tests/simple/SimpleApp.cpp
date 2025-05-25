@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <wsh/hw/reg/Wood.hpp>
+#include <wsh/hw/Wood.hpp>
 #include <wsh/ios/ipc/Low.hpp>
 #include <wsh/runtime/Thread.hpp>
 #include <wsh/util/ViConsole.hpp>

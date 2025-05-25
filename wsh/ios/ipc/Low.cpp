@@ -7,7 +7,7 @@
 #include "Low.hpp"
 #include "../../hw/Bit.hpp"
 #include "../../hw/Interrupt.hpp"
-#include "../../hw/reg/Wood.hpp"
+#include "../../hw/Wood.hpp"
 #include "../../ppc/Msr.hpp"
 #include "../../ppc/Sync.hpp"
 #include "../../runtime/Exception.hpp"
@@ -36,34 +36,32 @@ enum IpcBit {
 
 [[maybe_unused]]
 void syncNoInterrupt(IOSRequest &request) noexcept {
-  using hw::reg::WOOD;
-
   util::CpuCache::DcFlush(request);
 
-  WOOD->IPCPPCMSG.PTR = util::Physical(&request);
+  hw::WOOD->IPCPPCMSG.PTR = util::Physical(&request);
   ppc::Eieio();
-  WOOD->IPCPPCCTRL = X1;
-  while (!WOOD->IPCPPCCTRL.Y2) {
-    if (WOOD->IPCPPCCTRL.Y1) {
+  hw::WOOD->IPCPPCCTRL = X1;
+  while (!hw::WOOD->IPCPPCCTRL.Y2) {
+    if (hw::WOOD->IPCPPCCTRL.Y1) {
       // Expected an ack but got a reply!
-      WOOD->IPCPPCCTRL = Y1;
-      WOOD->IPCPPCCTRL = X2;
+      hw::WOOD->IPCPPCCTRL = Y1;
+      hw::WOOD->IPCPPCCTRL = X2;
     }
   }
 
-  WOOD->IPCPPCCTRL = Y2;
+  hw::WOOD->IPCPPCCTRL = Y2;
 
   void *reply;
   do {
-    while (!WOOD->IPCPPCCTRL.Y1) {
-      if (WOOD->IPCPPCCTRL.Y2) {
+    while (!hw::WOOD->IPCPPCCTRL.Y1) {
+      if (hw::WOOD->IPCPPCCTRL.Y2) {
         // Expected a reply but got an ack!
-        WOOD->IPCPPCCTRL.Y2 = 1;
+        hw::WOOD->IPCPPCCTRL.Y2 = 1;
       }
     }
-    reply = const_cast<void *>(WOOD->IPCIOPMSG.PTR);
-    WOOD->IPCPPCCTRL = Y1;
-    WOOD->IPCPPCCTRL = X2;
+    reply = const_cast<void *>(hw::WOOD->IPCIOPMSG.PTR);
+    hw::WOOD->IPCPPCCTRL = Y1;
+    hw::WOOD->IPCPPCCTRL = X2;
   } while (reply != util::Physical(&request));
 
   util::CpuCache::DcInvalidate(request);
@@ -71,24 +69,20 @@ void syncNoInterrupt(IOSRequest &request) noexcept {
 
 // Expects interrupts to be disabled
 void ipcAcrSend(IPCCommandBlock *request) {
-  using hw::reg::WOOD;
-
   util::CpuCache::DcFlush(request, sizeof(IOSRequest));
   ppc::Sync();
 
-  WOOD->IPCPPCMSG.PTR = util::Physical(request);
+  hw::WOOD->IPCPPCMSG.PTR = util::Physical(request);
   ppc::Eieio();
-  WOOD->IPCPPCCTRL = IY1 | IY2 | X1;
+  hw::WOOD->IPCPPCCTRL = IY1 | IY2 | X1;
 
   s_waiting_ack = true;
 }
 
 void handleAck() {
-  using hw::reg::WOOD;
-
-  WOOD->IPCPPCCTRL = IY1 | Y2;
+  hw::WOOD->IPCPPCCTRL = IY1 | Y2;
   ppc::Eieio();
-  WOOD->PPCINTSTS = hw::BitMask(hw::Irq::IpcPpc);
+  hw::WOOD->PPCINTSTS = hw::BitMask(hw::Irq::IpcPpc);
 
   s_waiting_ack = false;
 
@@ -100,15 +94,13 @@ void handleAck() {
 }
 
 void handleReply() {
-  using hw::reg::WOOD;
+  void *reply_ptr = const_cast<void *>(hw::WOOD->IPCIOPMSG.PTR);
 
-  void *reply_ptr = const_cast<void *>(WOOD->IPCIOPMSG.PTR);
-
-  WOOD->IPCPPCCTRL = (WOOD->IPCPPCCTRL & IY2) | Y1;
+  hw::WOOD->IPCPPCCTRL = (hw::WOOD->IPCPPCCTRL & IY2) | Y1;
   ppc::Eieio();
-  WOOD->PPCINTSTS = hw::BitMask(hw::Irq::IpcPpc);
+  hw::WOOD->PPCINTSTS = hw::BitMask(hw::Irq::IpcPpc);
   ppc::Eieio();
-  WOOD->IPCPPCCTRL = IY1 | IY2 | X2;
+  hw::WOOD->IPCPPCCTRL = IY1 | IY2 | X2;
 
   IPCCommandBlock *reply =
       static_cast<IPCCommandBlock *>(util::Effective(reply_ptr));
@@ -153,7 +145,7 @@ void handleReply() {
 }
 
 void ipcHandleInterrupt(hw::Irq, ppc::Context *) {
-  u32 ctrl = hw::reg::WOOD->IPCPPCCTRL;
+  u32 ctrl = hw::WOOD->IPCPPCCTRL;
 
   if (ctrl & Y2) {
     handleAck();
@@ -405,7 +397,7 @@ void Init() noexcept {
 
   runtime::SetIrqHandler(hw::Irq::IpcPpc, ipcHandleInterrupt);
 
-  hw::reg::WOOD->IPCPPCCTRL = Y1 | Y2;
+  hw::WOOD->IPCPPCCTRL = Y1 | Y2;
 }
 
 #endif // !WSH_HOST_IOS

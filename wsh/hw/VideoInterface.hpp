@@ -1,4 +1,4 @@
-// wsh/hw/reg/VideoInterface.hpp
+// wsh/hw/VideoInterface.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "../../common/Types.h"
-#include "detail/Register.hpp"
+#include "../common/Types.h"
+#include "Register.hpp"
 
-namespace wsh::hw::reg {
+namespace wsh::hw {
 
 static struct VideoInterface {
   struct Vtr {
@@ -34,7 +34,7 @@ static struct VideoInterface {
    * Address: 0xCC002000
    * Size: u16
    */
-  detail::Register<Vtr> VTR;
+  Register<Vtr> VTR;
 
   struct Dcr {
     using Size = u16;
@@ -98,7 +98,7 @@ static struct VideoInterface {
    * Address: 0xCC002002
    * Size: u16
    */
-  detail::Register<Dcr> DCR;
+  Register<Dcr> DCR;
 
   struct Htr0 {
     using Size = u32;
@@ -131,7 +131,7 @@ static struct VideoInterface {
    * Address: 0xCC002004
    * Size: u32
    */
-  detail::Register<Htr0> HTR0;
+  Register<Htr0> HTR0;
 
   struct Htr1 {
     using Size = u32;
@@ -160,7 +160,7 @@ static struct VideoInterface {
    * Address: 0xCC002008
    * Size: u32
    */
-  detail::Register<Htr1> HTR1;
+  Register<Htr1> HTR1;
 
   struct Vtoe {
     using Size = u32;
@@ -186,7 +186,7 @@ static struct VideoInterface {
    * Address: 0xCC00200C
    * Size: u32
    */
-  detail::Register<Vtoe> VTO;
+  Register<Vtoe> VTO;
 
   /**
    * Even Field Vertical Timing Register.
@@ -194,7 +194,7 @@ static struct VideoInterface {
    * Address: 0xCC002010
    * Size: u32
    */
-  detail::Register<Vtoe> VTE;
+  Register<Vtoe> VTE;
 
   struct Bbei {
     using Size = u32;
@@ -226,7 +226,7 @@ static struct VideoInterface {
    * Address: 0xCC002014
    * Size: u32
    */
-  detail::Register<Bbei> BBEI;
+  Register<Bbei> BBEI;
 
   struct Bboi {
     using Size = u32;
@@ -258,7 +258,7 @@ static struct VideoInterface {
    * Address: 0xCC002018
    * Size: u32
    */
-  detail::Register<Bboi> BBOI;
+  Register<Bboi> BBOI;
 
   struct Fbl {
     using Size = u32;
@@ -296,7 +296,7 @@ static struct VideoInterface {
    * Address: 0xCC00201C
    * Size: u32
    */
-  detail::Register<Fbl> TFBL;
+  Register<Fbl> TFBL;
 
   struct Fbr {
     using Size = u32;
@@ -313,7 +313,7 @@ static struct VideoInterface {
    * Address: 0xCC002020
    * Size: u32
    */
-  detail::Register<Fbr> TFBR;
+  Register<Fbr> TFBR;
 
   /**
    * Bottom Field Base Register (L) (External Framebuffer Half 2).
@@ -322,14 +322,14 @@ static struct VideoInterface {
    * Size: u32
    */
 
-  detail::Register<Fbl> BFBL;
+  Register<Fbl> BFBL;
   /**
    * Bottom Field Base Register (R) (Only valid in 3D Mode).
    *
    * Address: 0xCC002028
    * Size: u32
    */
-  detail::Register<Fbr> BFBR;
+  Register<Fbr> BFBR;
 
   struct Dpv {
     using Size = u16;
@@ -348,7 +348,7 @@ static struct VideoInterface {
    * Address: 0xCC00202C
    * Size: u16
    */
-  detail::Register<Dpv> DPV;
+  Register<Dpv> DPV;
 
   struct Dph {
     using Size = u16;
@@ -367,7 +367,7 @@ static struct VideoInterface {
    * Address: 0xCC00202E
    * Size: u16
    */
-  detail::Register<Dph> DPH;
+  Register<Dph> DPH;
 
   struct Di {
     using Size = u32;
@@ -405,7 +405,7 @@ static struct VideoInterface {
    * Address: 0xCC002030
    * Size: u32
    */
-  detail::Register<Di> DI0;
+  Register<Di> DI0;
 
   /**
    * Display Interrupt 1.
@@ -413,7 +413,7 @@ static struct VideoInterface {
    * Address: 0xCC002034
    * Size: u32
    */
-  detail::Register<Di> DI1;
+  Register<Di> DI1;
 
   /**
    * Display Interrupt 2.
@@ -421,7 +421,7 @@ static struct VideoInterface {
    * Address: 0xCC002038
    * Size: u32
    */
-  detail::Register<Di> DI2;
+  Register<Di> DI2;
 
   /**
    * Display Interrupt 3.
@@ -429,7 +429,7 @@ static struct VideoInterface {
    * Address: 0xCC00203C
    * Size: u32
    */
-  detail::Register<Di> DI3;
+  Register<Di> DI3;
 
   struct Dl {
     using Size = u32;
@@ -460,7 +460,7 @@ static struct VideoInterface {
    * Address: 0xCC002040
    * Size: u32
    */
-  detail::Register<Dl> DL0;
+  Register<Dl> DL0;
 
   /**
    * Display Latch Register 1.
@@ -468,7 +468,7 @@ static struct VideoInterface {
    * Address: 0xCC002044
    * Size: u32
    */
-  detail::Register<Dl> DL1;
+  Register<Dl> DL1;
 
   struct Hsw {
     using Size = u16;
@@ -486,7 +486,7 @@ static struct VideoInterface {
    * Address: 0xCC002048
    * Size: u16
    */
-  detail::Register<Hsw> HSW;
+  Register<Hsw> HSW;
 
   struct Hsr {
     using Size = u16;
@@ -512,7 +512,7 @@ static struct VideoInterface {
    * Address: 0xCC00204A
    * Size: u16
    */
-  detail::Register<Hsr> HSR;
+  Register<Hsr> HSR;
 
   struct Fct0 {
     using Size = u32;
@@ -541,7 +541,7 @@ static struct VideoInterface {
    * Address: 0xCC00204C
    * Size: u32
    */
-  detail::Register<Fct0> FCT0;
+  Register<Fct0> FCT0;
 
   struct Fct1 {
     using Size = u32;
@@ -570,7 +570,7 @@ static struct VideoInterface {
    * Address: 0xCC002050
    * Size: u32
    */
-  detail::Register<Fct1> FCT1;
+  Register<Fct1> FCT1;
 
   struct Fct2 {
     using Size = u32;
@@ -599,7 +599,7 @@ static struct VideoInterface {
    * Address: 0xCC002054
    * Size: u32
    */
-  detail::Register<Fct2> FCT2;
+  Register<Fct2> FCT2;
 
   struct Fct3 {
     using Size = u32;
@@ -631,7 +631,7 @@ static struct VideoInterface {
    * Address: 0xCC002058
    * Size: u32
    */
-  detail::Register<Fct3> FCT3;
+  Register<Fct3> FCT3;
 
   struct Fct4 {
     using Size = u32;
@@ -663,7 +663,7 @@ static struct VideoInterface {
    * Address: 0xCC00205C
    * Size: u32
    */
-  detail::Register<Fct4> FCT4;
+  Register<Fct4> FCT4;
 
   struct Fct5 {
     using Size = u32;
@@ -695,7 +695,7 @@ static struct VideoInterface {
    * Address: 0xCC002060
    * Size: u32
    */
-  detail::Register<Fct5> FCT5;
+  Register<Fct5> FCT5;
 
   struct Fct6 {
     using Size = u32;
@@ -727,7 +727,7 @@ static struct VideoInterface {
    * Address: 0xCC002064
    * Size: u32
    */
-  detail::Register<Fct6> FCT6;
+  Register<Fct6> FCT6;
 
   /**
    * Unknown register (AA stuff).
@@ -766,7 +766,7 @@ static struct VideoInterface {
    * Address: 0xCC00206C
    * Size: u16
    */
-  detail::Register<ViClk> VICLK;
+  Register<ViClk> VICLK;
 
   struct ViSel {
     using Size = u16;
@@ -782,7 +782,7 @@ static struct VideoInterface {
    * Address: 0xCC00206E
    * Size: u16
    */
-  detail::Register<ViSel> VISEL;
+  Register<ViSel> VISEL;
 
   /**
    * Unknown register.
@@ -814,7 +814,7 @@ static struct VideoInterface {
    * Address: 0xCC002072
    * Size: u16
    */
-  detail::Register<Hbe> HBE;
+  Register<Hbe> HBE;
 
   struct Hbs {
     using Size = u16;
@@ -833,7 +833,7 @@ static struct VideoInterface {
    * Address: 0xCC002074
    * Size: u16
    */
-  detail::Register<Hbs> HBS;
+  Register<Hbs> HBS;
 
   /**
    * Pad to 0x80 size block. The values are always 0x00FF.
@@ -848,4 +848,4 @@ static struct VideoInterface {
 
 static_assert(sizeof(VideoInterface) == 0x100);
 
-} // namespace wsh::hw::reg
+} // namespace wsh::hw

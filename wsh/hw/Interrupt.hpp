@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include "reg/ProcessorInterface.hpp"
-#include "reg/Wood.hpp"
+#include "ProcessorInterface.hpp"
+#include "Wood.hpp"
 
 namespace wsh::hw {
 
-using Irq = reg::Wood::Irq;
-constexpr u32 IrqCount = reg::Wood::IrqCount;
+using Irq = Wood::Irq;
+constexpr u32 IrqCount = Wood::IrqCount;
 
-using IntCause = reg::ProcessorInterface::Interrupt;
-constexpr u32 IntCauseCount = reg::ProcessorInterface::InterruptCount;
+using IntCause = ProcessorInterface::Interrupt;
+constexpr u32 IntCauseCount = ProcessorInterface::InterruptCount;
 
 } // namespace wsh::hw

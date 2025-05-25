@@ -9,8 +9,8 @@
 #include "../common/Types.h"
 #include "../hw/Bit.hpp"
 #include "../hw/Interrupt.hpp"
-#include "../hw/reg/ProcessorInterface.hpp"
-#include "../hw/reg/Wood.hpp"
+#include "../hw/ProcessorInterface.hpp"
+#include "../hw/Wood.hpp"
 #include "../ppc/Cache.hpp"
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
@@ -253,7 +253,7 @@ void SetInterruptEventHandler(hw::IntCause type,
 
   s_interrupt_handlers[static_cast<std::size_t>(type)] = handler;
 
-  hw::reg::PI->INTMR |= (1 << static_cast<u32>(type));
+  hw::PI->INTMR |= (1 << static_cast<u32>(type));
 }
 
 static bool s_use_simple_irq = false;
@@ -265,10 +265,10 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
 
   s_irq_handlers[static_cast<std::size_t>(type)] = handler;
 
-  hw::reg::WOOD->PPCINTEN |= (1 << static_cast<u32>(type));
+  hw::WOOD->PPCINTEN |= (1 << static_cast<u32>(type));
   ppc::Eieio();
 
-  if (hw::reg::WOOD->PPCINTEN == 0) {
+  if (hw::WOOD->PPCINTEN == 0) {
     // For Dolphin, which doesn't support reading from IRQ
     s_use_simple_irq = true;
   }
@@ -276,14 +276,12 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
 
 ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
                                       u32 srr0, u32 srr1, u32 xer) noexcept {
-  using hw::reg::PI;
-
   // Find out what device(s) the interrupt came from
-  auto cause = PI->INTSR.Hex();
-  auto mask = PI->INTMR.Hex();
+  auto cause = hw::PI->INTSR.Hex();
+  auto mask = hw::PI->INTMR.Hex();
 
   // Mask out unhandled interrupts
-  PI->INTSR = cause & ~mask;
+  hw::PI->INTSR = cause & ~mask;
 
   for (u32 i = 0; i < hw::IntCauseCount; i++) {
     if (mask & cause & (1 << i)) {
@@ -305,12 +303,10 @@ ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
 
 // Second layer interrupt handler for IRQ
 static void handleIrq(hw::IntCause, ppc::Context *context) {
-  using hw::reg::WOOD;
-
   u32 cause, mask;
   if (!s_use_simple_irq) {
-    cause = WOOD->PPCINTSTS;
-    mask = WOOD->PPCINTEN;
+    cause = hw::WOOD->PPCINTSTS;
+    mask = hw::WOOD->PPCINTEN;
   } else {
     // Due to emulator limitations, we must assume the interrupt is from IPC
     cause = hw::BitMask(hw::Irq::IpcPpc);
@@ -318,7 +314,7 @@ static void handleIrq(hw::IntCause, ppc::Context *context) {
   }
 
   // Mask out unhandled interrupts
-  WOOD->PPCINTSTS = cause & ~mask;
+  hw::WOOD->PPCINTSTS = cause & ~mask;
 
   for (u32 i = 0; i < hw::IrqCount; i++) {
     if (mask & cause & (1 << i)) {
@@ -483,8 +479,8 @@ void InitExceptions() noexcept {
   writeFunctionToVector(ppc::Exception::Decrementer,
                         reinterpret_cast<u32 *>(stubExceptionHandler));
 
-  hw::reg::PI->INTMR = 0;
-  hw::reg::WOOD->PPCINTEN = 0;
+  hw::PI->INTMR = 0;
+  hw::WOOD->PPCINTEN = 0;
 
   // Register IRQ handler
   SetInterruptEventHandler(hw::IntCause::Irq, handleIrq);

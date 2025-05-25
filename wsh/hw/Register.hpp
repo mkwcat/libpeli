@@ -1,4 +1,4 @@
-// wsh/hw/reg/detail/Register.hpp
+// wsh/hw/Register.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace wsh::hw::reg::detail {
+namespace wsh::hw {
 
 template <class T> class Register : public T {
 public:
@@ -64,4 +64,4 @@ public:
   Register &operator^=(SizeType rhs) { return operator=(Hex() ^ rhs); }
 };
 
-} // namespace wsh::hw::reg::detail
+} // namespace wsh::hw
