@@ -20,53 +20,6 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -O4 -fstrict-volatile-bi
 set(CMAKE_STATIC_LIBRARY_SUFFIX ".a")
 
 add_library(wsh STATIC
-        # wsh/ogc/aram.c
-        # wsh/ogc/argv.c
-        # wsh/ogc/arqmgr.c
-        # wsh/ogc/arqueue.c
-        # wsh/ogc/audio.c
-        # wsh/ogc/cache_asm.S
-        # wsh/ogc/cache.c
-        # wsh/ogc/card.c
-        # wsh/ogc/conf.c
-        # wsh/ogc/decrementer_handler.S
-        # wsh/ogc/decrementer.c
-        # wsh/ogc/depackrnc.S
-        # wsh/ogc/depackrnc1.c
-        # wsh/ogc/dsp.c
-        # wsh/ogc/dvd.c
-        # wsh/ogc/es.c
-        # wsh/ogc/exception_handler.S
-        # wsh/ogc/exception.c
-        # wsh/ogc/exi.c
-        # wsh/ogc/gu_psasm.S
-        # wsh/ogc/gu.c
-        # wsh/ogc/gx.c
-        # wsh/ogc/ios.c
-        # wsh/ogc/ipc.c
-        # wsh/ogc/irq_handler.S
-        # wsh/ogc/irq.c
-        # wsh/ogc/isfs.c
-        # wsh/ogc/kprintf.c
-        # wsh/ogc/lock_supp.c
-        # wsh/ogc/malloc_lock.c
-        # wsh/ogc/newlibc.c
-        # wsh/ogc/pad.c
-        # wsh/ogc/sdgecko_buf.c
-        # wsh/ogc/sdgecko_io.c
-        # wsh/ogc/si.c
-        # wsh/ogc/stm.c
-        # wsh/ogc/sys_state.c
-        # wsh/ogc/system_asm.S
-        # wsh/ogc/system.cpp
-        # wsh/ogc/texconv.c
-        # wsh/ogc/timesupp.c
-        # wsh/ogc/tpl.c
-        # wsh/ogc/usbgecko.c
-        # wsh/ogc/video_asm.S
-        # wsh/ogc/video.c
-        # wsh/ogc/wiilaunch.c
-
         wsh/ios/ipc/Low.cpp
 
         wsh/ppc/Cache.cpp
