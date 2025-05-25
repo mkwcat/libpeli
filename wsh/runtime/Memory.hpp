@@ -7,7 +7,6 @@
 #pragma once
 
 #include "../common/Types.h"
-#include <cstddef>
 
 namespace wsh::runtime {
 
@@ -22,13 +21,13 @@ public:
 
   static void InitArena();
 
-  static u8 *AllocFromMem1ArenaLo(std::size_t size, std::size_t align);
-  static u8 *AllocFromMem1ArenaHi(std::size_t size, std::size_t align);
-  static u8 *AllocFromMem2ArenaLo(std::size_t size, std::size_t align);
-  static u8 *AllocFromMem2ArenaHi(std::size_t size, std::size_t align);
+  static u8 *AllocFromMem1ArenaLo(size_t size, size_t align);
+  static u8 *AllocFromMem1ArenaHi(size_t size, size_t align);
+  static u8 *AllocFromMem2ArenaLo(size_t size, size_t align);
+  static u8 *AllocFromMem2ArenaHi(size_t size, size_t align);
 
-  static u8 *SbrkAlloc(std::size_t size);
-  static u8 *SbrkFree(std::size_t size);
+  static u8 *SbrkAlloc(size_t size);
+  static u8 *SbrkFree(size_t size);
 };
 
 } // namespace wsh::runtime

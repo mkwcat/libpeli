@@ -10,8 +10,8 @@
 #include "../ppc/Msr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
-#include "../util/Debug.hpp"
 #include "ThreadQueue.hpp"
+#include "wsh/util/Halt.hpp"
 #include <bit>
 #include <cstdio>
 #include <cstdlib>
@@ -44,8 +44,10 @@ void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
   s_main_thread.m_state = State::Running;
   s_main_thread.m_priority = 16;
 
-  s_main_thread.m_libc_reent = _REENT_INIT(s_main_thread.m_libc_reent);
-  _impure_ptr = &s_main_thread.m_libc_reent;
+#ifdef WSH_NEWLIB
+  s_main_thread.m_newlib_reent = _REENT_INIT(s_main_thread.m_newlib_reent);
+  _impure_ptr = &s_main_thread.m_newlib_reent;
+#endif
 
   s_main_thread.m_stack_bottom = reinterpret_cast<u8 *>(stack);
   s_main_thread.m_stack_top = s_main_thread.m_stack_bottom + stackSize;
@@ -108,7 +110,9 @@ Thread::Thread(ThreadFunc func, void *arg, void *stack, u32 stackSize,
   m_context.gprs[1] = reinterpret_cast<u32>(m_stack_top - 0x8);
   *reinterpret_cast<u32 *>(m_stack_top - 0x4) = 0xFFFFFFFF;
 
-  m_libc_reent = _REENT_INIT(m_libcReent);
+#if defined(WSH_NEWLIB)
+  m_newlib_reent = _REENT_INIT(m_newlib_reent);
+#endif
 
   m_link = {nullptr, nullptr};
 
@@ -160,7 +164,7 @@ Thread::~Thread() noexcept {
 
     // Exit the current thread, shouldn't return
     dispatchAny();
-    util::Assert(false, "Dispatched thread is deleted");
+    _WSH_PANIC("Dispatched thread is deleted");
   }
 
   if (m_stack_owned) {
@@ -325,7 +329,7 @@ void Thread::dispatchAny() noexcept {
 
   // Dequeue and switch to the next thread
   next = s_run_queue[priority].DequeueHead<&Thread::m_run_link>();
-  util::Assert(next != nullptr, "Dispatched thread is null");
+  _WSH_ASSERT(next != nullptr, "Dispatched thread is null");
   if (s_run_queue[priority].IsEmpty()) {
     s_run_queue_mask &= ~priorityBit(priority);
   }
@@ -335,7 +339,9 @@ void Thread::dispatchAny() noexcept {
 
 // Assumes interrupts are disabled
 void Thread::dispatch() noexcept {
-  _impure_ptr = &m_libc_reent;
+#if defined(WSH_NEWLIB)
+  _impure_ptr = &m_newlib_reent;
+#endif
 
   // Set the current thread
   s_current = this;

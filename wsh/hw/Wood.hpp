@@ -7,7 +7,6 @@
 #pragma once
 
 #include "../common/Types.h"
-#include "../util/Detail.hpp"
 #include "Register.hpp"
 
 namespace wsh::hw {

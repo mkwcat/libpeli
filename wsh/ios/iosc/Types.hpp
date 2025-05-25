@@ -7,7 +7,6 @@
 #pragma once
 
 #include "../../common/Types.h"
-#include <cstddef>
 
 namespace wsh::ios::iosc {
 
@@ -45,7 +44,7 @@ using EccCertPad = u8[4];
  */
 using EccPublicPad = u8[4];
 
-constexpr std::size_t EccKeySize = 30;
+constexpr size_t EccKeySize = 30;
 
 using EccPublicKey = u8[EccKeySize * 2];
 using EccPrivateKey = u8[EccKeySize];
@@ -61,13 +60,13 @@ enum class KeyType : u32 {
   Ecc = 0x00010002,
 };
 
-constexpr std::size_t Rsa4096Size = 512;
-constexpr std::size_t Rsa2048Size = 256;
-constexpr std::size_t EccSize = EccKeySize * 2;
+constexpr size_t Rsa4096Size = 512;
+constexpr size_t Rsa2048Size = 256;
+constexpr size_t EccSize = EccKeySize * 2;
 
 struct SigRsa4096 {
   static constexpr KeyType Type = KeyType::Rsa4096;
-  static constexpr u32 Size = Rsa4096Size;
+  static constexpr size_t Size = Rsa4096Size;
 
   /* 0x000 */ KeyType sig_type;
   /* 0x004 */ u8 sig[Rsa4096Size];
@@ -79,7 +78,7 @@ static_assert(sizeof(SigRsa4096) == 0x280);
 
 struct SigRsa2048 {
   static constexpr KeyType Type = KeyType::Rsa2048;
-  static constexpr u32 Size = Rsa2048Size;
+  static constexpr size_t Size = Rsa2048Size;
 
   /* 0x000 */ KeyType sig_type;
   /* 0x004 */ u8 sig[Rsa2048Size];
@@ -91,7 +90,7 @@ static_assert(sizeof(SigRsa2048) == 0x180);
 
 struct SigEcc {
   static constexpr KeyType Type = KeyType::Ecc;
-  static constexpr u32 Size = EccSize;
+  static constexpr size_t Size = EccSize;
 
   /* 0x000 */ KeyType sig_type;
   /* 0x004 */ u8 sig[EccSize];
@@ -143,8 +142,8 @@ template <> struct PublicKey<KeyType::Rsa2048> : PublicKeyRsa2048 {};
 
 template <> struct PublicKey<KeyType::Ecc> : PublicKeyEcc {};
 
-constexpr std::size_t AesKeySize = 16;
-constexpr std::size_t AesDataAlign = 64;
+constexpr size_t AesKeySize = 16;
+constexpr size_t AesDataAlign = 64;
 
 using AesKey = u8[AesKeySize];
 using AesIv = u8[AesKeySize];

@@ -8,8 +8,10 @@
 
 #include "../ppc/Context.hpp"
 #include "../util/List.hpp"
-#include <cstdlib>
+
+#if defined(WSH_NEWLIB)
 #include <sys/reent.h>
+#endif
 
 namespace wsh::runtime {
 
@@ -35,13 +37,7 @@ public:
   using List = util::List<Thread>;
 
 public:
-  constexpr Thread() noexcept
-      : m_context({}), m_link({nullptr, nullptr}), m_state(State::Disabled),
-        m_stack_top(nullptr), m_stack_bottom(nullptr), m_stack_owned(false),
-        m_unique_id(0), m_libc_reent({}), m_priority(0), m_run_link(),
-        m_join_thread(nullptr), m_join_queue({nullptr, nullptr}),
-        m_wait_queue(nullptr), m_wait_link({nullptr, nullptr}),
-        m_result(nullptr) {}
+  constexpr Thread() noexcept = default;
 
   Thread(ThreadFunc func, void *arg, void *stack, u32 stackSize,
          Priority priority, bool suspended) noexcept;
@@ -108,7 +104,7 @@ public:
   [[noreturn]]
   static void ExitThread(void *result) noexcept {
     GetCurrent()->Exit(result);
-    std::abort();
+    __builtin_unreachable();
   }
 
   /**
@@ -132,32 +128,35 @@ private:
   static void updateLoMem() noexcept;
 
 private:
-  ppc::Context m_context;
-  Link m_link;
-  State m_state;
-  u8 *m_stack_top;
-  u8 *m_stack_bottom;
-  bool m_stack_owned;
-  ThreadId m_unique_id;
-  struct _reent m_libc_reent;
+  ppc::Context m_context = {};
+  Link m_link = {nullptr, nullptr};
+  State m_state = State::Disabled;
+  u8 *m_stack_top = nullptr;
+  u8 *m_stack_bottom = nullptr;
+  bool m_stack_owned = false;
+  ThreadId m_unique_id = 0;
+
+#if defined(WSH_NEWLIB)
+  struct _reent m_newlib_reent = {};
+#endif
 
   // Thread priority (0-63) and position in the run queue
-  Priority m_priority;
-  Link m_run_link;
+  Priority m_priority = 0;
+  Link m_run_link = {nullptr, nullptr};
 
   // The thread that this thread is waiting to join
-  Thread *m_join_thread;
+  Thread *m_join_thread = nullptr;
 
   // The queue of threads that are waiting to join this thread
-  List m_join_queue;
+  List m_join_queue = {nullptr, nullptr};
 
   // Entry involving this thread waiting for a signal (e.g. joining another
   // thread or locking a mutex)
-  ThreadQueue *m_wait_queue;
-  Link m_wait_link;
+  ThreadQueue *m_wait_queue = nullptr;
+  Link m_wait_link = {nullptr, nullptr};
 
   // The result of the thread function or Exit()
-  void *m_result;
+  void *m_result = nullptr;
 
 private:
   static ThreadId s_next_id;

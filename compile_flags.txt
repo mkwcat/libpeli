@@ -6,12 +6,15 @@
 -I/opt/devkitpro/devkitPPC/lib/gcc/powerpc-eabi/14.2.0/include-fixed
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include
 -I.
+-nobuiltininc
 -nostdinc
 -nostdinc++
 -Wpedantic
 -Wno-zero-length-array
 -Wno-unknown-attributes
 -DWSH_HOST_PPC
+-DWSH_NEWLIB
+-DWSH_DEBUG
 -std=c++23
 -x
 c++

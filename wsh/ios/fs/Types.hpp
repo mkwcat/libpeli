@@ -10,10 +10,10 @@
 
 namespace wsh::ios::fs {
 
-constexpr u32 PathSize = 64; // Includes null terminator
+constexpr size_t PathSize = 64; // Includes null terminator
 using Path = char[PathSize];
 
-constexpr u32 NodeNameSize = 13; // Includes null terminator
+constexpr size_t NodeNameSize = 13; // Includes null terminator
 using NodeName = char[NodeNameSize];
 
 struct Stats {

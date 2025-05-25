@@ -87,9 +87,9 @@ void handleAck() {
   s_waiting_ack = false;
 
   // Send the next request if available
-  std::optional<IPCCommandBlock *> request = s_queue_send->TryReceive();
-  if (request) {
-    ipcAcrSend(*request);
+  IPCCommandBlock *request;
+  if (s_queue_send->TryReceive(request)) {
+    ipcAcrSend(request);
   }
 }
 
@@ -170,10 +170,10 @@ void ipcAsync(IPCCommandBlock *request) {
 } // namespace
 
 s32 IOS_Open(const char *path, u32 flags) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
-  alignas(ALIGNMENT) char path_fixed[64] = {};
+  alignas(Alignment) char path_fixed[64] = {};
   std::strncpy(path_fixed, path, sizeof(path_fixed) - 1);
 
   s32 result = IOS_OpenAsync(path_fixed, flags, queue, &request);
@@ -181,7 +181,7 @@ s32 IOS_Open(const char *path, u32 flags) noexcept {
 }
 
 s32 IOS_Close(s32 fd) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result = IOS_CloseAsync(fd, queue, &request);
@@ -189,7 +189,7 @@ s32 IOS_Close(s32 fd) noexcept {
 }
 
 s32 IOS_Read(s32 fd, void *data, s32 size) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result = IOS_ReadAsync(fd, data, size, queue, &request);
@@ -197,7 +197,7 @@ s32 IOS_Read(s32 fd, void *data, s32 size) noexcept {
 }
 
 s32 IOS_Write(s32 fd, void *data, s32 size) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result = IOS_WriteAsync(fd, data, size, queue, &request);
@@ -205,7 +205,7 @@ s32 IOS_Write(s32 fd, void *data, s32 size) noexcept {
 }
 
 s32 IOS_Seek(s32 fd, s32 where, s32 whence) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result = IOS_SeekAsync(fd, where, whence, queue, &request);
@@ -214,7 +214,7 @@ s32 IOS_Seek(s32 fd, s32 where, s32 whence) noexcept {
 
 s32 IOS_Ioctl(s32 fd, u32 command, void *in, u32 in_size, void *out,
               u32 out_size) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result =
@@ -224,7 +224,7 @@ s32 IOS_Ioctl(s32 fd, u32 command, void *in, u32 in_size, void *out,
 
 s32 IOS_Ioctlv(s32 fd, u32 command, u32 in_count, u32 out_count,
                IOVector *vec) noexcept {
-  alignas(ALIGNMENT) IPCCommandBlock request = {};
+  alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
 
   s32 result =
@@ -235,8 +235,8 @@ s32 IOS_Ioctlv(s32 fd, u32 command, u32 in_count, u32 out_count,
 s32 IOS_OpenAsync(const char *path, u32 flags,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
-  if (path == nullptr || !util::IsAligned(ALIGNMENT, block) ||
-      !util::IsAligned(ALIGNMENT, path)) {
+  if (path == nullptr || !util::IsAligned(Alignment, block) ||
+      !util::IsAligned(Alignment, path)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -255,7 +255,7 @@ s32 IOS_OpenAsync(const char *path, u32 flags,
 
 s32 IOS_CloseAsync(s32 fd, host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -272,7 +272,7 @@ s32 IOS_CloseAsync(s32 fd, host::MessageQueue<IPCCommandBlock *> &queue,
 s32 IOS_SeekAsync(s32 fd, s32 where, s32 whence,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -291,7 +291,7 @@ s32 IOS_SeekAsync(s32 fd, s32 where, s32 whence,
 s32 IOS_ReadAsync(s32 fd, void *data, s32 size,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -310,7 +310,7 @@ s32 IOS_ReadAsync(s32 fd, void *data, s32 size,
 s32 IOS_WriteAsync(s32 fd, void *data, s32 size,
                    host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -331,7 +331,7 @@ s32 IOS_WriteAsync(s32 fd, void *data, s32 size,
 s32 IOS_IoctlAsync(s32 fd, u32 command, void *in, u32 in_size, void *out,
                    u32 out_size, host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -360,7 +360,7 @@ s32 IOS_IoctlAsync(s32 fd, u32 command, void *in, u32 in_size, void *out,
 s32 IOS_IoctlvAsync(s32 fd, u32 command, u32 in_count, u32 out_count,
                     IOVector *vec, host::MessageQueue<IPCCommandBlock *> &queue,
                     IPCCommandBlock *block) noexcept {
-  if (!util::IsAligned(ALIGNMENT, block)) {
+  if (!util::IsAligned(Alignment, block)) {
     return IOSError::IOS_ERROR_INVALID;
   }
 

@@ -9,8 +9,6 @@
 #include "../common/Types.h"
 #include "../ppc/Msr.hpp"
 #include "ThreadQueue.hpp"
-#include <optional>
-#include <utility>
 
 namespace wsh::runtime {
 
@@ -89,31 +87,31 @@ public:
       m_wait_queue.Sleep();
     }
 
-    MessageType value = std::move(m_messages[m_first]);
+    MessageType value = m_messages[m_first];
     m_first = (m_first + 1) % m_max_count;
     m_count--;
 
     if (m_count == m_max_count - 1) {
       m_wait_queue.WakeupOne();
     }
-    return std::move(value);
+    return value;
   }
 
-  std::optional<MessageType> TryReceive() {
+  bool TryReceive(MessageType &value) {
     ppc::Msr::NoInterruptsScope guard;
 
     if (IsEmpty()) {
-      return std::nullopt;
+      return false;
     }
 
-    MessageType value = std::move(m_messages[m_first]);
+    value = m_messages[m_first];
     m_first = (m_first + 1) % m_max_count;
     m_count--;
 
     if (m_count == m_max_count - 1) {
       m_wait_queue.WakeupOne();
     }
-    return std::move(value);
+    return true;
   }
 
   MessageType Peek() const {
@@ -127,14 +125,15 @@ public:
     return m_messages[m_first];
   }
 
-  std::optional<MessageType> TryPeek() const {
+  bool TryPeek(MessageType &value) const {
     ppc::Msr::NoInterruptsScope guard;
 
     if (IsEmpty()) {
-      return std::nullopt;
+      return false;
     }
 
-    return m_messages[m_first];
+    value = m_messages[m_first];
+    return true;
   }
 
   bool IsEmpty() const {

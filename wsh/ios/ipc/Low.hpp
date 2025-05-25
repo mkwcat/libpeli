@@ -15,7 +15,7 @@ namespace wsh::ios::ipc::low {
  * The byte alignment necessary for buffers passed through IPC. This is derived
  * from the processor cache line size of both the PPC and ARM CPUs.
  */
-constexpr std::size_t ALIGNMENT = 32;
+constexpr size_t Alignment = 32;
 
 enum {
   IOS_CMD_OPEN = 1,

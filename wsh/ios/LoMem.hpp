@@ -8,7 +8,6 @@
 
 #include "../common/Types.h"
 #include "../ios/di/Types.hpp"
-#include "../util/Detail.hpp"
 
 namespace wsh::ios {
 

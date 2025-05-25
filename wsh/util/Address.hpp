@@ -7,37 +7,37 @@
 #pragma once
 
 #include "../common/Types.h"
-#include <cstddef>
+#include <stddef.h>
 
 namespace wsh::util {
 
 template <class T>
 [[gnu::const]] constexpr T AlignUp(unsigned int align, T num) noexcept {
-  std::size_t raw = (std::size_t)num;
+  size_t raw = (size_t)num;
   return (T)((raw + align - 1) & -align);
 }
 
 template <class T>
 [[gnu::const]] constexpr T AlignDown(unsigned int align, T num) noexcept {
-  std::size_t raw = (std::size_t)num;
+  size_t raw = (size_t)num;
   return (T)(raw & -align);
 }
 
 template <class T>
 [[gnu::const]] constexpr bool IsAligned(unsigned int align, T num) noexcept {
-  std::size_t raw = (std::size_t)num;
+  size_t raw = (size_t)num;
   return (raw & (align - 1)) == 0;
 }
 
 typedef unsigned int size_t;
 
 template <class T1, class T2>
-[[gnu::const]] constexpr bool CheckBounds(T1 bounds, std::size_t boundLen,
-                                          T2 buffer, std::size_t len) noexcept {
-  std::size_t low = (size_t)bounds;
-  std::size_t high = low + boundLen;
-  std::size_t inside = (size_t)buffer;
-  std::size_t insidehi = inside + len;
+[[gnu::const]] constexpr bool CheckBounds(T1 bounds, size_t boundLen, T2 buffer,
+                                          size_t len) noexcept {
+  size_t low = (size_t)bounds;
+  size_t high = low + boundLen;
+  size_t inside = (size_t)buffer;
+  size_t insidehi = inside + len;
 
   return (high >= low) && (insidehi >= inside) && (inside >= low) &&
          (insidehi <= high);

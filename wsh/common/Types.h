@@ -8,10 +8,10 @@
 
 #if !defined(__cplusplus)
 #include <stdbool.h>
+#endif
+
+#include <stddef.h>
 #include <stdint.h>
-#else
-#include <cstdint>
-#endif // __cplusplus
 
 // Value type definitions
 
@@ -65,7 +65,13 @@ typedef float f32;
  */
 typedef double f64;
 
+// Some type-related preprocessor definitions
+
+#define _WSH_PAD(X_START, X_END) char _Pad##X_START[X_END - X_START]
 #define _WSH_PACKED __attribute__((__packed__))
-#define _WSH_ALIGN(v) __attribute__((__aligned__(v)))
-#define _WSH_UNREACHABLE __builtin_unreachable()
 #define _WSH_PRAGMA(x) _Pragma(#x)
+
+#if defined(__cplusplus)
+#define _WSH_SIZE_ASSERT(X_TYPE, X_SIZE)                                       \
+  static_assert(sizeof(X_TYPE) == X_SIZE, #X_TYPE " size mismatch")
+#endif

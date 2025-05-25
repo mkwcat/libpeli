@@ -22,6 +22,6 @@ __asm__(".set toc, 2;");
   _WSH_PRAGMA(GCC diagnostic ignored "-Wunused-parameter")                     \
   [[__gnu__::__optimize__("Os")]] X_PROTOTYPE {                                \
     WSH_ASM(__VA_ARGS__);                                                      \
-    _WSH_UNREACHABLE;                                                          \
+    __builtin_unreachable();                                                   \
   }                                                                            \
   _WSH_PRAGMA(GCC diagnostic pop)

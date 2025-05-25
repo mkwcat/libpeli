@@ -6,12 +6,12 @@
 
 #include "Mutex.hpp"
 #include "../ppc/Msr.hpp"
-#include "../util/Debug.hpp"
+#include "../util/Halt.hpp"
 
 namespace wsh::runtime {
 
 Mutex::~Mutex() noexcept {
-  util::Assert(m_lock_count == 0, "Mutex destroyed while locked");
+  _WSH_ASSERT(m_lock_count == 0, "Mutex destroyed while locked");
 }
 
 void Mutex::Lock() noexcept {
@@ -35,8 +35,7 @@ void Mutex::Lock() noexcept {
 void Mutex::Unlock() noexcept {
   ppc::Msr::NoInterruptsScope guard;
 
-  util::Assert(m_lock_count > 0,
-               "Attempt to unlock a mutex that is not locked");
+  _WSH_ASSERT(m_lock_count > 0, "Attempt to unlock a mutex that is not locked");
 
   if (--m_lock_count > 0) {
     return;

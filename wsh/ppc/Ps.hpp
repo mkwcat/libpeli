@@ -55,7 +55,7 @@ static inline void SetGQR(u32 gqr, u32 value) noexcept {
     break;
 
   default:
-    util::Unreachable();
+    _WSH_UNREACHABLE();
   }
 }
 
@@ -79,7 +79,7 @@ static inline u32 GetGQR(u32 gqr) noexcept {
     return GetSpr<Spr::GQR7>();
 
   default:
-    util::Unreachable();
+    _WSH_UNREACHABLE();
     return 0;
   }
 }

@@ -10,11 +10,10 @@
 #include "../util/Address.hpp"
 #include "Hid0.hpp"
 #include "Sync.hpp"
-#include <cstddef>
 
 namespace wsh::ppc::Cache {
 
-constexpr std::size_t BlockSize = 32;
+constexpr u32 BlockSize = 32;
 
 enum class Op {
   DcStore,
@@ -27,7 +26,7 @@ enum class Op {
 };
 
 template <Op XOp, bool DoSync>
-inline void OpRange(const void *block, std::size_t size) noexcept {
+inline void OpRange(const void *block, u32 size) noexcept {
   if (size == 0) {
     return;
   }
@@ -64,19 +63,18 @@ inline void OpRange(const void *block, std::size_t size) noexcept {
 }
 
 template <bool DoSync = true>
-void DcStore(const void *start, std::size_t size) noexcept;
+void DcStore(const void *start, u32 size) noexcept;
 template <bool DoSync = true>
-void DcFlush(const void *start, std::size_t size) noexcept;
+void DcFlush(const void *start, u32 size) noexcept;
 template <bool DoSync = true>
-void DcInvalidate(const void *start, std::size_t size) noexcept;
+void DcInvalidate(const void *start, u32 size) noexcept;
+template <bool DoSync = true> void DcZero(const void *start, u32 size) noexcept;
 template <bool DoSync = true>
-void DcZero(const void *start, std::size_t size) noexcept;
+void DcTouch(const void *start, u32 size) noexcept;
 template <bool DoSync = true>
-void DcTouch(const void *start, std::size_t size) noexcept;
+void DcTouchStore(const void *start, u32 size) noexcept;
 template <bool DoSync = true>
-void DcTouchStore(const void *start, std::size_t size) noexcept;
-template <bool DoSync = true>
-void IcInvalidate(const void *start, std::size_t size) noexcept;
+void IcInvalidate(const void *start, u32 size) noexcept;
 
 inline void DcEnable(bool enable) noexcept { SprRwCtl<Hid0>()->DCE = enable; }
 

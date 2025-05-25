@@ -4,6 +4,8 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
+#if defined(WSH_NEWLIB)
+
 #include "ViConsoleStdOut.hpp"
 #include <sys/iosupport.h>
 #include <sys/reent.h>
@@ -55,18 +57,20 @@ void ViConsoleStdOut::Register(ViConsole &console) {
   devoptab_list[STD_ERR] = &s_devoptab;
 }
 
-int ViConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
-                              [[maybe_unused]] void *fd, const char *ptr,
-                              std::size_t len) {
+ssize_t ViConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
+                                  [[maybe_unused]] void *fd, const char *ptr,
+                                  size_t len) {
   s_console->Print(ptr, len);
   return len;
 }
 
-int ViConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
-                              [[maybe_unused]] void *fd, struct stat *st) {
+ssize_t ViConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
+                                  [[maybe_unused]] void *fd, struct stat *st) {
   *st = {};
   st->st_mode = S_IFCHR;
   return 0;
 }
 
 } // namespace wsh::util
+
+#endif

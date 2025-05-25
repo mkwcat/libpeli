@@ -6,24 +6,36 @@
 
 #pragma once
 
-#include "Debug.hpp"
+#if defined(WSH_DEBUG)
+#include "Halt.hpp"
+#endif
 
 namespace wsh::util {
 
-constexpr bool
-Assume(bool condition = true,
-       std::source_location location = std::source_location::current()) {
-  if constexpr (Debug) {
-    return Assert(condition, nullptr, location);
-  } else {
-    [[assume(condition)]];
-    return condition;
-  }
-}
+#if defined(WSH_DEBUG)
 
-[[__noreturn__]]
-constexpr void Unreachable() noexcept {
-  __builtin_unreachable();
-}
+#define _WSH_ASSUME_2(X_CONDITION, X_LINE)                                     \
+  do {                                                                         \
+    if (!(X_CONDITION)) {                                                      \
+      util::AssertFail(#X_CONDITION, "Assumption failed (debug)",              \
+                       __PRETTY_FUNCTION__, __FILE__, #X_LINE);                \
+    }                                                                          \
+  } while (false)
+#define _WSH_ASSUME_1(X_CONDITION, X_LINE) _WSH_ASSUME_2(X_CONDITION, X_LINE)
+#define _WSH_ASSUME(X_CONDITION) _WSH_ASSUME_1(X_CONDITION, __LINE__)
+
+#else
+
+#define _WSH_ASSUME(X_CONDITION) [[__assume__]] (X_CONDITION)
+
+#endif
+
+#define _WSH_UNREACHABLE_2(X_LINE)                                             \
+  do {                                                                         \
+    util::AssertFail(nullptr, "Unreachable code executed",                     \
+                     __PRETTY_FUNCTION__, __FILE__, #X_LINE);                  \
+  } while (false)
+#define _WSH_UNREACHABLE_1(X_LINE) _WSH_UNREACHABLE_2(X_LINE)
+#define _WSH_UNREACHABLE() _WSH_UNREACHABLE_1(__LINE__)
 
 } // namespace wsh::util
