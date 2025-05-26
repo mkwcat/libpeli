@@ -1,4 +1,4 @@
-// wsh/util/ViConsoleStdOut.cpp - Pipe stdout to an instance of ViConsole
+// wsh/util/VIConsoleStdOut.cpp - Pipe stdout to an instance of VIConsole
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,16 +6,17 @@
 
 #if defined(WSH_NEWLIB)
 
-#include "ViConsoleStdOut.hpp"
+#include "VIConsoleStdOut.hpp"
+
 #include <sys/iosupport.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
 
 namespace wsh::util {
 
-ViConsole *ViConsoleStdOut::s_console = nullptr;
+VIConsole *VIConsoleStdOut::s_console = nullptr;
 
-void ViConsoleStdOut::Register(ViConsole &console) {
+void VIConsoleStdOut::Register(VIConsole &console) {
   s_console = &console;
 
   static devoptab_t s_devoptab = {
@@ -23,10 +24,10 @@ void ViConsoleStdOut::Register(ViConsole &console) {
       .structSize = 0,
       .open_r = nullptr,
       .close_r = nullptr,
-      .write_r = ViConsoleStdOut::SysWrite,
+      .write_r = VIConsoleStdOut::SysWrite,
       .read_r = nullptr,
       .seek_r = nullptr,
-      .fstat_r = ViConsoleStdOut::SysFstat,
+      .fstat_r = VIConsoleStdOut::SysFstat,
       .stat_r = nullptr,
       .link_r = nullptr,
       .unlink_r = nullptr,
@@ -57,15 +58,15 @@ void ViConsoleStdOut::Register(ViConsole &console) {
   devoptab_list[STD_ERR] = &s_devoptab;
 }
 
-ssize_t ViConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
-                                  [[maybe_unused]] void *fd, const char *ptr,
-                                  size_t len) {
+int VIConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
+                              [[maybe_unused]] void *fd, const char *ptr,
+                              size_t len) {
   s_console->Print(ptr, len);
   return len;
 }
 
-ssize_t ViConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
-                                  [[maybe_unused]] void *fd, struct stat *st) {
+int VIConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
+                              [[maybe_unused]] void *fd, struct stat *st) {
   *st = {};
   st->st_mode = S_IFCHR;
   return 0;

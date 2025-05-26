@@ -1,4 +1,4 @@
-// wsh/util/ViConsole.cpp - Visual debug console shared between PPC and IOS
+// wsh/util/VIConsole.cpp - Visual debug console shared between PPC and IOS
 //   Written by mkwcat
 //   Written by stebler
 //
@@ -17,7 +17,7 @@
 
 namespace wsh::util {
 
-class ViConsole {
+class VIConsole {
 public:
   // All values must be 32-bit sized to be compatible with uncached memory.
   struct alignas(32) Share {
@@ -58,7 +58,7 @@ public:
   /**
    * Create and allocate memory for the debug console.
    */
-  ViConsole(bool sideways = false) noexcept;
+  VIConsole(bool sideways = false) noexcept;
 
   /**
    * Configure VI for the debug console.
@@ -71,7 +71,7 @@ public:
   /**
    * Recreate the debug console using an existing shared configuration.
    */
-  ViConsole(Share *share) noexcept;
+  VIConsole(Share *share) noexcept;
 
   /**
    * Get the width of the console framebuffer.
@@ -121,7 +121,7 @@ public:
   /**
    * Print a string to the debug console.
    */
-  void Print(const char *s, std::size_t len) noexcept;
+  void Print(const char *s, size_t len) noexcept;
 
 private:
   /**

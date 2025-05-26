@@ -8,10 +8,6 @@
 
 #include "Types.h"
 
-// TODO: This kind of ASM statement doesn't work with Clang
-__asm__(".set sp, 1;");
-__asm__(".set toc, 2;");
-
 #define _WSH_ASM_EVAL2(...) __asm__(#__VA_ARGS__)
 #define _WSH_ASM_EVAL(...) _WSH_ASM_EVAL2(__VA_ARGS__)
 

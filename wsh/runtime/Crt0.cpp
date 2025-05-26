@@ -18,25 +18,26 @@
 #include "Exception.hpp"
 #include "Memory.hpp"
 #include "Thread.hpp"
-#include <algorithm>
+#include <cstdlib>
+
+#ifndef WSH_CRT0_STACK_SIZE
+#define WSH_CRT0_STACK_SIZE 0x8000
+#endif
+
+extern "C" wsh::runtime::Args *__system_argv;
 
 namespace wsh::runtime {
 
-extern "C" Args _Wsh_HbLoadArg;
-extern "C" void _start() noexcept;
-extern "C" void _Wsh_Crt0() noexcept;
-
-const Args *Crt0SystemArgv asm("__system_argv") = &_Wsh_HbLoadArg;
+// Make the entire file extern "C" for easier accessing from assembly.
+extern "C" {
 
 WSH_ASM_FUNCTION( // clang-format off
   [[gnu::weak]]
   void _start() noexcept,
 
-  bl      _Wsh_Crt0;
+  bl      wshCrt0;
 
-  // TODO: Defining symbols this way isn't portable (requires GCC)
-  .global _Wsh_HbLoadArg;
-_Wsh_HbLoadArg:;
+  // Homebrew loader arguments
   .ascii  "_arg"; // Indicator
   .long   0;      // Magic
   .long   0;      // Command Line
@@ -47,20 +48,20 @@ _Wsh_HbLoadArg:;
                   // clang-format on
 );
 
-#ifndef WSH_CRT0_STACK_SIZE
-#define WSH_CRT0_STACK_SIZE 0x8000
-#endif
+namespace {
 
-[[gnu::aligned(32)]]
-static u8 Crt0Stack[WSH_CRT0_STACK_SIZE] asm("_Wsh_Crt0Stack");
+constinit Args s_args;
+alignas(32) u8 s_crt0_stack[WSH_CRT0_STACK_SIZE];
+
+void wshMain(Args *input_args) noexcept;
+void wshCrt0() noexcept;
 
 WSH_ASM_FUNCTION( // clang-format off
-  [[gnu::weak]]
-  void _Wsh_Crt0() noexcept,
+  void wshCrt0() noexcept,
 
   // Set temporary stack pointer
-  lis     %r1, (_Wsh_Crt0Stack + WSH_CRT0_STACK_SIZE - 0x8)@ha;
-  la      %r1, (_Wsh_Crt0Stack + WSH_CRT0_STACK_SIZE - 0x8)@l(%r1);
+  lis     %r1, (s_crt0_stack + WSH_CRT0_STACK_SIZE - 0x8)@ha;
+  la      %r1, (s_crt0_stack + WSH_CRT0_STACK_SIZE - 0x8)@l(%r1);
 
   // Set the read-only Small Data Area 2 (SDA2) base pointer
   lis     %r2, _SDA2_BASE_@ha;
@@ -75,20 +76,23 @@ WSH_ASM_FUNCTION( // clang-format off
   mtspr   912, %r0;
                  
   // Call the main init function
-  bl      _Wsh_Init;
+  bl      wshMain;
                   // clang-format on
 );
 
-static void InitPowerPC() {
+void initPowerPC() {
+#if 0
   // These values are set by IOS. Note that IOS versions after IOS28 expanded
   // the size of MEM2 addressable to PPC. In the future we should probably
-  // select the MEM2 size based on the expected IOS version / the IOS version
+  // select the MEM2 size based on the expected IOS version or the IOS version
   // we'll launch later, rather than whatever we're launched with.
-  // u32 mem1Size = ios::gLoMem.osGlobals.mem1End - 0x80000000;
-  // u32 mem2Size = ios::gLoMem.osGlobals.mem2End - 0x90000000;
-
-  u32 mem1Size = 0x01800000u;
-  u32 mem2Size = 0x03600000u;
+  u32 mem1_size = std::max(ios::g_lo_mem.os_globals.mem1_end - 0x80000000u, 0x01800000u);
+  u32 mem2_size = std::max(ios::g_lo_mem.os_globals.mem2_end - 0x90000000u, 0x03400000u);
+#else
+  // For now, use constants for MEM1 and MEM2 sizes
+  constexpr u32 mem1_size = 0x01800000u;
+  constexpr u32 mem2_size = 0x03600000u;
+#endif
 
   // Switch to Real Mode
   {
@@ -99,7 +103,8 @@ static void InitPowerPC() {
 
     // Store temporary stack before flash invalidate
     if (ppc::Hid0::MoveFrom().DCE) {
-      ppc::Cache::DcStore<false>(&Crt0Stack - 0x80000000, sizeof(Crt0Stack));
+      ppc::Cache::DcStore<false>(&s_crt0_stack - 0x80000000u,
+                                 sizeof(s_crt0_stack));
     }
 
     // HID0 = 0x00910C64
@@ -125,8 +130,7 @@ static void InitPowerPC() {
     ppc::ISync();
 
     // Configure the Block Address Translation registers
-    ppc::BatConfig(std::max(0x01800000u, mem1Size),
-                   std::max(0x03400000u, mem2Size), false, false, false);
+    ppc::BatConfig(mem1_size, mem2_size, false, false, false);
 
     // Set MSR before leaving real mode
     scope.msr = ppc::Msr(ppc::MsrBits{
@@ -148,23 +152,24 @@ static void InitPowerPC() {
   ppc::L2Cache::Init();
 }
 
-extern "C" int main(int argc, char **argv);
+int main(int argc, char **argv);
 
-extern "C" [[gnu::used]]
-void _Wsh_Init() {
-  InitPowerPC();
+void wshMain(Args *input_args) noexcept {
+  initPowerPC();
   Memory::InitArena();
 
-  // TODO: Building arguments this way results in writing to the .text section!
-  // This may not be always possible.
-  _Wsh_HbLoadArg.Build();
+  s_args.Build(input_args);
 
   // Initialize the thread system
-  Thread::SystemInit(Crt0Stack, WSH_CRT0_STACK_SIZE);
+  Thread::SystemInit(s_crt0_stack, WSH_CRT0_STACK_SIZE);
 
   InitExceptions();
 
-  main(_Wsh_HbLoadArg.argc, _Wsh_HbLoadArg.argv);
+  std::exit(main(s_args.argc, s_args.argv));
 }
 
+} // namespace
+} // extern "C"
 } // namespace wsh::runtime
+
+constinit wsh::runtime::Args *__system_argv = &wsh::runtime::s_args;

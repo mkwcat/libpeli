@@ -9,7 +9,7 @@ include_directories(../..)
 set(BIN2S ${DEVKITPRO}/tools/bin/bin2s)
 set(BINARY_AS ${DEVKITPPC}/bin/powerpc-eabi-as)
 
-set(MACHDEP "-DWSH_HOST_PPC -mrvl -mcpu=750 -meabi -mhard-float")
+set(MACHDEP "-DWSH_HOST_PPC -DWSH_NEWLIB -DWSH_DEBUG -mrvl -mcpu=750 -meabi -mhard-float")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

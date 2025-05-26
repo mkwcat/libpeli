@@ -1,4 +1,4 @@
-// wsh/util/ViConsoleStdOut.hpp - Pipe stdout to an instance of ViConsole
+// wsh/util/VIConsoleStdOut.hpp - Pipe stdout to an instance of VIConsole
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,24 +8,23 @@
 
 #if defined(WSH_NEWLIB)
 
-#include "ViConsole.hpp"
-#include <stdio.h>
+#include "VIConsole.hpp"
+#include <stddef.h>
 
 struct _reent;
 struct stat;
 
 namespace wsh::util {
 
-class ViConsoleStdOut {
+class VIConsoleStdOut {
 public:
-  static void Register(ViConsole &console);
+  static void Register(VIConsole &console);
 
 private:
-  static ssize_t SysWrite(struct _reent *r, void *fd, const char *ptr,
-                          size_t len);
-  static ssize_t SysFstat(struct _reent *r, void *fd, struct stat *st);
+  static int SysWrite(struct _reent *r, void *fd, const char *ptr, size_t len);
+  static int SysFstat(struct _reent *r, void *fd, struct stat *st);
 
-  static ViConsole *s_console;
+  static VIConsole *s_console;
 };
 
 } // namespace wsh::util

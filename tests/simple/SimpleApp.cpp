@@ -6,8 +6,8 @@
 #include <wsh/hw/Wood.hpp>
 #include <wsh/ios/ipc/Low.hpp>
 #include <wsh/runtime/Thread.hpp>
-#include <wsh/util/ViConsole.hpp>
-#include <wsh/util/ViConsoleStdOut.hpp>
+#include <wsh/util/VIConsole.hpp>
+#include <wsh/util/VIConsoleStdOut.hpp>
 
 void *ThreadEntryTest(void *) {
   printf("Thread Entry Test\n");
@@ -17,12 +17,12 @@ void *ThreadEntryTest(void *) {
 }
 
 int main(int argc, char **argv) {
-  wsh::util::ViConsole console(true);
+  wsh::util::VIConsole console(true);
 
   console.Print("\nmeow!\n");
 
   // Register the console as stdout
-  wsh::util::ViConsoleStdOut::Register(console);
+  wsh::util::VIConsoleStdOut::Register(console);
 
   wsh::ios::ipc::low::Init();
 

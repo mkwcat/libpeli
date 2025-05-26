@@ -8,6 +8,6 @@
 
 namespace wsh::runtime {
 
-void Args::Build() noexcept {}
+void Args::Build([[maybe_unused]] Args *input_args) noexcept {}
 
 } // namespace wsh::runtime

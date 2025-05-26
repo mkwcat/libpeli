@@ -35,7 +35,7 @@ add_library(wsh STATIC
         wsh/runtime/Once.cpp
         wsh/runtime/Thread.cpp
 
-        wsh/util/ViConsole.cpp
-        wsh/util/ViConsoleFont.c
-        wsh/util/ViConsoleStdOut.cpp
+        wsh/util/VIConsole.cpp
+        wsh/util/VIConsoleFont.c
+        wsh/util/VIConsoleStdOut.cpp
 )

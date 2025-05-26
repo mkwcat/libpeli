@@ -15,7 +15,7 @@
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
 #include "../util/Halt.hpp"
-#include "../util/ViConsole.hpp"
+#include "../util/VIConsole.hpp"
 #include <array>
 #include <cstddef>
 #include <cstring>
@@ -352,7 +352,7 @@ static u32 *checkStackAddr(u32 stackAddr) {
   return nullptr;
 }
 
-static void printHex(util::ViConsole &console, u32 value) {
+static void printHex(util::VIConsole &console, u32 value) {
   static constexpr char HexDigits[] = "0123456789ABCDEF";
 
   console.Print(
@@ -375,7 +375,7 @@ static void printHex(util::ViConsole &console, u32 value) {
 [[noreturn]]
 static void defaultErrorHandler(wsh::ppc::Exception type,
                                 ppc::Context *context) {
-  util::ViConsole console;
+  util::VIConsole console;
 
   console.Print("\n\n   ########### EXCEPTION (");
   console.Print(wsh::ppc::GetExceptionName(type));

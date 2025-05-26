@@ -9,16 +9,16 @@
 namespace wsh::runtime {
 
 struct Args {
-  void Build() noexcept;
+  void Build(Args *input_args = nullptr) noexcept;
 
-  int magic;
-  char *cmdLine;
-  int cmdLineSize;
+  int magic = 0;
+  char *cmdLine = nullptr;
+  int cmdLineSize = 0;
 
   // Output from build_argv
-  int argc;
-  char **argv;
-  char **argvEnd;
+  int argc = 0;
+  char **argv = nullptr;
+  char **argvEnd = nullptr;
 };
 
 void libsysbase_build_argv(Args *argstruct) asm("build_argv");
