@@ -24,11 +24,10 @@ public:
   }
 
   Register() = default;
-  Register(SizeType value) { Hex() = value; }
-  Register(const T &value) {
-    Hex() = *reinterpret_cast<const SizeType *>(&value);
-  }
-  Register(const Register &rhs) { Hex() = rhs.Hex(); }
+  Register(SizeType value) { operator=(value); }
+  Register(const T &value)
+      : Register(*reinterpret_cast<const SizeType *>(&value)) {}
+  Register(const Register &rhs) : Register(rhs.Hex()) {}
 
   Register &operator=(const Register &rhs) { return operator=(rhs.Hex()); }
   Register &operator=(const T &rhs) {
@@ -48,7 +47,7 @@ public:
     *this = func(*static_cast<T *>(this));
   }
 
-  constexpr void operator<=(const auto &func) { Hex() = func(); }
+  constexpr void operator<=(const auto &func) { operator=(func()); }
 
   Register &operator|=(const Register &rhs) {
     return operator=(Hex() | rhs.Hex());

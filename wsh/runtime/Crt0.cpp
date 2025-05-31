@@ -14,10 +14,12 @@
 #include "../ppc/Msr.hpp"
 #include "../ppc/Ps.hpp"
 #include "../ppc/Sync.hpp"
+#include "../util/Address.hpp"
 #include "Args.hpp"
 #include "Exception.hpp"
 #include "Memory.hpp"
 #include "Thread.hpp"
+#include "wsh/ppc/SprRwCtl.hpp"
 #include <cstdlib>
 
 #ifndef WSH_CRT0_STACK_SIZE
@@ -74,6 +76,8 @@ WSH_ASM_FUNCTION( // clang-format off
   // Set GQR0 as it may be used by the compiler
   li      %r0, 0;
   mtspr   912, %r0;
+
+  mflr    %r3;
                  
   // Call the main init function
   bl      wshMain;
@@ -91,20 +95,22 @@ void initPowerPC() {
 #else
   // For now, use constants for MEM1 and MEM2 sizes
   constexpr u32 mem1_size = 0x01800000u;
-  constexpr u32 mem2_size = 0x03600000u;
+  constexpr u32 mem2_size = 0x03400000u;
 #endif
 
   // Switch to Real Mode
   {
     ppc::Msr::RealModeScope scope;
 
-    // Make sure the rms variable is stored before we store the cache
-    asm volatile("" : : "m"(scope.msr));
-
     // Store temporary stack before flash invalidate
     if (ppc::Hid0::MoveFrom().DCE) {
-      ppc::Cache::DcStore<false>(&s_crt0_stack - 0x80000000u,
-                                 sizeof(s_crt0_stack));
+      ppc::Cache::OpRange<ppc::Cache::Op::DcFlush, false, true>(
+          util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
+
+      ppc::Sync();
+      ppc::SprRwCtl<ppc::Hid0>()->ABE = true; // Address Broadcast Enable
+      ppc::ISync();
+      ppc::Sync();
     }
 
     // HID0 = 0x00910C64
@@ -119,6 +125,7 @@ void initPowerPC() {
         .SGE = false, // Disable Speculation Guard
         .DCFA = true, // Data Cache Flush Assist
         .BTIC = true, // Branch Target Instruction Cache
+        .ABE = false, // Address Broadcast Disabled
         .BHT = true,  // Branch History Table
     });
 
@@ -156,6 +163,7 @@ int main(int argc, char **argv);
 
 void wshMain(Args *input_args) noexcept {
   initPowerPC();
+
   Memory::InitArena();
 
   s_args.Build(input_args);

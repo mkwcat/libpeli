@@ -20,6 +20,9 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -O4 -fstrict-volatile-bi
 set(CMAKE_STATIC_LIBRARY_SUFFIX ".a")
 
 add_library(wsh STATIC
+        wsh/hw/Video.cpp
+        wsh/hw/VideoMode.cpp
+
         wsh/ios/ipc/Low.cpp
 
         wsh/ppc/Cache.cpp

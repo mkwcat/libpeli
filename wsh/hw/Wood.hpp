@@ -86,7 +86,43 @@ static struct Wood {
    */
   Register<IpcCtrl> IPCIOPCTRL;
 
-  _WSH_PAD(0x010, 0x030);
+  _WSH_PAD(0x010, 0x024);
+
+  struct ViSolid {
+    using Size = u32;
+
+    /**
+     * U component.
+     */
+    /* 24-31 */ volatile u32 U : 8 = 0;
+
+    /**
+     * V component.
+     */
+    /* 16-23 */ volatile u32 V : 8 = 0;
+
+    /**
+     * Y component.
+     */
+    /* 8-15 */ volatile u32 Y : 8 = 0;
+
+    u32 : 7;
+
+    /**
+     * Enable solid color.
+     */
+    /* 0 */ volatile u32 E : 1 = 0;
+  };
+
+  /**
+   * VI solid color register.
+   *
+   * Address: 0x0D000024
+   * Size: u32
+   */
+  Register<ViSolid> VISOLID;
+
+  _WSH_PAD(0x028, 0x030);
 
   enum class Irq {
     Timer = 0,

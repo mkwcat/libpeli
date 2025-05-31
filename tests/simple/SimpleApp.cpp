@@ -17,7 +17,7 @@ void *ThreadEntryTest(void *) {
 }
 
 int main(int argc, char **argv) {
-  wsh::util::VIConsole console(true);
+  wsh::util::VIConsole console(false);
 
   console.Print("\nmeow!\n");
 
@@ -44,6 +44,7 @@ int main(int argc, char **argv) {
       printf("IOS_Ioctl succeeded with return value %d\n", ret);
     }
   }
+
 
   while (true) {
   }

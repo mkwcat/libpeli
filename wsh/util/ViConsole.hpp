@@ -22,19 +22,19 @@ public:
   // All values must be 32-bit sized to be compatible with uncached memory.
   struct alignas(32) Share {
     u32 *xfb = nullptr;
-    u32 xfbWidth;
-    u32 xfbHeight;
+    u32 xfb_width;
+    u32 xfb_height;
     u32 lock;
-    s32 ppcRow;
-    s32 iosRow;
-    s32 xfbInit;
+    s32 ppc_row;
+    s32 ios_row;
+    s32 xfb_init;
     u32 option;
   };
 
   static_assert(IsAligned(32, sizeof(Share)));
 
 private:
-  Share *m_shareBlock;
+  Share *m_share_block;
 
   volatile Share *m_share;
 

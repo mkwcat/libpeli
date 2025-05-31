@@ -25,13 +25,18 @@ enum class Op {
   IcInvalidate,
 };
 
-template <Op XOp, bool DoSync>
+template <Op XOp, bool DoSync, bool AssumeAligned = false>
 inline void OpRange(const void *block, u32 size) noexcept {
   if (size == 0) {
     return;
   }
 
   const u8 *address = reinterpret_cast<const u8 *>(block);
+
+  if constexpr (AssumeAligned) {
+    [[assume(util::AlignDown(BlockSize, address) == address)]];
+    [[assume(util::AlignUp(BlockSize, address + size) == address + size)]];
+  }
 
   for (const u8 *start = util::AlignDown(BlockSize, address),
                 *end = util::AlignUp(BlockSize, address + size);

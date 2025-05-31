@@ -11,23 +11,26 @@
 // SPDX-License-Identifier: MIT
 
 #include "VIConsole.hpp"
-#include "../hw/VideoInterface.hpp"
 #include "../util/Address.hpp"
 #include "../util/CpuCache.hpp"
-#include <malloc.h>
+#include <cstdlib>
+
+#if defined(WSH_HOST_PPC)
+#include "../hw/Video.hpp"
+#endif
 
 extern "C" const u8 VIConsoleFont[128][16];
 
 namespace wsh::util {
 
-constexpr u8 BG_INTENSITY = 16;
-constexpr u8 FG_INTENSITY = 235;
+constexpr u8 BgIntensity = 16;
+constexpr u8 FgIntensity = 235;
 
-constexpr u8 GLYPH_WIDTH = 8;
-constexpr u8 GLYPH_HEIGHT = 16;
+constexpr u8 GlyphWidth = 8;
+constexpr u8 GlyphHeight = 16;
 
 enum Flag {
-  SIDEWAYS = 1 << 0,
+  Sideways = 1 << 0,
 };
 
 #ifdef WSH_HOST_PPC
@@ -36,19 +39,20 @@ enum Flag {
  * Create and configure VI for the debug console.
  */
 VIConsole::VIConsole(bool sideways) noexcept {
-  m_shareBlock = static_cast<Share *>(memalign(32, sizeof(Share)));
+  m_share_block = static_cast<Share *>(std::aligned_alloc(32, sizeof(Share)));
+  *m_share_block = {};
 
-  CpuCache::DcFlush(m_shareBlock, sizeof(Share));
+  CpuCache::DcFlush(m_share_block, sizeof(Share));
 
-  m_share = util::Uncached(m_shareBlock);
+  m_share = util::Uncached(m_share_block);
 
   ConfigureVideo(true);
 
   m_share->lock = 0;
-  m_share->ppcRow = -1;
-  m_share->iosRow = -1;
-  m_share->xfbInit = true;
-  m_share->option = sideways ? Flag::SIDEWAYS : 0;
+  m_share->ppc_row = -1;
+  m_share->ios_row = -1;
+  m_share->xfb_init = true;
+  m_share->option = sideways ? Flag::Sideways : 0;
 }
 
 /**
@@ -56,83 +60,25 @@ VIConsole::VIConsole(bool sideways) noexcept {
  * @param clear Clear the XFB.
  */
 void VIConsole::ConfigureVideo(bool clear) noexcept {
-  bool isNtsc = hw::VI->DCR.FMT == hw::VI->DCR.Fmt::NTSC;
-  bool isProgressive = isNtsc && (hw::VI->VISEL.VISEL & 1 || hw::VI->DCR.NIN);
-  m_share->xfbWidth = 608;
-  m_share->xfbHeight = isNtsc ? 448 : 538;
+  hw::Video video;
 
+  m_share->xfb_width = video.GetXfbWidth();
+  m_share->xfb_height = video.GetXfbHeight();
   if (m_share->xfb == nullptr) {
-    m_share->xfb = static_cast<u32 *>(
-        memalign(16384, m_share->xfbWidth * m_share->xfbHeight * sizeof(u32)));
+    m_share->xfb = reinterpret_cast<u32 *>(video.AllocateXfb());
   }
 
   if (clear) {
-    for (u16 y = 0; y < m_share->xfbHeight; y++) {
-      for (u16 x = 0; x < m_share->xfbWidth; x++) {
+    for (u16 y = 0; y < m_share->xfb_height; y++) {
+      for (u16 x = 0; x < m_share->xfb_width; x++) {
         WriteGrayscaleToXfb(x, y, 16);
       }
     }
     FlushXfb();
   }
 
-  hw::VI->VTR = hw::VideoInterface::Vtr{
-      .ACV = u16(m_share->xfbHeight >> (isProgressive ? 0 : 1)),
-      .EQU = u16((isNtsc ? 12 : 10) >> (isProgressive ? 0 : 1)),
-  };
-
-  hw::VideoInterface::Vtoe vto;
-  hw::VideoInterface::Vtoe vte;
-  if (isProgressive) {
-    vto = {
-        .PSB = 38,
-        .PRB = 80,
-    };
-    vte = vto;
-  } else if (isNtsc) {
-    vto = {
-        .PSB = 19,
-        .PRB = 40,
-    };
-    vte = {
-        .PSB = 18,
-        .PRB = 41,
-    };
-  } else {
-    vto = {
-        .PSB = 19,
-        .PRB = 53,
-    };
-    vte = {
-        .PSB = 18,
-        .PRB = 54,
-    };
-  }
-  hw::VI->VTO = vto;
-  hw::VI->VTE = vte;
-
-  hw::VI->HSW = hw::VideoInterface::Hsw{
-      .WPL = u16(m_share->xfbWidth >> 4),
-      .STD = u16(m_share->xfbWidth >> 3 >> isProgressive),
-  };
-
-  hw::VI->HSR = hw::VideoInterface::Hsr{
-      .HS_EN = true,
-      .STP = u16(isNtsc ? 234 : 233),
-  };
-
-  hw::VI->TFBL = hw::VideoInterface::Fbl{
-      .POFF = true,
-      .XOF = 0,
-      .FBB = u32(Physical(m_share->xfb)) >> (5 + 9),
-  };
-
-  hw::VI->BFBL = hw::VideoInterface::Fbl{
-      .POFF = true,
-      .XOF = 0,
-      .FBB = u32(Physical(m_share->xfb +
-                          !isProgressive * m_share->xfbWidth / 2)) >>
-             (5 + 9),
-  };
+  video.SetNextFramebuffer(m_share->xfb);
+  video.Flush();
 
   m_col = 0;
 }
@@ -143,12 +89,13 @@ void VIConsole::ConfigureVideo(bool clear) noexcept {
  * Recreate the debug console using an existing shared configuration.
  */
 VIConsole::VIConsole(Share *share) noexcept {
-  m_share = share;
 #ifdef WSH_HOST_PPC
   m_share = util::Uncached(share);
+#else
+  m_share = share;
 #endif
 
-  CpuCache::DcInvalidate(const_cast<Share *>(m_share), sizeof(Share));
+  CpuCache::DcInvalidate(const_cast<Share *>(share), sizeof(Share));
 
   Print("\n");
 }
@@ -205,16 +152,16 @@ void VIConsole::unlock() noexcept {
  * Get the current row for this instance.
  */
 s32 &VIConsole::refMyRow() noexcept {
-  return const_cast<s32 &>(MyLock == PpcLock ? m_share->ppcRow
-                                             : m_share->iosRow);
+  return const_cast<s32 &>(MyLock == PpcLock ? m_share->ppc_row
+                                             : m_share->ios_row);
 }
 
 /**
  * Get the current row for the other instance.
  */
 s32 &VIConsole::refOtherRow() noexcept {
-  return const_cast<s32 &>(MyLock == PpcLock ? m_share->iosRow
-                                             : m_share->ppcRow);
+  return const_cast<s32 &>(MyLock == PpcLock ? m_share->ios_row
+                                             : m_share->ppc_row);
 }
 
 /**
@@ -239,8 +186,8 @@ s32 VIConsole::incrementRow() noexcept {
 s32 VIConsole::decrementRow() noexcept {
   syncShare(false);
 
-  m_share->iosRow -= 1;
-  m_share->ppcRow -= 1;
+  m_share->ios_row -= 1;
+  m_share->ppc_row -= 1;
 
   syncShare(true);
 
@@ -250,21 +197,21 @@ s32 VIConsole::decrementRow() noexcept {
 /**
  * Get the width of the console framebuffer.
  */
-u16 VIConsole::GetXfbWidth() const noexcept { return m_share->xfbWidth; }
+u16 VIConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
 
 /**
  * Get the height of the console framebuffer.
  */
-u16 VIConsole::GetXfbHeight() const noexcept { return m_share->xfbHeight; }
+u16 VIConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
 
 /**
  * Get column count.
  */
 u8 VIConsole::NumCols() const noexcept {
-  if (!(m_share->option & Flag::SIDEWAYS)) {
-    return m_share->xfbWidth / GLYPH_WIDTH - 1;
+  if (!(m_share->option & Flag::Sideways)) {
+    return m_share->xfb_width / GlyphWidth - 1;
   } else {
-    return m_share->xfbHeight / GLYPH_WIDTH - 1;
+    return m_share->xfb_height / GlyphWidth - 1;
   }
 }
 
@@ -272,10 +219,10 @@ u8 VIConsole::NumCols() const noexcept {
  * Get row count.
  */
 u8 VIConsole::NumRows() const noexcept {
-  if (!(m_share->option & Flag::SIDEWAYS)) {
-    return m_share->xfbHeight / GLYPH_HEIGHT - 2;
+  if (!(m_share->option & Flag::Sideways)) {
+    return m_share->xfb_height / GlyphHeight - 2;
   } else {
-    return m_share->xfbWidth / GLYPH_HEIGHT - 2;
+    return m_share->xfb_width / GlyphHeight - 2;
   }
 }
 
@@ -283,11 +230,11 @@ u8 VIConsole::NumRows() const noexcept {
  * Read from the specified pixel on the framebuffer.
  */
 u8 VIConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
-  if (x > m_share->xfbWidth || y > m_share->xfbHeight) {
+  if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return 16;
   }
 
-  u32 val = m_share->xfb[y * (m_share->xfbWidth / 2) + x / 2];
+  u32 val = m_share->xfb[y * (m_share->xfb_width / 2) + x / 2];
   if (x & 1) {
     return val >> 8;
   } else {
@@ -299,11 +246,11 @@ u8 VIConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
  * Write to the specified pixel on the framebuffer.
  */
 void VIConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
-  if (x > m_share->xfbWidth || y > m_share->xfbHeight) {
+  if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return;
   }
 
-  u32 *val = &m_share->xfb[y * (m_share->xfbWidth / 2) + x / 2];
+  u32 *val = &m_share->xfb[y * (m_share->xfb_width / 2) + x / 2];
   u8 y0 = *val >> 24;
   u8 y1 = *val >> 8;
   if (x & 1) {
@@ -318,12 +265,13 @@ void VIConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
  * Move the framebuffer up by the specified height.
  */
 void VIConsole::MoveUp(u16 height) noexcept {
-  if (!(m_share->option & Flag::SIDEWAYS)) {
-    u32 offset = height * (m_share->xfbWidth / 2);
+  if (!(m_share->option & Flag::Sideways)) {
+    u32 offset = height * (m_share->xfb_width / 2);
 
     u32 src = AlignDown(offset, 32);
     u32 dest = 0;
-    u32 totalSize = AlignDown(m_share->xfbHeight * (m_share->xfbWidth / 2), 32);
+    u32 totalSize =
+        AlignDown(m_share->xfb_height * (m_share->xfb_width / 2), 32);
 
     // Copy 8 words at a time
     while (src < totalSize) {
@@ -339,18 +287,18 @@ void VIConsole::MoveUp(u16 height) noexcept {
   } else {
     // Move left instead of up
     u32 offset = height / 2;
-    u32 lineCount = m_share->xfbWidth / 2 - offset;
+    u32 line_count = m_share->xfb_width / 2 - offset;
 
-    for (u32 y = 0; y < m_share->xfbHeight; y++) {
-      u32 src = y * (m_share->xfbWidth / 2) + offset;
-      u32 dest = y * (m_share->xfbWidth / 2);
+    for (u32 y = 0; y < m_share->xfb_height; y++) {
+      u32 src = y * (m_share->xfb_width / 2) + offset;
+      u32 dest = y * (m_share->xfb_width / 2);
 
-      for (u32 i = 0; i < lineCount; i++) {
+      for (u32 i = 0; i < line_count; i++) {
         m_share->xfb[dest++] = m_share->xfb[src++];
       }
 
       for (u32 i = 0; i < offset; i++) {
-        WriteGrayscaleToXfb(m_share->xfbWidth - offset + i, y, 16);
+        WriteGrayscaleToXfb(m_share->xfb_width - offset + i, y, 16);
       }
     }
   }
@@ -399,7 +347,7 @@ void VIConsole::printChar(char c) noexcept {
   }
 
   while (row >= NumRows()) {
-    VIConsole::MoveUp(GLYPH_HEIGHT);
+    VIConsole::MoveUp(GlyphHeight);
     row = decrementRow();
   }
 
@@ -408,15 +356,15 @@ void VIConsole::printChar(char c) noexcept {
     glyph = VIConsoleFont[u32(c)];
   }
 
-  u16 y0 = row * GLYPH_HEIGHT + GLYPH_HEIGHT / 2;
-  for (u16 y = 0; y < GLYPH_HEIGHT; y++) {
-    u16 x0 = m_col * GLYPH_WIDTH + GLYPH_WIDTH / 2;
-    for (u16 x = 0; x < GLYPH_WIDTH; x++) {
-      u8 intensity = glyph[(y * GLYPH_WIDTH + x) / 8] & (1 << (8 - (x % 8)))
-                         ? FG_INTENSITY
-                         : BG_INTENSITY;
-      if (m_share->option & Flag::SIDEWAYS) {
-        VIConsole::WriteGrayscaleToXfb(y0 + y, m_share->xfbHeight - (x0 + x),
+  u16 y0 = row * GlyphHeight + GlyphHeight / 2;
+  for (u16 y = 0; y < GlyphHeight; y++) {
+    u16 x0 = m_col * GlyphWidth + GlyphWidth / 2;
+    for (u16 x = 0; x < GlyphWidth; x++) {
+      u8 intensity = glyph[(y * GlyphWidth + x) / 8] & (1 << (8 - (x % 8)))
+                         ? FgIntensity
+                         : BgIntensity;
+      if (m_share->option & Flag::Sideways) {
+        VIConsole::WriteGrayscaleToXfb(y0 + y, m_share->xfb_height - (x0 + x),
                                        intensity);
       } else {
         VIConsole::WriteGrayscaleToXfb(x0 + x, y0 + y, intensity);

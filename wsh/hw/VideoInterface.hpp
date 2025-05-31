@@ -12,6 +12,7 @@
 namespace wsh::hw {
 
 static struct VideoInterface {
+public:
   struct Vtr {
     using Size = u16;
 
@@ -20,12 +21,12 @@ static struct VideoInterface {
     /**
      * Active Video (in full lines?). This value is double buffered.
      */
-    /* 4-13 */ volatile u16 ACV : 10;
+    /* 4-13 */ volatile u16 ACV : 10 = 0;
 
     /**
      * Equalization pulse in half lines.
      */
-    /* 0-3 */ volatile u16 EQU : 4;
+    /* 0-3 */ volatile u16 EQU : 4 = 0;
   };
 
   /**
@@ -41,7 +42,7 @@ static struct VideoInterface {
 
     /* 10-15 */ u16 : 6;
 
-    enum Fmt {
+    enum class Fmt : u16 {
       NTSC = 0,
       PAL = 1,
       MPAL = 2,
@@ -51,9 +52,9 @@ static struct VideoInterface {
     /**
      * Current Video Format.
      */
-    /* 8-9 */ volatile u16 FMT : 2;
+    /* 8-9 */ volatile Fmt FMT : 2 = Fmt::NTSC;
 
-    enum Le {
+    enum class Le : u16 {
       OFF = 0,
       ON_1_FLD = 1,
       ON_2_FLD = 2,
@@ -63,33 +64,33 @@ static struct VideoInterface {
     /**
      * Enable Display Latch 1.
      */
-    /* 6-7 */ volatile u16 LE1 : 1;
+    /* 6-7 */ volatile Le LE1 : 2 = Le::OFF;
 
     /**
      * Enable Display Latch 0.
      */
-    /* 4-5 */ volatile u16 LE0 : 2;
+    /* 4-5 */ volatile Le LE0 : 2 = Le::OFF;
 
     /**
      * Enable 3D Display mode.
      */
-    /* 3 */ volatile u16 DLR : 1;
+    /* 3 */ volatile u16 DLR : 1 = 0;
 
     /**
      * Enable Non-Interlaced; top field drawn at field rate and bottom field is
      * not displayed.
      */
-    /* 2 */ volatile u16 NIN : 1;
+    /* 2 */ volatile u16 NIN : 1 = 0;
 
     /**
      * Reset; clear all data requests and put VI into its idle state.
      */
-    /* 1 */ volatile u16 RST : 1;
+    /* 1 */ volatile u16 RST : 1 = 0;
 
     /**
      * Enable video timing generation and data request.
      */
-    /* 0 */ volatile u16 ENB : 1;
+    /* 0 */ volatile u16 ENB : 1 = 0;
   };
 
   /**
@@ -108,21 +109,21 @@ static struct VideoInterface {
     /**
      * Horizontal Sync Start to Color Burst Start.
      */
-    /* 24-30 */ volatile u32 HCS : 7;
+    /* 24-30 */ volatile u32 HCS : 7 = 0;
 
     /* 23 */ u32 : 1;
 
     /**
      * Horizontal Sync Start to Color Burst End.
      */
-    /* 16-22 */ volatile u32 HCE : 7;
+    /* 16-22 */ volatile u32 HCE : 7 = 0;
 
     /* 9-15 */ u32 : 7;
 
     /**
      * Halfline Width (W*16 = Width (720)).
      */
-    /* 0-8 */ volatile u32 HLW : 9;
+    /* 0-8 */ volatile u32 HLW : 9 = 0;
   };
 
   /**
@@ -141,17 +142,17 @@ static struct VideoInterface {
     /**
      * Halfline to Horizontal Blanking Start.
      */
-    /* 17-26 */ volatile u32 HBS : 10;
+    /* 17-26 */ volatile u32 HBS : 10 = 0;
 
     /**
      * Horizontal Sync Start to Horizontal Blank End.
      */
-    /* 7-16 */ volatile u32 HBE : 10;
+    /* 7-16 */ volatile u32 HBE : 10 = 0;
 
     /**
      * Horizontal Sync Width.
      */
-    /* 0-6 */ volatile u32 HSY : 7;
+    /* 0-6 */ volatile u32 HSY : 7 = 0;
   };
 
   /**
@@ -170,14 +171,14 @@ static struct VideoInterface {
     /**
      * Post-blanking in half lines.
      */
-    /* 16-25 */ volatile u32 PSB : 10;
+    /* 16-25 */ volatile u32 PSB : 10 = 0;
 
     /* 10-15 */ u32 : 6;
 
     /**
      * Pre-blanking in half lines.
      */
-    /* 0-9 */ volatile u32 PRB : 10;
+    /* 0-9 */ volatile u32 PRB : 10 = 0;
   };
 
   /**
@@ -202,22 +203,22 @@ static struct VideoInterface {
     /**
      * Field 3 start to burst blanking end in half lines.
      */
-    /* 21-31 */ volatile u32 BE3 : 11;
+    /* 21-31 */ volatile u32 BE3 : 11 = 0;
 
     /**
      * Field 3 start to burst blanking start in half lines.
      */
-    /* 16-20 */ volatile u32 BS3 : 5;
+    /* 16-20 */ volatile u32 BS3 : 5 = 0;
 
     /**
      * Field 1 start to burst blanking end in half lines.
      */
-    /* 5-15 */ volatile u32 BE1 : 11;
+    /* 5-15 */ volatile u32 BE1 : 11 = 0;
 
     /**
      * Field 1 start to burst blanking start in half lines.
      */
-    /* 0-4 */ volatile u32 BS1 : 5;
+    /* 0-4 */ volatile u32 BS1 : 5 = 0;
   };
 
   /**
@@ -234,22 +235,22 @@ static struct VideoInterface {
     /**
      * Field 4 start to burst blanking end in half lines.
      */
-    /* 21-31 */ volatile u32 BE4 : 11;
+    /* 21-31 */ volatile u32 BE4 : 11 = 0;
 
     /**
      * Field 4 start to burst blanking start in half lines.
      */
-    /* 16-20 */ volatile u32 BS4 : 5;
+    /* 16-20 */ volatile u32 BS4 : 5 = 0;
 
     /**
      * Field 2 start to burst blanking end in half lines.
      */
-    /* 5-15 */ volatile u32 BE2 : 11;
+    /* 5-15 */ volatile u32 BE2 : 11 = 0;
 
     /**
      * Field 2 start to burst blanking start in half lines.
      */
-    /* 0-4 */ volatile u32 BS2 : 5;
+    /* 0-4 */ volatile u32 BS2 : 5 = 0;
   };
 
   /**
@@ -271,23 +272,18 @@ static struct VideoInterface {
     /**
      * Page offset bit.
      */
-    /* 28 */ volatile u32 POFF : 1;
+    /* 28 */ volatile u32 POFF : 1 = 0;
 
     /**
      * Horizontal Offset of the left-most pixel within the first word of the
      * fetched picture.
      */
-    /* 24-27 */ volatile u32 XOF : 4;
+    /* 24-27 */ volatile u32 XOF : 4 = 0;
 
     /**
-     * Bit 23 - bit 9 of XFB Address.
+     * XFB Address.
      */
-    /* 9-23 */ volatile u32 FBB : 15;
-
-    /**
-     * Unused.
-     */
-    /* 0-8 */ volatile u32 UND : 9 = 0;
+    /* 0-23 */ volatile u32 FBB : 24 = 0;
   };
 
   /**
@@ -304,7 +300,7 @@ static struct VideoInterface {
     /**
      * External Memory Address of frame buffer.
      */
-    /* 0-31 */ volatile u32 FBB : 32;
+    /* 0-31 */ volatile u32 FBB : 32 = 0;
   };
 
   /**
@@ -323,6 +319,7 @@ static struct VideoInterface {
    */
 
   Register<Fbl> BFBL;
+
   /**
    * Bottom Field Base Register (R) (Only valid in 3D Mode).
    *
@@ -339,7 +336,7 @@ static struct VideoInterface {
     /**
      * Current vertical Position of Raster beam.
      */
-    /* 0-10 */ volatile u16 VCT : 11;
+    /* 0-10 */ volatile u16 VCT : 11 = 0;
   };
 
   /**
@@ -358,7 +355,7 @@ static struct VideoInterface {
     /**
      * Current horizontal Position of Raster beam.
      */
-    /* 0-10 */ volatile u16 HCT : 11;
+    /* 0-10 */ volatile u16 HCT : 11 = 0;
   };
 
   /**
@@ -375,28 +372,28 @@ static struct VideoInterface {
     /**
      * Interrupt Status (1=Active) (Write to clear).
      */
-    /* 31 */ volatile u32 INT : 1;
+    /* 31 */ volatile u32 INT : 1 = 0;
 
     /* 29-30 */ u32 : 2;
 
     /**
      * Interrupt Enable Bit.
      */
-    /* 28 */ volatile u32 ENB : 1;
+    /* 28 */ volatile u32 ENB : 1 = 0;
 
     /* 26-27 */ u32 : 2;
 
     /**
      * Vertical Position.
      */
-    /* 16-25 */ volatile u32 VCT : 10;
+    /* 16-25 */ volatile u32 VCT : 10 = 0;
 
     /* 10-15 */ u32 : 6;
 
     /**
      * Horizontal Position.
      */
-    /* 0-9 */ volatile u32 HCT : 10;
+    /* 0-9 */ volatile u32 HCT : 10 = 0;
   };
 
   /**
@@ -437,21 +434,21 @@ static struct VideoInterface {
     /**
      * Horizontal Count.
      */
-    /* 0-10 */ volatile u32 HCT : 11;
+    /* 0-10 */ volatile u32 HCT : 11 = 0;
 
     /* 11-15 */ u32 : 5;
 
     /**
      * Vertical Count.
      */
-    /* 16-26 */ volatile u32 VCT : 11;
+    /* 16-26 */ volatile u32 VCT : 11 = 0;
 
     /* 27-30 */ u32 : 4;
 
     /**
      * Trigger Flag.
      */
-    /* 31 */ volatile u32 TRG : 1;
+    /* 31 */ volatile u32 TRG : 1 = 0;
   };
 
   /**
@@ -475,9 +472,9 @@ static struct VideoInterface {
 
     /* 15 */ u16 : 1;
 
-    /* 8-14 */ volatile u16 WPL : 7;
+    /* 8-14 */ volatile u16 WPL : 7 = 0;
 
-    /* 0-7 */ volatile u16 STD : 8;
+    /* 0-7 */ volatile u16 STD : 8 = 0;
   };
 
   /**
@@ -496,14 +493,14 @@ static struct VideoInterface {
     /**
      * Enable Horizontal Scaling.
      */
-    /* 12 */ volatile u16 HS_EN : 1;
+    /* 12 */ volatile u16 HS_EN : 1 = 0;
 
     /* 9-11 */ u16 : 3;
 
     /**
      * Horizontal stepping size (U1.8 Scaler Value).
      */
-    /* 0-8 */ volatile u16 STP : 9;
+    /* 0-8 */ volatile u16 STP : 9 = 0;
   };
 
   /**
@@ -522,17 +519,17 @@ static struct VideoInterface {
     /**
      * Tap2.
      */
-    /* 20-29 */ volatile u32 T2 : 10;
+    /* 20-29 */ volatile u32 T2 : 10 = 0;
 
     /**
      * Tap1.
      */
-    /* 10-19 */ volatile u32 T1 : 10;
+    /* 10-19 */ volatile u32 T1 : 10 = 0;
 
     /**
      * Tap0.
      */
-    /* 0-9 */ volatile u32 T0 : 10;
+    /* 0-9 */ volatile u32 T0 : 10 = 0;
   };
 
   /**
@@ -551,17 +548,17 @@ static struct VideoInterface {
     /**
      * Tap5.
      */
-    /* 20-29 */ volatile u32 T5 : 10;
+    /* 20-29 */ volatile u32 T5 : 10 = 0;
 
     /**
      * Tap4.
      */
-    /* 10-19 */ volatile u32 T4 : 10;
+    /* 10-19 */ volatile u32 T4 : 10 = 0;
 
     /**
      * Tap3.
      */
-    /* 0-9 */ volatile u32 T3 : 10;
+    /* 0-9 */ volatile u32 T3 : 10 = 0;
   };
 
   /**
@@ -580,17 +577,17 @@ static struct VideoInterface {
     /**
      * Tap8.
      */
-    /* 20-29 */ volatile u32 T8 : 10;
+    /* 20-29 */ volatile u32 T8 : 10 = 0;
 
     /**
      * Tap7.
      */
-    /* 10-19 */ volatile u32 T7 : 10;
+    /* 10-19 */ volatile u32 T7 : 10 = 0;
 
     /**
      * Tap6.
      */
-    /* 0-9 */ volatile u32 T6 : 10;
+    /* 0-9 */ volatile u32 T6 : 10 = 0;
   };
 
   /**
@@ -607,22 +604,22 @@ static struct VideoInterface {
     /**
      * Tap12.
      */
-    /* 24-31 */ volatile u32 T12 : 8;
+    /* 24-31 */ volatile u32 T12 : 8 = 0;
 
     /**
      * Tap11.
      */
-    /* 16-23 */ volatile u32 T11 : 8;
+    /* 16-23 */ volatile u32 T11 : 8 = 0;
 
     /**
      * Tap10.
      */
-    /* 8-15 */ volatile u32 T10 : 8;
+    /* 8-15 */ volatile u32 T10 : 8 = 0;
 
     /**
      * Tap9.
      */
-    /* 0-7 */ volatile u32 T9 : 8;
+    /* 0-7 */ volatile u32 T9 : 8 = 0;
   };
 
   /**
@@ -639,22 +636,22 @@ static struct VideoInterface {
     /**
      * Tap16.
      */
-    /* 24-31 */ volatile u32 T16 : 8;
+    /* 24-31 */ volatile u32 T16 : 8 = 0;
 
     /**
      * Tap15.
      */
-    /* 16-23 */ volatile u32 T15 : 8;
+    /* 16-23 */ volatile u32 T15 : 8 = 0;
 
     /**
      * Tap14.
      */
-    /* 8-15 */ volatile u32 T14 : 8;
+    /* 8-15 */ volatile u32 T14 : 8 = 0;
 
     /**
      * Tap13.
      */
-    /* 0-7 */ volatile u32 T13 : 8;
+    /* 0-7 */ volatile u32 T13 : 8 = 0;
   };
 
   /**
@@ -671,22 +668,22 @@ static struct VideoInterface {
     /**
      * Tap20.
      */
-    /* 24-31 */ volatile u32 T20 : 8;
+    /* 24-31 */ volatile u32 T20 : 8 = 0;
 
     /**
      * Tap19.
      */
-    /* 16-23 */ volatile u32 T19 : 8;
+    /* 16-23 */ volatile u32 T19 : 8 = 0;
 
     /**
      * Tap18.
      */
-    /* 8-15 */ volatile u32 T18 : 8;
+    /* 8-15 */ volatile u32 T18 : 8 = 0;
 
     /**
      * Tap17.
      */
-    /* 0-7 */ volatile u32 T17 : 8;
+    /* 0-7 */ volatile u32 T17 : 8 = 0;
   };
 
   /**
@@ -708,17 +705,17 @@ static struct VideoInterface {
     /**
      * Tap23.
      */
-    /* 16-23 */ volatile u32 T23 : 8;
+    /* 16-23 */ volatile u32 T23 : 8 = 0;
 
     /**
      * Tap22.
      */
-    /* 8-15 */ volatile u32 T22 : 8;
+    /* 8-15 */ volatile u32 T22 : 8 = 0;
 
     /**
      * Tap21.
      */
-    /* 0-7 */ volatile u32 T21 : 8;
+    /* 0-7 */ volatile u32 T21 : 8 = 0;
   };
 
   /**
@@ -757,7 +754,7 @@ static struct VideoInterface {
     /**
      * Video clock select.
      */
-    /* 0 */ volatile u16 CLK : 1;
+    /* 0 */ volatile u16 CLK : 1 = 0;
   };
 
   /**
@@ -773,7 +770,7 @@ static struct VideoInterface {
 
     /* 2-15 */ u16 : 14;
 
-    /* 0-1 */ volatile u16 VISEL : 2;
+    /* 0-1 */ volatile u16 VISEL : 2 = 0;
   };
 
   /**
@@ -798,14 +795,14 @@ static struct VideoInterface {
     /**
      * Border Enable.
      */
-    /* 15 */ volatile u16 BRDR_EN : 1;
+    /* 15 */ volatile u16 BRDR_EN : 1 = 0;
 
     /* 10-14 */ u16 : 5;
 
     /**
      * Border Horizontal Blank End.
      */
-    /* 0-9 */ volatile u16 HBE656 : 10;
+    /* 0-9 */ volatile u16 HBE656 : 10 = 0;
   };
 
   /**
@@ -824,7 +821,7 @@ static struct VideoInterface {
     /**
      * Border Horizontal Blank Start.
      */
-    /* 0-9 */ volatile u16 HBS656 : 10;
+    /* 0-9 */ volatile u16 HBS656 : 10 = 0;
   };
 
   /**
@@ -839,13 +836,8 @@ static struct VideoInterface {
    * Pad to 0x80 size block. The values are always 0x00FF.
    */
   u16 PAD[5];
-
-  /**
-   * Pad to 0x100 size block.
-   */
-  const u16 PAD2[0x40];
 } *const VI = reinterpret_cast<VideoInterface *>(0xCC002000);
 
-static_assert(sizeof(VideoInterface) == 0x100);
+static_assert(sizeof(VideoInterface) == 0x80);
 
 } // namespace wsh::hw
