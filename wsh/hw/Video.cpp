@@ -1,3 +1,9 @@
+// wsh/hw/Video.cpp - High level video manager
+//   Written by mkwcat
+//
+// Copyright (c) 2025 mkwcat
+// SPDX-License-Identifier: MIT
+
 #include "Video.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
@@ -82,7 +88,7 @@ void Video::Flush() noexcept {
   if (!VI->DCR.ENB || (m_changed_config && VI->DCR.FMT != DCR.FMT)) {
     // Reset VI
     VI->DCR = Dcr{.RST = 1};
-    util::BusDelay(1000);
+    util::BusDelay(100);
     VI->DCR = Dcr{.RST = 0};
   }
 

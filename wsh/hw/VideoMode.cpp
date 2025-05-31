@@ -1,3 +1,9 @@
+// wsh/hw/VideoMode.cpp - Video mode definitions
+//   Written by mkwcat
+//
+// Copyright (c) 2025 mkwcat
+// SPDX-License-Identifier: MIT
+
 #include "Video.hpp"
 
 namespace wsh::hw {

@@ -1,3 +1,9 @@
+// wsh/hw/Video.hpp - High level video manager
+//   Written by mkwcat
+//
+// Copyright (c) 2025 mkwcat
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include "VideoInterface.hpp"

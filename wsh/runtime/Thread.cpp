@@ -10,8 +10,8 @@
 #include "../ppc/Msr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
+#include "../util/Halt.hpp"
 #include "ThreadQueue.hpp"
-#include "wsh/util/Halt.hpp"
 #include <bit>
 #include <cstdio>
 #include <cstdlib>

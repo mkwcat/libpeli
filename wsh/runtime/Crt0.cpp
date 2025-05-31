@@ -13,13 +13,13 @@
 #include "../ppc/L2Cache.hpp"
 #include "../ppc/Msr.hpp"
 #include "../ppc/Ps.hpp"
+#include "../ppc/SprRwCtl.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
 #include "Args.hpp"
 #include "Exception.hpp"
 #include "Memory.hpp"
 #include "Thread.hpp"
-#include "wsh/ppc/SprRwCtl.hpp"
 #include <cstdlib>
 
 #ifndef WSH_CRT0_STACK_SIZE
