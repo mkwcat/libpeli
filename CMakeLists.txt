@@ -25,7 +25,6 @@ add_library(wsh STATIC
 
         wsh/ios/ipc/Low.cpp
 
-        wsh/ppc/Cache.cpp
         wsh/ppc/Context.cpp
         wsh/ppc/Msr.cpp
 

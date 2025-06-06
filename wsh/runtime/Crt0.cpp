@@ -104,9 +104,7 @@ void initPowerPC() {
 
     // Store temporary stack before flash invalidate
     if (ppc::Hid0::MoveFrom().DCE) {
-      ppc::Cache::OpRange<ppc::Cache::Op::DcFlush, false, true>(
-          util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
-
+      ppc::Cache::DcStore(util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
       ppc::Sync();
       ppc::SprRwCtl<ppc::Hid0>()->ABE = true; // Address Broadcast Enable
       ppc::ISync();

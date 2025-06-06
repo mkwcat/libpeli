@@ -88,6 +88,10 @@ struct Hid0Bits {
    */
   /* 26 */ u32 BTIC : 1 = 0;
   /* 27 */ u32 RESV27 : 1 = 0;
+
+  /**
+   * Address Broadcast Enable.
+   */
   /* 28 */ u32 ABE : 1 = 0;
 
   /**

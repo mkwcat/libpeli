@@ -45,9 +45,33 @@ struct Msr : public detail::SprInterface<MsrBits> {
   static u32 EnterRealMode() noexcept;
   static void ExitRealMode(u32 prevMsr) noexcept;
 
-  static bool EnableInterrupts() noexcept;
-  static bool DisableInterrupts() noexcept;
-  static void RestoreInterrupts(bool prev) noexcept;
+  static bool EnableInterrupts() noexcept {
+    Msr msr = MoveFrom();
+    if (msr.EE) {
+      return true;
+    }
+
+    msr.EE = true;
+    msr.MoveTo();
+    return false;
+  }
+
+  static bool DisableInterrupts() noexcept {
+    if (!MoveFrom().EE) {
+      return false;
+    }
+    // Call DisableInterrupts syscall to ensure atomic write to MSR
+    __asm__ __volatile__("crclr 28; sc" ::: "cr7", "r0");
+    return true;
+  }
+
+  static void SetInterrupts(bool enable) noexcept {
+    if (enable) {
+      EnableInterrupts();
+    } else {
+      DisableInterrupts();
+    }
+  }
 
   class RealModeScope {
   public:
@@ -74,7 +98,11 @@ struct Msr : public detail::SprInterface<MsrBits> {
   public:
     NoInterruptsScope() noexcept { prev = DisableInterrupts(); }
 
-    ~NoInterruptsScope() noexcept { RestoreInterrupts(prev); }
+    ~NoInterruptsScope() noexcept {
+      if (prev) {
+        EnableInterrupts();
+      }
+    }
 
     bool prev;
   };
@@ -83,7 +111,11 @@ struct Msr : public detail::SprInterface<MsrBits> {
   public:
     EnableInterruptsScope() noexcept { prev = EnableInterrupts(); }
 
-    ~EnableInterruptsScope() noexcept { RestoreInterrupts(prev); }
+    ~EnableInterruptsScope() noexcept {
+      if (!prev) {
+        DisableInterrupts();
+      }
+    }
 
     bool prev;
   };

@@ -14,6 +14,7 @@
 #include "../ppc/Cache.hpp"
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
+#include "../ppc/Sync.hpp"
 #include "../util/Halt.hpp"
 #include "../util/VIConsole.hpp"
 #include <array>
@@ -39,21 +40,20 @@ namespace wsh::runtime {
 using ExceptionHandler = void (*)(wsh::ppc::Exception, ppc::Context *);
 
 #define EXCEPTION_STACK_SIZE 0x800
+
+namespace {
+
+constinit InterruptHandler s_interrupt_handlers[32];
+constinit IrqHandler s_irq_handlers[32];
+constinit bool s_use_simple_irq = false;
+
+extern "C" {
 [[gnu::used]]
-static constinit u8
-    s_exception_stack[EXCEPTION_STACK_SIZE] asm("_WshExceptionStack");
-
-static constinit InterruptHandler s_interrupt_handlers[32];
-static constinit IrqHandler s_irq_handlers[32];
-
-ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
-                                      u32 srr0, u32 srr1, u32 xer) noexcept
-    asm("_WshHandleExternalInterrupt");
-void returnFromExternalInterrupt(ppc::Context *context) noexcept
-    asm("_WshReturnFromExternalInterrupt");
+constinit u8 s_exception_stack[EXCEPTION_STACK_SIZE];
+} // extern "C"
 
 WSH_ASM_FUNCTION( // clang-format off
-  static void panicExceptionVector() noexcept,
+   void panicExceptionVector() noexcept,
 
   stw     %r1, BACKUP_R1(0); // Backup r1
   lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
@@ -107,8 +107,8 @@ WSH_ASM_FUNCTION( // clang-format off
   lwz     %r4, EM_CURRENT_CONTEXT(0); // Context for callee
 
   // Set up the stack pointer
-  lis     %r1, (_WshExceptionStack + EXCEPTION_STACK_SIZE - 8)@h;
-  ori     %r1, %r1, (_WshExceptionStack + EXCEPTION_STACK_SIZE - 8)@l;
+  lis     %r1, (s_exception_stack + EXCEPTION_STACK_SIZE - 8)@h;
+  ori     %r1, %r1, (s_exception_stack + EXCEPTION_STACK_SIZE - 8)@l;
 
   // Get the handler for this exception
   slwi    %r6, %r3, 2;
@@ -122,7 +122,7 @@ WSH_ASM_FUNCTION( // clang-format off
 );
 
 WSH_ASM_FUNCTION( // clang-format off
-  static void stubExceptionHandler() noexcept,
+   void stubExceptionHandler() noexcept,
  
   // Just immediately return from the exception
   rfi;
@@ -131,7 +131,7 @@ WSH_ASM_FUNCTION( // clang-format off
 );
 
 WSH_ASM_FUNCTION( // clang-format off
-  static void externalInterruptVector() noexcept,
+   void externalInterruptVector() noexcept,
   
   stw     %r1, BACKUP_R1(0);
   lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
@@ -165,12 +165,12 @@ WSH_ASM_FUNCTION( // clang-format off
   li      %r0, 0x2030;
   mtsrr1  %r0;
 
-  lis     %r0, _WshReturnFromExternalInterrupt@ha;
-  ori     %r0, %r0, _WshReturnFromExternalInterrupt@l;
+  lis     %r0, returnFromExternalInterrupt@ha;
+  ori     %r0, %r0, returnFromExternalInterrupt@l;
   mtlr    %r0;
 
-  lis     %r0, _WshHandleExternalInterrupt@ha;
-  ori     %r0, %r0, _WshHandleExternalInterrupt@l;
+  lis     %r0, handleExternalInterrupt@ha;
+  ori     %r0, %r0, handleExternalInterrupt@l;
   mtsrr0  %r0;
 
   // Load stack pointer from backup. It should be okay to use the stack
@@ -184,6 +184,7 @@ WSH_ASM_FUNCTION( // clang-format off
                   // clang-format on
 );
 
+extern "C" {
 WSH_ASM_FUNCTION( // clang-format off
   void returnFromExternalInterrupt(ppc::Context*) noexcept,
   // Restore some special purpose registers
@@ -212,70 +213,37 @@ WSH_ASM_FUNCTION( // clang-format off
   rfi;
                   // clang-format on
 );
+} // extern "C"
 
-void StubExceptionHandlers() noexcept {
-  u32 stubInst = 0x48000000; // b +0
-  auto &handlers = ios::g_lo_mem_uncached.exception_handlers;
+WSH_ASM_FUNCTION( // clang-format off
+  void systemCallHandler() noexcept,
 
-  handlers.system_reset[0] = stubInst;
-  handlers.machine_check[0] = stubInst;
-  handlers.data_storage_interrupt[0] = stubInst;
-  handlers.instruction_storage_interrupt[0] = stubInst;
-  handlers.external_interrupt[0] = stubInst;
-  handlers.alignment[0] = stubInst;
-  handlers.program[0] = stubInst;
-  handlers.floating_point_unavailable[0] = stubInst;
-  handlers.decrementer[0] = stubInst;
-  handlers.system_call[0] = stubInst;
-  handlers.trace[0] = stubInst;
-  handlers.floating_point_assist[0] = stubInst;
-  handlers.performance_monitor[0] = stubInst;
-  handlers.instruction_address_breakpoint[0] = stubInst;
-  handlers.reserved[0] = stubInst;
-  handlers.thermal_management[0] = stubInst;
-}
+  // Branch if bit 28 is false
+  bc      0b00100, 28, .SC_DisableInterrupts;
 
-void SetExceptionHandler(wsh::ppc::Exception type,
-                         ExceptionHandler handler) noexcept {
-  if (type > wsh::ppc::Exception::ThermalManagement) {
-    return;
-  }
+.SC_Sync:;
+  mfhid0  %r0;
+  ori     %r3, %r0, 0x8; // Set HID0.ABE
+  mthid0  %r3; // Write back to HID0
+  isync;
+  sync;
+  mthid0  %r0; // Restore HID0
+  rfi;
 
-  ios::g_lo_mem.os_globals.os_interrupt_table[static_cast<std::size_t>(type)] =
-      reinterpret_cast<u32>(handler);
-}
+.SC_DisableInterrupts:;
+  // r0 = 0 disable, 1 = enable
+  mfsrr1  %r0; // Stored MSR
+  rlwinm  %r0, %r0, 0, ~0x8000; // Clear MSR.EE
+  mtsrr1  %r0;
+  rfi;
 
-void SetInterruptEventHandler(hw::IntCause type,
-                              InterruptHandler handler) noexcept {
-  if (type >= hw::IntCause::Count) {
-    return;
-  }
+  .long   0; // Terminator
+                  // clang-format on
+);
 
-  s_interrupt_handlers[static_cast<std::size_t>(type)] = handler;
-
-  hw::PI->INTMR |= (1 << static_cast<u32>(type));
-}
-
-static bool s_use_simple_irq = false;
-
-void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
-  if (type >= hw::Irq::Count) {
-    return;
-  }
-
-  s_irq_handlers[static_cast<std::size_t>(type)] = handler;
-
-  hw::WOOD->PPCINTEN |= (1 << static_cast<u32>(type));
-  ppc::Eieio();
-
-  if (hw::WOOD->PPCINTEN == 0) {
-    // For Dolphin, which doesn't support reading from IRQ
-    s_use_simple_irq = true;
-  }
-}
-
-ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
-                                      u32 srr0, u32 srr1, u32 xer) noexcept {
+extern "C" ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr,
+                                                 u32 lr, u32 srr0, u32 srr1,
+                                                 u32 xer) noexcept {
   // Find out what device(s) the interrupt came from
   auto cause = hw::PI->INTSR.Hex();
   auto mask = hw::PI->INTMR.Hex();
@@ -302,7 +270,7 @@ ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
 }
 
 // Second layer interrupt handler for IRQ
-static void handleIrq(hw::IntCause, ppc::Context *context) {
+void handleIrq(hw::IntCause, ppc::Context *context) {
   u32 cause, mask;
   if (!s_use_simple_irq) {
     cause = hw::WOOD->PPCINTSTS;
@@ -326,10 +294,10 @@ static void handleIrq(hw::IntCause, ppc::Context *context) {
   }
 }
 
-static void writeFunctionToVector(wsh::ppc::Exception type, u32 *function) {
+void writeFunctionToVector(wsh::ppc::Exception type, u32 *function) {
   u32 *vector = wsh::ppc::GetExceptionVectorAddress(type);
   if (vector) {
-    ppc::Cache::DcZero<false>(vector, 64 * sizeof(u32));
+    ppc::Cache::DcZero(vector, 64 * sizeof(u32));
     for (std::size_t i = 0; i < 64 && function[i]; i++) {
       u32 instruction = function[i];
       if (instruction == 0x3860DEADu) {
@@ -338,12 +306,12 @@ static void writeFunctionToVector(wsh::ppc::Exception type, u32 *function) {
       }
       vector[i] = instruction;
     }
-    ppc::Cache::DcFlush<false>(vector, 64 * sizeof(u32));
-    ppc::Cache::IcInvalidate<true>(vector, 64 * sizeof(u32));
+    ppc::Cache::DcFlush(vector, 64 * sizeof(u32));
+    ppc::Cache::IcInvalidate(vector, 64 * sizeof(u32));
   }
 }
 
-static u32 *checkStackAddr(u32 stackAddr) {
+u32 *checkStackAddr(u32 stackAddr) {
   if ((stackAddr >= 0x80003F00 && stackAddr <= 0x817FFFF8) ||
       (stackAddr >= 0x90000020 && stackAddr <= 0x935FFFF8)) {
     return reinterpret_cast<u32 *>(stackAddr);
@@ -352,7 +320,7 @@ static u32 *checkStackAddr(u32 stackAddr) {
   return nullptr;
 }
 
-static void printHex(util::VIConsole &console, u32 value) {
+void printHex(util::VIConsole &console, u32 value) {
   static constexpr char HexDigits[] = "0123456789ABCDEF";
 
   console.Print(
@@ -373,8 +341,7 @@ static void printHex(util::VIConsole &console, u32 value) {
 }
 
 [[noreturn]]
-static void defaultErrorHandler(wsh::ppc::Exception type,
-                                ppc::Context *context) {
+void defaultErrorHandler(wsh::ppc::Exception type, ppc::Context *context) {
   util::VIConsole console;
 
   console.Print("\n\n   ########### EXCEPTION (");
@@ -441,7 +408,68 @@ static void defaultErrorHandler(wsh::ppc::Exception type,
 
   ppc::Sync();
   util::Halt();
-};
+}
+
+} // namespace
+
+void StubExceptionHandlers() noexcept {
+  u32 stubInst = 0x48000000; // b +0
+  auto &handlers = ios::g_lo_mem_uncached.exception_handlers;
+
+  handlers.system_reset[0] = stubInst;
+  handlers.machine_check[0] = stubInst;
+  handlers.data_storage_interrupt[0] = stubInst;
+  handlers.instruction_storage_interrupt[0] = stubInst;
+  handlers.external_interrupt[0] = stubInst;
+  handlers.alignment[0] = stubInst;
+  handlers.program[0] = stubInst;
+  handlers.floating_point_unavailable[0] = stubInst;
+  handlers.decrementer[0] = stubInst;
+  handlers.system_call[0] = stubInst;
+  handlers.trace[0] = stubInst;
+  handlers.floating_point_assist[0] = stubInst;
+  handlers.performance_monitor[0] = stubInst;
+  handlers.instruction_address_breakpoint[0] = stubInst;
+  handlers.reserved[0] = stubInst;
+  handlers.thermal_management[0] = stubInst;
+}
+
+void SetExceptionHandler(wsh::ppc::Exception type,
+                         ExceptionHandler handler) noexcept {
+  if (type > wsh::ppc::Exception::ThermalManagement) {
+    return;
+  }
+
+  ios::g_lo_mem.os_globals.os_interrupt_table[static_cast<std::size_t>(type)] =
+      reinterpret_cast<u32>(handler);
+}
+
+void SetInterruptEventHandler(hw::IntCause type,
+                              InterruptHandler handler) noexcept {
+  if (type >= hw::IntCause::Count) {
+    return;
+  }
+
+  s_interrupt_handlers[static_cast<std::size_t>(type)] = handler;
+
+  hw::PI->INTMR |= (1 << static_cast<u32>(type));
+}
+
+void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
+  if (type >= hw::Irq::Count) {
+    return;
+  }
+
+  s_irq_handlers[static_cast<std::size_t>(type)] = handler;
+
+  hw::WOOD->PPCINTEN |= (1 << static_cast<u32>(type));
+  ppc::Eieio();
+
+  if (hw::WOOD->PPCINTEN == 0) {
+    // For Dolphin, which doesn't support reading from IRQ
+    s_use_simple_irq = true;
+  }
+}
 
 void InitExceptions() noexcept {
   // Set all default exception handlers
@@ -478,6 +506,12 @@ void InitExceptions() noexcept {
   // Stub the decrementer exception handler - it's not used
   writeFunctionToVector(ppc::Exception::Decrementer,
                         reinterpret_cast<u32 *>(stubExceptionHandler));
+
+  // Write the system call handler
+  writeFunctionToVector(ppc::Exception::SystemCall,
+                        reinterpret_cast<u32 *>(systemCallHandler));
+
+  ppc::SyncBroadcast();
 
   hw::PI->INTMR = 0;
   hw::WOOD->PPCINTEN = 0;
