@@ -13,6 +13,7 @@
 #pragma once
 
 #include "../common/Types.h"
+#include "../host/Config.h"
 #include "../util/Address.hpp"
 
 namespace wsh::util {
@@ -44,7 +45,7 @@ private:
   static constexpr u32 PpcLock = 0x1;
   static constexpr u32 IosLock = 0x2;
 
-#ifdef WSH_HOST_PPC
+#if defined(WSH_HOST_PPC)
   static constexpr u32 MyLock = PpcLock;
   static constexpr u32 OtherLock = IosLock;
 #else
@@ -53,7 +54,7 @@ private:
 #endif
 
 public:
-#ifdef WSH_HOST_PPC
+#if defined(WSH_HOST_PPC)
 
   /**
    * Create and allocate memory for the debug console.

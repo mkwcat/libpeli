@@ -46,14 +46,19 @@ struct Msr : public detail::SprInterface<MsrBits> {
   static void ExitRealMode(u32 prevMsr) noexcept;
 
   static bool EnableInterrupts() noexcept {
-    Msr msr = MoveFrom();
-    if (msr.EE) {
-      return true;
-    }
-
-    msr.EE = true;
-    msr.MoveTo();
-    return false;
+    // Done in ASM to ensure no floating point operations are performed between
+    // reading and writing to the MSR
+    u32 tmp;
+    bool flag;
+    __asm__ __volatile__("mfmsr %0;"
+                         "rlwinm. %1, %0, 32-15, 1;"
+                         "bne +12;"
+                         "ori %0, %0, 0x8000;"
+                         "mtmsr %0"
+                         : "=r"(tmp), "=r"(flag)
+                         :
+                         : "cr0");
+    return flag;
   }
 
   static bool DisableInterrupts() noexcept {

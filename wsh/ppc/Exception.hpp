@@ -34,7 +34,7 @@ static constexpr u32 ExceptionCount =
     static_cast<u32>(Exception::ThermalManagement) + 1;
 
 static constexpr const char *GetExceptionName(Exception type) noexcept {
-  if (type < Exception::SystemCall || type > Exception::ThermalManagement) {
+  if (type < Exception::SystemReset || type > Exception::ThermalManagement) {
     return "UNKNOWN";
   }
 

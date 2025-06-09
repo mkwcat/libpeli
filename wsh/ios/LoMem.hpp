@@ -34,7 +34,7 @@ struct OSContext {
   /* 0x1A0 */ u16 mode;
   /* 0x1A2 */ u16 state;
   /* 0x1A4 */ u32 gqrs[8];
-  /* 0x1C4 */ u32 psf_pad;
+  /* 0x1C4 */ u32 hid2; // Originally psf_pad
   /* 0x1C8 */ f64 psfs[32];
 };
 

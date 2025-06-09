@@ -33,7 +33,7 @@ enum Flag {
   Sideways = 1 << 0,
 };
 
-#ifdef WSH_HOST_PPC
+#if defined(WSH_HOST_PPC)
 
 /**
  * Create and configure VI for the debug console.
@@ -89,7 +89,7 @@ void VIConsole::ConfigureVideo(bool clear) noexcept {
  * Recreate the debug console using an existing shared configuration.
  */
 VIConsole::VIConsole(Share *share) noexcept {
-#ifdef WSH_HOST_PPC
+#if defined(WSH_HOST_PPC)
   m_share = util::Uncached(share);
 #else
   m_share = share;

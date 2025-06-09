@@ -12,9 +12,7 @@
 -Wpedantic
 -Wno-zero-length-array
 -Wno-unknown-attributes
--DWSH_HOST_PPC
--DWSH_NEWLIB
--DWSH_DEBUG
+-Wno-embedded-directive
 -std=c++23
 -x
 c++

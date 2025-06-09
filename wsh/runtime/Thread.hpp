@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../host/Config.h"
 #include "../ppc/Context.hpp"
 #include "../util/List.hpp"
 

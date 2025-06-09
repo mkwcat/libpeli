@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "../host/Config.h"
+
 #if defined(WSH_DEBUG)
 #include <stdio.h>
 #endif

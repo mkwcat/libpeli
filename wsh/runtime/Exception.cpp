@@ -7,6 +7,7 @@
 #include "Exception.hpp"
 #include "../common/Asm.h"
 #include "../common/Types.h"
+#include "../host/Config.h"
 #include "../hw/Bit.hpp"
 #include "../hw/Interrupt.hpp"
 #include "../hw/ProcessorInterface.hpp"
@@ -53,7 +54,7 @@ constinit u8 s_exception_stack[EXCEPTION_STACK_SIZE];
 } // extern "C"
 
 WSH_ASM_FUNCTION( // clang-format off
-   void panicExceptionVector() noexcept,
+  void panicExceptionVector() noexcept,
 
   stw     %r1, BACKUP_R1(0); // Backup r1
   lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
@@ -122,7 +123,7 @@ WSH_ASM_FUNCTION( // clang-format off
 );
 
 WSH_ASM_FUNCTION( // clang-format off
-   void stubExceptionHandler() noexcept,
+  void stubExceptionHandler() noexcept,
  
   // Just immediately return from the exception
   rfi;
@@ -131,7 +132,7 @@ WSH_ASM_FUNCTION( // clang-format off
 );
 
 WSH_ASM_FUNCTION( // clang-format off
-   void externalInterruptVector() noexcept,
+  void externalInterruptVector() noexcept,
   
   stw     %r1, BACKUP_R1(0);
   lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
@@ -162,7 +163,7 @@ WSH_ASM_FUNCTION( // clang-format off
   mfxer   %r8;
 
   // Restore memory address translation after rfi
-  li      %r0, 0x2030;
+  li      %r0, 0x30;
   mtsrr1  %r0;
 
   lis     %r0, returnFromExternalInterrupt@ha;
@@ -187,6 +188,7 @@ WSH_ASM_FUNCTION( // clang-format off
 extern "C" {
 WSH_ASM_FUNCTION( // clang-format off
   void returnFromExternalInterrupt(ppc::Context*) noexcept,
+
   // Restore some special purpose registers
   lwz     %r0, 0x080(%r3); // OSContext.cr
   mtcr    %r0;
@@ -237,6 +239,174 @@ WSH_ASM_FUNCTION( // clang-format off
   mtsrr1  %r0;
   rfi;
 
+  .long   0; // Terminator
+                  // clang-format on
+);
+
+WSH_ASM_FUNCTION( // clang-format off
+  void floatingPointUnavailableHandler() noexcept,
+
+  stw     %r1, BACKUP_R1(0); // Backup r1
+  // Enable floating-point
+  li      %r1, 0x2000; // MSR.FP
+  mtmsr   %r1;
+
+  lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
+  stw     %r0, 0x000(%r1); // OSContext.gprs[0]
+#if defined(WSH_ENABLE_PAIRED_SINGLE)
+  mfhid2  %r0; // OSContext.hid2
+  stw     %r3, 0x00C(%r1); // OSContext.gprs[3]
+  xoris   %r0, %r0, 0xA000; // Check HID2.LSQE and HID2.PSE
+  mfcr    %r3;
+  andis.  %r0, %r0, 0xA000;
+#endif // WSH_ENABLE_PAIRED_SINGLE
+
+  // Ensure MSR is updated
+  isync;
+  // Restore FPSCR
+  lfd     %f3, 0x190(%r1); // OSContext.fpscr_pad
+  mtfsf   0xFF, %f3; // Restore FPSCR
+
+#if defined(WSH_ENABLE_PAIRED_SINGLE)
+  bnea+   0x920; // Skip to just floating point registers
+
+  psq_l   %f0, 0x1C8(%r1), 0, 0; // OSContext.psfs[0]
+  psq_l   %f1, 0x1D0(%r1), 0, 0; // OSContext.psfs[1]
+  psq_l   %f2, 0x1D8(%r1), 0, 0; // OSContext.psfs[2]
+  psq_l   %f3, 0x1E0(%r1), 0, 0; // OSContext.psfs[3]
+  psq_l   %f4, 0x1E8(%r1), 0, 0; // OSContext.psfs[4]
+  psq_l   %f5, 0x1F0(%r1), 0, 0; // OSContext.psfs[5]
+  psq_l   %f6, 0x1F8(%r1), 0, 0; // OSContext.psfs[6]
+  psq_l   %f7, 0x200(%r1), 0, 0; // OSContext.psfs[7]
+  psq_l   %f8, 0x208(%r1), 0, 0; // OSContext.psfs[8]
+  psq_l   %f9, 0x210(%r1), 0, 0; // OSContext.psfs[9]
+  psq_l   %f10, 0x218(%r1), 0, 0; // OSContext.psfs[10]
+  psq_l   %f11, 0x220(%r1), 0, 0; // OSContext.psfs[11]
+  psq_l   %f12, 0x228(%r1), 0, 0; // OSContext.psfs[12]
+  psq_l   %f13, 0x230(%r1), 0, 0; // OSContext.psfs[13]
+  psq_l   %f14, 0x238(%r1), 0, 0; // OSContext.psfs[14]
+  psq_l   %f15, 0x240(%r1), 0, 0; // OSContext.psfs[15]
+  psq_l   %f16, 0x248(%r1), 0, 0; // OSContext.psfs[16]
+  psq_l   %f17, 0x250(%r1), 0, 0; // OSContext.psfs[17]
+  psq_l   %f18, 0x258(%r1), 0, 0; // OSContext.psfs[18]
+  psq_l   %f19, 0x260(%r1), 0, 0; // OSContext.psfs[19]
+  psq_l   %f20, 0x268(%r1), 0, 0; // OSContext.psfs[20]
+  psq_l   %f21, 0x270(%r1), 0, 0; // OSContext.psfs[21]
+  psq_l   %f22, 0x278(%r1), 0, 0; // OSContext.psfs[22]
+  psq_l   %f23, 0x280(%r1), 0, 0; // OSContext.psfs[23]
+  psq_l   %f24, 0x288(%r1), 0, 0; // OSContext.psfs[24]
+  psq_l   %f25, 0x290(%r1), 0, 0; // OSContext.psfs[25]
+  psq_l   %f26, 0x298(%r1), 0, 0; // OSContext.psfs[26]
+  psq_l   %f27, 0x2A0(%r1), 0, 0; // OSContext.psfs[27]
+  psq_l   %f28, 0x2A8(%r1), 0, 0; // OSContext.psfs[28]
+  psq_l   %f29, 0x2B0(%r1), 0, 0; // OSContext.psfs[29]
+  psq_l   %f30, 0x2B8(%r1), 0, 0; // OSContext.psfs[30]
+  psq_l   %f31, 0x2C0(%r1), 0, 0; // OSContext.psfs[31]
+  ba      0x920;
+#else // if !defined(WSH_ENABLE_PAIRED_SINGLE)
+  lfd     %f0, 0x090(%r1); // OSContext.fprs[0]
+  lfd     %f1, 0x098(%r1); // OSContext.fprs[1]
+  lfd     %f2, 0x0A0(%r1); // OSContext.fprs[2]
+  lfd     %f3, 0x0A8(%r1); // OSContext.fprs[3]
+  lfd     %f4, 0x0B0(%r1); // OSContext.fprs[4]
+  lfd     %f5, 0x0B8(%r1); // OSContext.fprs[5]
+  lfd     %f6, 0x0C0(%r1); // OSContext.fprs[6]
+  lfd     %f7, 0x0C8(%r1); // OSContext.fprs[7]
+  lfd     %f8, 0x0D0(%r1); // OSContext.fprs[8]
+  lfd     %f9, 0x0D8(%r1); // OSContext.fprs[9]
+  lfd     %f10, 0x0E0(%r1); // OSContext.fprs[10]
+  lfd     %f11, 0x0E8(%r1); // OSContext.fprs[11]
+  lfd     %f12, 0x0F0(%r1); // OSContext.fprs[12]
+  lfd     %f13, 0x0F8(%r1); // OSContext.fprs[13]
+  lfd     %f14, 0x100(%r1); // OSContext.fprs[14]
+  lfd     %f15, 0x108(%r1); // OSContext.fprs[15]
+  lfd     %f16, 0x110(%r1); // OSContext.fprs[16]
+  lfd     %f17, 0x118(%r1); // OSContext.fprs[17]
+  lfd     %f18, 0x120(%r1); // OSContext.fprs[18]
+  lfd     %f19, 0x128(%r1); // OSContext.fprs[19]
+  lfd     %f20, 0x130(%r1); // OSContext.fprs[20]
+  lfd     %f21, 0x138(%r1); // OSContext.fprs[21]
+  lfd     %f22, 0x140(%r1); // OSContext.fprs[22]
+  lfd     %f23, 0x148(%r1); // OSContext.fprs[23]
+  lfd     %f24, 0x150(%r1); // OSContext.fprs[24]
+  lfd     %f25, 0x158(%r1); // OSContext.fprs[25]
+  lfd     %f26, 0x160(%r1); // OSContext.fprs[26]
+  lfd     %f27, 0x168(%r1); // OSContext.fprs[27]
+  lfd     %f28, 0x170(%r1); // OSContext.fprs[28]
+  lfd     %f29, 0x178(%r1); // OSContext.fprs[29]
+  lfd     %f30, 0x180(%r1); // OSContext.fprs[30]
+  lfd     %f31, 0x188(%r1); // OSContext.fprs[31]
+
+  lwz     %r0, 0x000(%r1); // OSContext.gprs[0]
+  mfsrr1  %r1;
+  ori     %r1, %r1, 0x2000; // Set MSR.FP
+  mtsrr1  %r1; // Write back to MSR
+  lwz     %r1, BACKUP_R1(0); // Restore r1
+  rfi;
+#endif // !WSH_ENABLE_PAIRED_SINGLE
+  .long   0; // Terminator
+                  // clang-format on
+);
+
+WSH_ASM_FUNCTION( // clang-format off
+  void decrementerInterruptHandler() noexcept,
+
+  // Return from interrupt immediately
+  rfi;
+#if defined(WSH_ENABLE_PAIRED_SINGLE)
+  // Align to 32-bit boundary
+  nop;
+  nop;
+  nop;
+  nop;
+  nop;
+  nop;
+  nop;
+
+.L_RestoreRegularFloat:;
+  // Restore regular floating point registers here because we ran out of space
+  lfd     %f0, 0x090(%r1); // OSContext.fprs[0]
+  lfd     %f1, 0x098(%r1); // OSContext.fprs[1]
+  lfd     %f2, 0x0A0(%r1); // OSContext.fprs[2]
+  lfd     %f3, 0x0A8(%r1); // OSContext.fprs[3]
+  lfd     %f4, 0x0B0(%r1); // OSContext.fprs[4]
+  lfd     %f5, 0x0B8(%r1); // OSContext.fprs[5]
+  lfd     %f6, 0x0C0(%r1); // OSContext.fprs[6]
+  lfd     %f7, 0x0C8(%r1); // OSContext.fprs[7]
+  lfd     %f8, 0x0D0(%r1); // OSContext.fprs[8]
+  lfd     %f9, 0x0D8(%r1); // OSContext.fprs[9]
+  lfd     %f10, 0x0E0(%r1); // OSContext.fprs[10]
+  lfd     %f11, 0x0E8(%r1); // OSContext.fprs[11]
+  lfd     %f12, 0x0F0(%r1); // OSContext.fprs[12]
+  lfd     %f13, 0x0F8(%r1); // OSContext.fprs[13]
+  lfd     %f14, 0x100(%r1); // OSContext.fprs[14]
+  lfd     %f15, 0x108(%r1); // OSContext.fprs[15]
+  lfd     %f16, 0x110(%r1); // OSContext.fprs[16]
+  lfd     %f17, 0x118(%r1); // OSContext.fprs[17]
+  lfd     %f18, 0x120(%r1); // OSContext.fprs[18]
+  lfd     %f19, 0x128(%r1); // OSContext.fprs[19]
+  lfd     %f20, 0x130(%r1); // OSContext.fprs[20]
+  lfd     %f21, 0x138(%r1); // OSContext.fprs[21]
+  lfd     %f22, 0x140(%r1); // OSContext.fprs[22]
+  lfd     %f23, 0x148(%r1); // OSContext.fprs[23]
+  lfd     %f24, 0x150(%r1); // OSContext.fprs[24]
+  lfd     %f25, 0x158(%r1); // OSContext.fprs[25]
+  lfd     %f26, 0x160(%r1); // OSContext.fprs[26]
+  lfd     %f27, 0x168(%r1); // OSContext.fprs[27]
+  lfd     %f28, 0x170(%r1); // OSContext.fprs[28]
+  lfd     %f29, 0x178(%r1); // OSContext.fprs[29]
+  lfd     %f30, 0x180(%r1); // OSContext.fprs[30]
+  lfd     %f31, 0x188(%r1); // OSContext.fprs[31]
+
+  mtcr    %r3; // Restore CR
+  lwz     %r3, 0x00C(%r1); // OSContext.gprs[3]
+  lwz     %r0, 0x000(%r1); // OSContext.gprs[0]
+  mfsrr1  %r1;
+  ori     %r1, %r1, 0x2000; // Set MSR.FP
+  mtsrr1  %r1; // Write back to MSR
+  lwz     %r1, BACKUP_R1(0); // Restore r1
+  rfi;
+#endif // WSH_ENABLE_PAIRED_SINGLE
   .long   0; // Terminator
                   // clang-format on
 );
@@ -320,7 +490,7 @@ u32 *checkStackAddr(u32 stackAddr) {
   return nullptr;
 }
 
-void printHex(util::VIConsole &console, u32 value) {
+void printHex(util::VIConsole &console, u32 value) noexcept {
   static constexpr char HexDigits[] = "0123456789ABCDEF";
 
   console.Print(
@@ -340,52 +510,55 @@ void printHex(util::VIConsole &console, u32 value) {
       10);
 }
 
-[[noreturn]]
-void defaultErrorHandler(wsh::ppc::Exception type, ppc::Context *context) {
-  util::VIConsole console;
-
-  console.Print("\n\n   ########### EXCEPTION (");
-  console.Print(wsh::ppc::GetExceptionName(type));
-  console.Print(") OCCURRED! ###########\n"
-                "   PC:   ");
-  printHex(console, context->srr0);
-  console.Print("   MSR:  ");
-  printHex(console, context->srr1);
-  console.Print("   DSIR: ");
-  printHex(console, ppc::GetSpr<ppc::Spr::DSISR>());
-
-  console.Print("\n   CTR:  ");
-  printHex(console, context->ctr);
-  console.Print("   XER:  ");
-  printHex(console, context->xer);
-  console.Print("   DAR:  ");
-  printHex(console, ppc::GetSpr<ppc::Spr::DAR>());
-
-  console.Print("\n\n"
-                "   Registers:\n   ");
-  for (std::size_t i = 0; i < 32; i++) {
-    std::size_t reg = i % 4 * 8 + i / 4;
-
-    console.Print(
-        std::array<char, 5>{
-            'r',
-            static_cast<char>('0' + reg / 10),
-            static_cast<char>('0' + reg % 10),
-            ':',
-            ' ',
-        }
-            .data(),
-        5);
-    printHex(console, context->gprs[reg]);
-
-    if (i % 4 == 3) {
-      console.Print("\n   ");
+[[gnu::noinline]]
+void printStringList(util::VIConsole &console, std::size_t count,
+                     const char *const *strings, u32 *values) {
+  for (std::size_t i = 0; i < count; i++) {
+    if ((i % 2) == 0) {
+      console.Print(strings[i >> 1]);
     } else {
-      console.Print("    ");
+      printHex(console, values[i >> 1]);
     }
   }
+}
 
-  console.Print("\n   Address:      Back Chain    LR Save");
+[[noreturn]]
+void defaultErrorHandler(wsh::ppc::Exception type,
+                         ppc::Context *context) noexcept {
+  util::VIConsole console;
+
+  console.Print("\n\n  ########### EXCEPTION (");
+  console.Print(wsh::ppc::GetExceptionName(type));
+
+  using StringList = const char *const[];
+  using IntList = u32[];
+
+  // Print basic context info
+  static constinit StringList s_strings0 = {") OCCURRED! ###########\n  PC:   ",
+                                            "   MSR:  ",
+                                            "   DSIR: ",
+                                            "\n  CTR:  ",
+                                            "   XER:  ",
+                                            "   DAR:  ",
+                                            "\n\n  Registers:"};
+  printStringList(console, 13, s_strings0,
+                  IntList{context->srr0, context->srr1,
+                          ppc::GetSpr<ppc::Spr::DSISR>(), context->ctr,
+                          context->xer, ppc::GetSpr<ppc::Spr::DAR>()});
+
+  // Print registers
+  for (std::size_t i = 0; i < 32; i++) {
+    std::size_t reg = i % 4 * 8 + i / 4;
+    console.Print(std::array<char, 8>{i % 4 == 0 ? '\n' : ' ', ' ', ' ', 'r',
+                                      static_cast<char>('0' + reg / 10),
+                                      static_cast<char>('0' + reg % 10), ':',
+                                      ' '}
+                      .data(),
+                  8);
+    printHex(console, context->gprs[reg]);
+  }
+
+  console.Print("\n\n  Address:      Back Chain    LR Save");
   u32 *stack = checkStackAddr(context->gprs[1]);
   // Print the first LR which may not be on the stack
   if (stack == nullptr || stack[1] != context->lr) {
@@ -398,12 +571,9 @@ void defaultErrorHandler(wsh::ppc::Exception type, ppc::Context *context) {
 
   for (u32 *stack = checkStackAddr(context->gprs[1]); stack != nullptr;
        stack = checkStackAddr(stack[0])) {
-    console.Print("\n   ");
-    printHex(console, reinterpret_cast<u32>(stack));
-    console.Print(":   ");
-    printHex(console, stack[0]);
-    console.Print("    ");
-    printHex(console, stack[1]);
+    static constinit StringList s_strings1 = {"\n  ", ":   ", "    "};
+    printStringList(console, 6, s_strings1,
+                    IntList{reinterpret_cast<u32>(stack), stack[0], stack[1]});
   }
 
   ppc::Sync();
@@ -487,7 +657,9 @@ void InitExceptions() noexcept {
            ppc::Exception::InstructionStorageInterrupt,
            ppc::Exception::Alignment,
            ppc::Exception::Program,
+#if !defined(WSH_ENABLE_FLOAT)
            ppc::Exception::FloatingPointUnavailable,
+#endif // !WSH_ENABLE_FLOAT
            ppc::Exception::SystemCall,
            ppc::Exception::Trace,
            ppc::Exception::FloatingPointAssist,
@@ -505,11 +677,18 @@ void InitExceptions() noexcept {
 
   // Stub the decrementer exception handler - it's not used
   writeFunctionToVector(ppc::Exception::Decrementer,
-                        reinterpret_cast<u32 *>(stubExceptionHandler));
+                        reinterpret_cast<u32 *>(decrementerInterruptHandler));
 
   // Write the system call handler
   writeFunctionToVector(ppc::Exception::SystemCall,
                         reinterpret_cast<u32 *>(systemCallHandler));
+
+#if defined(WSH_ENABLE_FLOAT)
+  // Write the floating-point unavailable handler
+  writeFunctionToVector(
+      ppc::Exception::FloatingPointUnavailable,
+      reinterpret_cast<u32 *>(floatingPointUnavailableHandler));
+#endif // WSH_ENABLE_FLOAT
 
   ppc::SyncBroadcast();
 

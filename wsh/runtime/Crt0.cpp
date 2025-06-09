@@ -140,7 +140,7 @@ void initPowerPC() {
     // Set MSR before leaving real mode
     scope.msr = ppc::Msr(ppc::MsrBits{
         .EE = 0, // External Interrupt Disabled
-        .FP = 1, // Floating Point Available
+        .FP = 0, // Floating Point Unavailable
         .ME = 0, // Machine Check Disabled
         .IR = 1, // Enable Instruction Address Translation
         .DR = 1, // Enable Data Address Translation
@@ -151,7 +151,11 @@ void initPowerPC() {
   StubExceptionHandlers();
 
   // Init Paired Singles
+#if defined(WSH_ENABLE_PAIRED_SINGLE)
   ppc::Ps::Init();
+#else
+  ppc::Ps::Disable();
+#endif
 
   // Init and enable L2 cache
   ppc::L2Cache::Init();

@@ -44,7 +44,7 @@ void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
   s_main_thread.m_state = State::Running;
   s_main_thread.m_priority = 16;
 
-#ifdef WSH_NEWLIB
+#if defined(WSH_NEWLIB)
   s_main_thread.m_newlib_reent = _REENT_INIT(s_main_thread.m_newlib_reent);
   _impure_ptr = &s_main_thread.m_newlib_reent;
 #endif

@@ -4,10 +4,11 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
+#include "../host/Config.h"
+
 #if defined(WSH_NEWLIB)
 
 #include "VIConsoleStdOut.hpp"
-
 #include <sys/iosupport.h>
 #include <sys/reent.h>
 #include <sys/stat.h>

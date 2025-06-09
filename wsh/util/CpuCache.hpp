@@ -7,8 +7,12 @@
 #pragma once
 
 #include "../common/Types.h"
+#include "../host/Config.h"
+
+#if defined(WSH_HOST_PPC)
 #include "../ppc/Cache.hpp"
 #include "../ppc/Sync.hpp"
+#endif
 
 namespace wsh::util {
 
