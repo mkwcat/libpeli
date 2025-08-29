@@ -34,8 +34,13 @@ public:
   }
 
   bool TrySend(const MessageType &value) {
+    if (IsFull()) {
+      return false;
+    }
+
     ppc::Msr::NoInterruptsScope guard;
 
+    // Check again for atomicity
     if (IsFull()) {
       return false;
     }
@@ -64,8 +69,13 @@ public:
   }
 
   bool TryJam(const MessageType &value) {
+    if (IsFull()) {
+      return false;
+    }
+
     ppc::Msr::NoInterruptsScope guard;
 
+    // Check again for atomicity
     if (IsFull()) {
       return false;
     }
@@ -98,8 +108,13 @@ public:
   }
 
   bool TryReceive(MessageType &value) {
+    if (IsEmpty()) {
+      return false;
+    }
+
     ppc::Msr::NoInterruptsScope guard;
 
+    // Check again for atomicity
     if (IsEmpty()) {
       return false;
     }
@@ -126,6 +141,10 @@ public:
   }
 
   bool TryPeek(MessageType &value) const {
+    if (IsEmpty()) {
+      return false;
+    }
+
     ppc::Msr::NoInterruptsScope guard;
 
     if (IsEmpty()) {
@@ -136,15 +155,9 @@ public:
     return true;
   }
 
-  bool IsEmpty() const {
-    ppc::Msr::NoInterruptsScope guard;
-    return m_count == 0;
-  }
+  bool IsEmpty() const { return m_count == 0; }
 
-  bool IsFull() const {
-    ppc::Msr::NoInterruptsScope guard;
-    return m_count >= m_max_count;
-  }
+  bool IsFull() const { return m_count >= m_max_count; }
 
 private:
   mutable ThreadQueue m_wait_queue;

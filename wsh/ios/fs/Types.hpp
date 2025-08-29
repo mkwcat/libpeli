@@ -10,6 +10,12 @@
 
 namespace wsh::ios::fs {
 
+enum class OpenMode {
+  Read = 1,
+  Write = 2,
+  ReadWrite = 1 | 2,
+};
+
 constexpr size_t PathSize = 64; // Includes null terminator
 using Path = char[PathSize];
 

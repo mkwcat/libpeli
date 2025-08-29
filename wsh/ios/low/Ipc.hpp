@@ -1,4 +1,4 @@
-// wsh/ios/ipc/Low.hpp - Low-level IOS IPC functions
+// wsh/ios/low/Ipc.hpp - Low-level IOS IPC functions
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -9,7 +9,7 @@
 #include "../../common/Types.h"
 #include "../../host/MessageQueue.hpp"
 
-namespace wsh::ios::ipc::low {
+namespace wsh::ios::low {
 
 /**
  * The byte alignment necessary for buffers passed through IPC. This is derived
@@ -50,8 +50,8 @@ struct IOSRequest {
   };
 
   struct Seek {
-    s32 offset;
-    s32 origin;
+    s32 where;
+    s32 whence;
   };
 
   struct Ioctl {
@@ -117,4 +117,4 @@ s32 IOS_IoctlvAsync(s32 fd, u32 cmd, u32 in_count, u32 out_count,
 
 void Init() noexcept;
 
-} // namespace wsh::ios::ipc::low
+} // namespace wsh::ios::low

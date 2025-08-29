@@ -23,7 +23,7 @@ add_library(wsh STATIC
         wsh/hw/Video.cpp
         wsh/hw/VideoMode.cpp
 
-        wsh/ios/ipc/Low.cpp
+        wsh/ios/low/Ipc.cpp
 
         wsh/ppc/Context.cpp
         wsh/ppc/Msr.cpp

@@ -1,10 +1,10 @@
-// wsh/ios/ipc/Low.cpp - Low-level IOS IPC functions
+// wsh/ios/low/Ipc.cpp - Low-level IOS IPC functions
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "Low.hpp"
+#include "Ipc.hpp"
 #include "../../hw/Bit.hpp"
 #include "../../hw/Interrupt.hpp"
 #include "../../hw/Wood.hpp"
@@ -16,7 +16,7 @@
 #include "../Error.hpp"
 #include <cstring>
 
-namespace wsh::ios::ipc::low {
+namespace wsh::ios::low {
 
 #ifndef WSH_HOST_IOS
 
@@ -235,8 +235,8 @@ s32 IOS_Ioctlv(s32 fd, u32 command, u32 in_count, u32 out_count,
 s32 IOS_OpenAsync(const char *path, u32 flags,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
-  if (path == nullptr || !util::IsAligned(Alignment, block) ||
-      !util::IsAligned(Alignment, path)) {
+  if (!util::IsAligned(Alignment, block) || !util::IsAligned(Alignment, path)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -256,6 +256,7 @@ s32 IOS_OpenAsync(const char *path, u32 flags,
 s32 IOS_CloseAsync(s32 fd, host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -273,14 +274,15 @@ s32 IOS_SeekAsync(s32 fd, s32 where, s32 whence,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
   *block = {};
   block->cmd = IOS_CMD_SEEK;
   block->fd = fd;
-  block->seek.offset = where;
-  block->seek.origin = whence;
+  block->seek.where = where;
+  block->seek.whence = whence;
   block->queue = &queue;
 
   ipcAsync(block);
@@ -292,6 +294,7 @@ s32 IOS_ReadAsync(s32 fd, void *data, s32 size,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -311,6 +314,7 @@ s32 IOS_WriteAsync(s32 fd, void *data, s32 size,
                    host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -332,6 +336,7 @@ s32 IOS_IoctlAsync(s32 fd, u32 command, void *in, u32 in_size, void *out,
                    u32 out_size, host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -361,6 +366,7 @@ s32 IOS_IoctlvAsync(s32 fd, u32 command, u32 in_count, u32 out_count,
                     IOVector *vec, host::MessageQueue<IPCCommandBlock *> &queue,
                     IPCCommandBlock *block) noexcept {
   if (!util::IsAligned(Alignment, block)) {
+    block->result = IOSError::IOS_ERROR_INVALID;
     return IOSError::IOS_ERROR_INVALID;
   }
 
@@ -402,4 +408,4 @@ void Init() noexcept {
 
 #endif // !WSH_HOST_IOS
 
-} // namespace wsh::ios::ipc::low
+} // namespace wsh::ios::low
