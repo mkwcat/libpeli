@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
 
-project(wsh LANGUAGES C CXX ASM)
+project(peli LANGUAGES C CXX ASM)
 
-include_directories(wsh/..)
+include_directories(peli/..)
 
 # Binary linker stuff
 set(BIN2S ${DEVKITPRO}/tools/bin/bin2s)
@@ -19,25 +19,25 @@ set(CMAKE_C_FLAGS "-Wall -Wextra -Wno-unused-function -O4 -fstrict-volatile-bitf
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unused-function -O4 -fstrict-volatile-bitfields -finline-limit=1400 -fno-threadsafe-statics ${CMAKE_CXX_FLAGS} ${MACHDEP}")
 set(CMAKE_STATIC_LIBRARY_SUFFIX ".a")
 
-add_library(wsh STATIC
-        wsh/hw/Video.cpp
-        wsh/hw/VideoMode.cpp
+add_library(peli STATIC
+        peli/hw/Video.cpp
+        peli/hw/VideoMode.cpp
 
-        wsh/ios/low/Ipc.cpp
+        peli/ios/low/Ipc.cpp
 
-        wsh/ppc/Context.cpp
-        wsh/ppc/Msr.cpp
+        peli/ppc/Context.cpp
+        peli/ppc/Msr.cpp
 
-        wsh/runtime/Args.cpp
-        wsh/runtime/Crt0.cpp
-        wsh/runtime/Exception.cpp
-        wsh/runtime/GThread.cpp
-        wsh/runtime/Memory.cpp
-        wsh/runtime/Mutex.cpp
-        wsh/runtime/Once.cpp
-        wsh/runtime/Thread.cpp
+        peli/runtime/Args.cpp
+        peli/runtime/Crt0.cpp
+        peli/runtime/Exception.cpp
+        peli/runtime/GThread.cpp
+        peli/runtime/Memory.cpp
+        peli/runtime/Mutex.cpp
+        peli/runtime/Once.cpp
+        peli/runtime/Thread.cpp
 
-        wsh/util/VIConsole.cpp
-        wsh/util/VIConsoleFont.c
-        wsh/util/VIConsoleStdOut.cpp
+        peli/util/VIConsole.cpp
+        peli/util/VIConsoleFont.c
+        peli/util/VIConsoleStdOut.cpp
 )

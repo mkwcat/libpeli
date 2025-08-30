@@ -1,4 +1,4 @@
-# wsh
+# libpeli
 
 A core runtime library for Wii homebrew applications, written in C++23. Currently a work in progress.
 
@@ -23,7 +23,7 @@ cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain-powerpc.cmake
 cmake --build .
 ```
 
-The output is a static library named `libwsh.a` in the build directory. See the example project in [tests/simple](tests/simple)
+The output is a static library named `libpeli.a` in the build directory. See the example project in [tests/simple](tests/simple)
 for a simple demonstration on how to use the library.
 
 ## License

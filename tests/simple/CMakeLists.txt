@@ -27,7 +27,7 @@ add_executable(SimpleApp
 # link library with whole archive
 target_link_libraries(SimpleApp PRIVATE
     "-Wl,--whole-archive"
-    wsh
+    peli
     "-Wl,--no-whole-archive"
 )
 
