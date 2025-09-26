@@ -65,6 +65,6 @@ pythonenv*
 .cache
 # Nested build directory
 /build*
-/tests/*/build*
+/tests/build*
 # VS out directories
 *out/

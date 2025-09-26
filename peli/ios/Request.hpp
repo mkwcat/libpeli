@@ -33,6 +33,8 @@ public:
   }
   constexpr bool IsError() const noexcept { return m_cmd_block.result < 0; }
 
+  constexpr s32 GetFd() const noexcept { return m_cmd_block.fd; }
+
   Open *GetOpen() noexcept;
   const Open *GetOpen() const noexcept {
     return const_cast<Request *>(this)->GetOpen();

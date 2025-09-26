@@ -10,7 +10,7 @@
 
 namespace peli::ios::di {
 
-class DiskId {
+struct DiskId {
   /**
    * Game Code, e.g. "RSPE" for Wii Sports.
    */

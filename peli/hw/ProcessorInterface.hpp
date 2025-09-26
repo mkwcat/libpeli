@@ -108,7 +108,7 @@ static struct ProcessorInterface {
     /* 3 */ volatile u32 SI : 1;
 
     /**
-     *  DVD Interface.
+     * DVD Interface.
      */
     /* 2 */ volatile u32 DI : 1;
 

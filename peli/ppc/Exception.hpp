@@ -30,10 +30,10 @@ enum class Exception {
   ThermalManagement,
 };
 
-static constexpr u32 ExceptionCount =
+constexpr u32 ExceptionCount =
     static_cast<u32>(Exception::ThermalManagement) + 1;
 
-static constexpr const char *GetExceptionName(Exception type) noexcept {
+constexpr const char *GetExceptionName(Exception type) noexcept {
   if (type < Exception::SystemReset || type > Exception::ThermalManagement) {
     return "UNKNOWN";
   }
@@ -51,7 +51,7 @@ static constexpr const char *GetExceptionName(Exception type) noexcept {
   return ExceptionNameTable[static_cast<u32>(type)];
 }
 
-static u32 *GetExceptionVectorAddress(Exception type) noexcept {
+inline u32 *GetExceptionVectorAddress(Exception type) noexcept {
   ios::LoMem &lo_mem = ios::g_lo_mem;
 
   switch (type) {

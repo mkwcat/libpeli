@@ -6,6 +6,7 @@
 
 #include "../common/Asm.h"
 #include "../common/Types.h"
+#include "../host/Config.h"
 #include "../ppc/Bat.hpp"
 #include "../ppc/Cache.hpp"
 #include "../ppc/Hid0.hpp"
@@ -25,6 +26,8 @@
 #ifndef PELI_CRT0_STACK_SIZE
 #define PELI_CRT0_STACK_SIZE 0x8000
 #endif
+
+int main(int argc, char **argv);
 
 extern "C" peli::runtime::Args *__system_argv;
 
@@ -47,7 +50,7 @@ PELI_ASM_FUNCTION( // clang-format off
   .long   0;      // Argc
   .long   0;      // Argv
   .long   0;      // Argv End
-                  // clang-format on
+                   // clang-format on
 );
 
 namespace {
@@ -81,7 +84,7 @@ PELI_ASM_FUNCTION( // clang-format off
                  
   // Call the main init function
   bl      peliMain;
-                  // clang-format on
+                   // clang-format on
 );
 
 void initPowerPC() {
@@ -161,8 +164,6 @@ void initPowerPC() {
   ppc::L2Cache::Init();
 }
 
-int main(int argc, char **argv);
-
 void peliMain(Args *input_args) noexcept {
   initPowerPC();
 
@@ -175,7 +176,11 @@ void peliMain(Args *input_args) noexcept {
 
   InitExceptions();
 
-  std::exit(main(s_args.argc, s_args.argv));
+  _PELI_DIAGNOSTIC(push)
+  // Ignore the warning on use of ::main
+  _PELI_DIAGNOSTIC(ignored "-Wpedantic")
+  std::exit(::main(s_args.argc, s_args.argv));
+  _PELI_DIAGNOSTIC(pop)
 }
 
 } // namespace

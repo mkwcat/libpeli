@@ -4,11 +4,12 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "../host/Config.h"
+#include "VIConsoleStdOut.hpp"
 
 #if defined(PELI_NEWLIB)
 
-#include "VIConsoleStdOut.hpp"
+#include <cstdio>
+#include <cstdlib>
 #include <sys/iosupport.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
@@ -16,11 +17,14 @@
 namespace peli::util {
 
 VIConsole *VIConsoleStdOut::s_console = nullptr;
+const void *VIConsoleStdOut::s_default_stdout = nullptr;
+const void *VIConsoleStdOut::s_default_stderr = nullptr;
 
 void VIConsoleStdOut::Register(VIConsole &console) {
+  bool registered = !!s_console;
   s_console = &console;
 
-  static devoptab_t s_devoptab = {
+  static const devoptab_t s_devoptab = {
       .name = "stdout",
       .structSize = 0,
       .open_r = nullptr,
@@ -55,13 +59,31 @@ void VIConsoleStdOut::Register(VIConsole &console) {
       .readlink_r = nullptr,
   };
 
+  if (!registered) {
+    s_default_stdout = devoptab_list[STD_OUT];
+    s_default_stderr = devoptab_list[STD_ERR];
+  }
+
   devoptab_list[STD_OUT] = &s_devoptab;
   devoptab_list[STD_ERR] = &s_devoptab;
 }
 
+void VIConsoleStdOut::Deregister() {
+  if (!s_console) {
+    return;
+  }
+
+  std::fflush(stdout);
+  devoptab_list[STD_OUT] = static_cast<const devoptab_t *>(s_default_stdout);
+  std::fflush(stderr);
+  devoptab_list[STD_ERR] = static_cast<const devoptab_t *>(s_default_stderr);
+  s_console = nullptr;
+}
+
+_PELI_CLANG_ONLY(long)
 int VIConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
                               [[maybe_unused]] void *fd, const char *ptr,
-                              size_t len) {
+                              __SIZE_TYPE__ len) {
   s_console->Print(ptr, len);
   return len;
 }

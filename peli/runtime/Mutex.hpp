@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "../common/Types.h"
 #include "Thread.hpp"
 #include "ThreadQueue.hpp"
 
@@ -23,15 +22,13 @@ public:
   Mutex(Mutex &&) = delete;
 
   void Lock() noexcept;
-
   void Unlock() noexcept;
-
   bool TryLock() noexcept;
 
 protected:
   Thread *m_owner_thread;
   ThreadQueue m_wait_queue;
-  u32 m_lock_count;
+  unsigned short m_lock_count;
   bool m_recursive;
 };
 

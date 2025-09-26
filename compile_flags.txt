@@ -1,4 +1,5 @@
 --target=powerpc-eabi
+-m32
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/14.2.0
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/14.2.0/powerpc-eabi
 -I/opt/devkitpro/devkitPPC/powerpc-eabi/include/c++/14.2.0/backward
@@ -9,10 +10,9 @@
 -nobuiltininc
 -nostdinc
 -nostdinc++
+-Wall
+-Wextra
 -Wpedantic
--Wno-zero-length-array
--Wno-unknown-attributes
--Wno-embedded-directive
--std=c++23
+-std=gnu++23
 -x
 c++

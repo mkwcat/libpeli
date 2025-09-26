@@ -58,7 +58,7 @@ public:
   }
 };
 
-template <detail::IoctlType TIoctlCmdType>
+template <util::EnumType TIoctlCmdType>
 class Resource<Interface<TIoctlCmdType>> : public Resource<void> {
 public:
   using InterfaceType = Interface<TIoctlCmdType>;

@@ -14,19 +14,19 @@ namespace peli::util {
 template <class T>
 [[gnu::const]] constexpr T AlignUp(unsigned int align, T num) noexcept {
   size_t raw = (size_t)num;
-  return (T)((raw + align - 1) & -align);
+  return (T)((raw + align - 1) - (raw % align));
 }
 
 template <class T>
 [[gnu::const]] constexpr T AlignDown(unsigned int align, T num) noexcept {
   size_t raw = (size_t)num;
-  return (T)(raw & -align);
+  return (T)(raw - (raw % align));
 }
 
 template <class T>
 [[gnu::const]] constexpr bool IsAligned(unsigned int align, T num) noexcept {
   size_t raw = (size_t)num;
-  return (raw & (align - 1)) == 0;
+  return (raw % align) == 0;
 }
 
 typedef unsigned int size_t;

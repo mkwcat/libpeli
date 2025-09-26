@@ -45,7 +45,10 @@ void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
   s_main_thread.m_priority = 16;
 
 #if defined(PELI_NEWLIB)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   s_main_thread.m_newlib_reent = _REENT_INIT(s_main_thread.m_newlib_reent);
+#pragma GCC diagnostic pop
   _impure_ptr = &s_main_thread.m_newlib_reent;
 #endif
 
@@ -111,7 +114,10 @@ Thread::Thread(ThreadFunc func, void *arg, void *stack, u32 stackSize,
   *reinterpret_cast<u32 *>(m_stack_top - 0x4) = 0xFFFFFFFF;
 
 #if defined(PELI_NEWLIB)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
   m_newlib_reent = _REENT_INIT(m_newlib_reent);
+#pragma GCC diagnostic pop
 #endif
 
   m_link = {nullptr, nullptr};

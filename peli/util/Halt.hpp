@@ -15,27 +15,27 @@
 namespace peli::util {
 
 [[__noreturn__]]
-static inline void Halt() noexcept {
+inline void Halt() noexcept {
   asm volatile("b .");
-  __builtin_unreachable();
+  ::__builtin_unreachable();
 }
 
 #if defined(PELI_DEBUG)
 
-#define _PELI_ASSERT_2(X_CONDITION, X_LINE, ...)                                \
+#define _PELI_ASSERT_2(X_CONDITION, X_LINE, ...)                               \
   while (!(X_CONDITION)) {                                                     \
-    ::peli::util::AssertFail("(" #X_CONDITION ") " __VA_OPT__(, ) __VA_ARGS__,  \
-                            __PRETTY_FUNCTION__, __FILE__, #X_LINE);           \
+    ::peli::util::AssertFail("(" #X_CONDITION ") " __VA_OPT__(, ) __VA_ARGS__, \
+                             __PRETTY_FUNCTION__, __FILE__, #X_LINE);          \
   }
-#define _PELI_ASSERT_1(X_CONDITION, X_LINE, ...)                                \
+#define _PELI_ASSERT_1(X_CONDITION, X_LINE, ...)                               \
   _PELI_ASSERT_2(X_CONDITION, X_LINE, __VA_ARGS__)
-#define _PELI_ASSERT(X_CONDITION, ...)                                          \
+#define _PELI_ASSERT(X_CONDITION, ...)                                         \
   _PELI_ASSERT_1(X_CONDITION, __LINE__, __VA_ARGS__)
 
-#define _PELI_DEBUG_ASSERT(X_CONDITION, ...)                                    \
+#define _PELI_DEBUG_ASSERT(X_CONDITION, ...)                                   \
   _PELI_ASSERT(X_CONDITION, __VA_ARGS__)
 
-#define _PELI_PANIC_2(X_MESSAGE, X_LINE)                                        \
+#define _PELI_PANIC_2(X_MESSAGE, X_LINE)                                       \
   ::peli::util::Panic(X_MESSAGE, __PRETTY_FUNCTION__, __FILE__, #X_LINE)
 #define _PELI_PANIC_1(X_MESSAGE, X_LINE) _PELI_PANIC_2(X_MESSAGE, X_LINE)
 #define _PELI_PANIC(X_MESSAGE) _PELI_PANIC_1(X_MESSAGE, __LINE__)
@@ -44,25 +44,25 @@ static inline void Halt() noexcept {
 inline void AssertFail(const char *condition, const char *message,
                        const char *function, const char *file,
                        const char *line) noexcept {
-  puts("Assertion ");
+  ::puts("Assertion ");
   if (condition) {
-    puts(condition);
+    ::puts(condition);
   }
-  puts(" failed");
+  ::puts(" failed");
   if (message) {
-    puts(": ");
-    puts(message);
+    ::puts(": ");
+    ::puts(message);
   }
-  puts("\nIn: ");
-  puts(function);
-  puts("\nFile: ");
-  puts(file);
-  puts("\nLine: ");
-  puts(line);
-  puts("\n");
+  ::puts("\nIn: ");
+  ::puts(function);
+  ::puts("\nFile: ");
+  ::puts(file);
+  ::puts("\nLine: ");
+  ::puts(line);
+  ::puts("\n");
 
-  __builtin_trap();
-  __builtin_unreachable();
+  ::__builtin_trap();
+  ::__builtin_unreachable();
 }
 
 [[__noreturn__]]
@@ -74,36 +74,36 @@ inline void AssertFail(const char *condition, const char *function,
 [[__noreturn__]]
 inline void Panic(const char *message, const char *function, const char *file,
                   const char *line) noexcept {
-  puts("Panic: ");
-  puts(message);
-  puts("\nIn: ");
-  puts(function);
-  puts("\nFile: ");
-  puts(file);
-  puts("\nLine: ");
-  puts(line);
-  puts("\n");
+  ::puts("Panic: ");
+  ::puts(message);
+  ::puts("\nIn: ");
+  ::puts(function);
+  ::puts("\nFile: ");
+  ::puts(file);
+  ::puts("\nLine: ");
+  ::puts(line);
+  ::puts("\n");
 
-  __builtin_trap();
-  __builtin_unreachable();
+  ::__builtin_trap();
+  ::__builtin_unreachable();
 }
 
 #else // PELI_DEBUG
 
-#define _PELI_ASSERT(X_CONDITION, ...)                                          \
+#define _PELI_ASSERT(X_CONDITION, ...)                                         \
   while (!(X_CONDITION)) {                                                     \
-    __builtin_trap();                                                          \
-    __builtin_unreachable();                                                   \
+    ::__builtin_trap();                                                        \
+    ::__builtin_unreachable();                                                 \
   }
 
-#define _PELI_DEBUG_ASSERT(X_CONDITION, ...)                                    \
+#define _PELI_DEBUG_ASSERT(X_CONDITION, ...)                                   \
   do {                                                                         \
   } while (false)
 
-#define _PELI_PANIC(X_MESSAGE)                                                  \
+#define _PELI_PANIC(X_MESSAGE)                                                 \
   do {                                                                         \
-    __builtin_trap();                                                          \
-    __builtin_unreachable();                                                   \
+    ::__builtin_trap();                                                        \
+    ::__builtin_unreachable();                                                 \
   } while (false)
 
 #endif

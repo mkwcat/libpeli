@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include "../host/Config.h"
+
 #if defined(PELI_NEWLIB)
 
+#include "../common/Types.h"
 #include "VIConsole.hpp"
-#include <stddef.h>
 
 struct _reent;
 struct stat;
@@ -19,12 +21,17 @@ namespace peli::util {
 class VIConsoleStdOut {
 public:
   static void Register(VIConsole &console);
+  static void Deregister();
 
 private:
-  static int SysWrite(struct _reent *r, void *fd, const char *ptr, size_t len);
+  static _PELI_CLANG_ONLY(long) int SysWrite(struct _reent *r, void *fd,
+                                             const char *ptr,
+                                             __SIZE_TYPE__ len);
   static int SysFstat(struct _reent *r, void *fd, struct stat *st);
 
   static VIConsole *s_console;
+  static const void *s_default_stdout;
+  static const void *s_default_stderr;
 };
 
 } // namespace peli::util

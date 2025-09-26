@@ -87,31 +87,25 @@ public:
     u8 sample_pattern[12][2];
     u8 vertical_filter[7];
   };
+    
+  static const struct {
+    struct {
+      Timings NtscEurgb60, Pal, PalM, Gca;
+    } Interlaced;
+    struct {
+      Timings NtscEurgb60, Pal, PalM;
+    } NonInterlaced;
+    struct {
+      Timings NtscPalMEurgb60, Gca, Pal;
+    } Progressive;
+    Timings Ntsc3D;
+  } TimingSets;
 
-  static const Timings TimingsInterlacedNtscEurgb60;
-  static const Timings TimingsNonInterlacedNtscEurgb60;
-  static const Timings TimingsInterlacedPal;
-  static const Timings TimingsNonInterlacedPal;
-  static const Timings TimingsInterlacedPalM;
-  static const Timings TimingsNonInterlacedPalM;
-  static const Timings TimingsProgressiveNtscPalMEurgb60;
-  static const Timings TimingsNtsc3D;
-  static const Timings TimingsInterlacedGca;
-  static const Timings TimingsProgressiveGca;
-  static const Timings TimingsProgressivePal;
-
-  static const RenderMode RenderModeNtscInterlaced;
-  static const RenderMode RenderModeNtscNonInterlaced;
-  static const RenderMode RenderModeNtscProgressive;
-  static const RenderMode RenderModePalInterlaced;
-  static const RenderMode RenderModePalNonInterlaced;
-  static const RenderMode RenderModePalProgressive;
-  static const RenderMode RenderModePalMInterlaced;
-  static const RenderMode RenderModePalMNonInterlaced;
-  static const RenderMode RenderModePalMProgressive;
-  static const RenderMode RenderModeEurgb60Interlaced;
-  static const RenderMode RenderModeEurgb60NonInterlaced;
-  static const RenderMode RenderModeEurgb60Progressive;
+  static const struct {
+    struct {
+      RenderMode Interlaced, NonInterlaced, Progressive;
+    } Ntsc, Pal, PalM, Eurgb60;
+  } RenderModes;
 
   static Dcr::Fmt GetDcrFmt(Standard standard) noexcept {
     switch (standard) {

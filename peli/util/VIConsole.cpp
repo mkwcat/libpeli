@@ -19,7 +19,7 @@
 #include "../hw/Video.hpp"
 #endif
 
-extern "C" const u8 VIConsoleFont[128][16];
+extern "C" const unsigned char VIConsoleFont[128][16];
 
 namespace peli::util {
 
@@ -29,7 +29,11 @@ constexpr u8 FgIntensity = 235;
 constexpr u8 GlyphWidth = 8;
 constexpr u8 GlyphHeight = 16;
 
-enum Flag {
+enum Option {
+  // Bit shift
+  TabWidth = 1,
+
+  // Bit flag
   Sideways = 1 << 0,
 };
 
@@ -52,7 +56,7 @@ VIConsole::VIConsole(bool sideways) noexcept {
   m_share->ppc_row = -1;
   m_share->ios_row = -1;
   m_share->xfb_init = true;
-  m_share->option = sideways ? Flag::Sideways : 0;
+  m_share->option = (3 << Option::TabWidth) | (sideways ? Option::Sideways : 0);
 }
 
 /**
@@ -195,6 +199,27 @@ s32 VIConsole::decrementRow() noexcept {
 }
 
 /**
+ * Set the alignment width of the TAB character. Does not apply retroactively
+ * to previously printed text. Must be between 1 and 16.
+ */
+void VIConsole::SetTabWidth(u8 width) noexcept {
+  syncShare(false);
+
+  constexpr u32 mask = 0xF << Option::TabWidth;
+  width = (width - 1) << Option::TabWidth;
+  m_share->option = (m_share->option & ~mask) | (width & mask);
+
+  syncShare(true);
+}
+
+/**
+ * Get the current TAB alignment width.
+ */
+u8 VIConsole::GetTabWidth() const noexcept {
+  return ((m_share->option >> Option::TabWidth) & 0xF) + 1;
+}
+
+/**
  * Get the width of the console framebuffer.
  */
 u16 VIConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
@@ -208,7 +233,7 @@ u16 VIConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
  * Get column count.
  */
 u8 VIConsole::NumCols() const noexcept {
-  if (!(m_share->option & Flag::Sideways)) {
+  if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_width / GlyphWidth - 1;
   } else {
     return m_share->xfb_height / GlyphWidth - 1;
@@ -219,7 +244,7 @@ u8 VIConsole::NumCols() const noexcept {
  * Get row count.
  */
 u8 VIConsole::NumRows() const noexcept {
-  if (!(m_share->option & Flag::Sideways)) {
+  if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_height / GlyphHeight - 2;
   } else {
     return m_share->xfb_width / GlyphHeight - 2;
@@ -265,7 +290,7 @@ void VIConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
  * Move the framebuffer up by the specified height.
  */
 void VIConsole::MoveUp(u16 height) noexcept {
-  if (!(m_share->option & Flag::Sideways)) {
+  if (!(m_share->option & Option::Sideways)) {
     u32 offset = height * (m_share->xfb_width / 2);
 
     u32 src = AlignDown(offset, 32);
@@ -335,6 +360,10 @@ void VIConsole::printChar(char c) noexcept {
     m_newline = false;
   }
 
+  if (c == '\t') {
+    m_col = AlignUp(GetTabWidth(), m_col + 1);
+  }
+
   if (m_col >= NumCols()) {
     incrementRow();
     m_col = 0;
@@ -363,7 +392,7 @@ void VIConsole::printChar(char c) noexcept {
       u8 intensity = glyph[(y * GlyphWidth + x) / 8] & (1 << (8 - (x % 8)))
                          ? FgIntensity
                          : BgIntensity;
-      if (m_share->option & Flag::Sideways) {
+      if (m_share->option & Option::Sideways) {
         VIConsole::WriteGrayscaleToXfb(y0 + y, m_share->xfb_height - (x0 + x),
                                        intensity);
       } else {

@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.23)
+
+project(peli-tests LANGUAGES C CXX ASM)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
+link_directories(../build)
+include_directories(..)
+
+# link library with whole archive
+link_libraries(
+    "-Wl,--whole-archive"
+    peli
+    "-Wl,--no-whole-archive"
+)
+
+add_link_options(
+    -T${DEVKITPPC}/powerpc-eabi/lib/rvl.ld
+)
+
+set(CMAKE_EXECUTABLE_SUFFIX ".elf")
+
+add_compile_options(
+    ${MACHDEP}
+
+    -Wall
+    -Wextra
+    -Wpedantic
+    -O3
+    $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fstrict-volatile-bitfields>
+)
+
+add_executable(SysConfReader SysConfReader.cpp)

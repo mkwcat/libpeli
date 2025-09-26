@@ -22,6 +22,22 @@ namespace peli::ppc {
 #define RM_CURRENT_CONTEXT 0x00C0
 #define EM_CURRENT_CONTEXT 0x00D4
 
+#define CODE_IF_ENABLE_FLOAT(...)
+#define CODE_IF_ENABLE_PAIRED_SINGLE(...)
+#define CODE_IF_NOT_ENABLE_PAIRED_SINGLE(...) __VA_ARGS__
+
+#if defined(PELI_ENABLE_FLOAT)
+#undef CODE_IF_ENABLE_FLOAT
+#define CODE_IF_ENABLE_FLOAT(...) __VA_ARGS__
+#endif
+
+#if defined(PELI_ENABLE_PAIRED_SINGLE)
+#undef CODE_IF_ENABLE_PAIRED_SINGLE
+#define CODE_IF_ENABLE_PAIRED_SINGLE(...) __VA_ARGS__
+#undef CODE_IF_NOT_ENABLE_PAIRED_SINGLE
+#define CODE_IF_NOT_ENABLE_PAIRED_SINGLE(...)
+#endif
+
 PELI_ASM_FUNCTION( // clang-format off
   [[noreturn]]
   void Context::Restore() noexcept,
@@ -54,24 +70,24 @@ PELI_ASM_FUNCTION( // clang-format off
   lwz     %r0, 0x1C0(%r3); // OSContext.gqrs[7]
   mtspr   GQR6, %r5;
   lwz     %r1, 0x004(%r3); // OSContext.gprs[1]
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
+CODE_IF_ENABLE_PAIRED_SINGLE(
   lwz     %r4, 0x1C4(%r3); // OSContext.hid2
   mfhid2  %r5;
-#endif
   lwz     %r2, 0x008(%r3); // OSContext.gprs[2]
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
   rlwimi  %r5, %r4, 0, 0x80000000; // Insert HID2.LSQE
   rlwimi  %r5, %r4, 0, 0x20000000; // Insert HID2.PSE
   mtspr   GQR7, %r0;
   mthid2  %r5;
-#else
+) // CODE_IF_ENABLE_PAIRED_SINGLE
+CODE_IF_NOT_ENABLE_PAIRED_SINGLE(
+  lwz     %r2, 0x008(%r3); // OSContext.gprs[2]
   mtspr   GQR7, %r0;
-#endif
+) // CODE_IF_NOT_ENABLE_PAIRED_SINGLE
   lwz     %r0, 0x000(%r3); // OSContext.gprs[0]
   lmw     %r4, 0x010(%r3); // OSContext.gprs[4+]
   lwz     %r3, 0x00C(%r3); // OSContext.gprs[3]
   rfi;
-                  // clang-format on
+                   // clang-format on
 );
 
 PELI_ASM_FUNCTION( // clang-format off
@@ -99,17 +115,15 @@ L_ContextSwitch:;
   stw     %r5, 0x084(%r4); // OSContext.lr
   mfmsr   %r0;
   stw     %r5, 0x198(%r4); // OSContext.srr0
-#if defined(PELI_ENABLE_FLOAT)
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
-  mfhid2  %r7; // OSContext.hid2
-  stw     %r6, 0x090(%r4); // OSContext.xer
-  andis.  %r7, %r7, 0xA000; // Get HID2.PSE and HID2.LSQE
+CODE_IF_ENABLE_FLOAT(
+CODE_IF_ENABLE_PAIRED_SINGLE(
+  mfhid2  %r8; // OSContext.hid2
+  andis.  %r7, %r8, 0xA000; // Get HID2.PSE and HID2.LSQE
   stw     %r7, 0x1C4(%r4); // OSContext.hid2
-#else
-  stw     %r6, 0x090(%r4); // OSContext.xer
-#endif // !PELI_ENABLE_PAIRED_SINGLE
+) // CODE_IF_ENABLE_PAIRED_SINGLE
   rlwinm. %r7, %r0, 0, 0x2000; // CR0.EQ = MSR.FP
-#endif // PELI_ENABLE_FLOAT
+) // CODE_IF_ENABLE_FLOAT
+  stw     %r6, 0x090(%r4); // OSContext.xer
   mfspr   %r5, GQR0;
   stw     %r0, 0x19C(%r4); // OSContext.srr1
   mfspr   %r6, GQR1;
@@ -128,7 +142,7 @@ L_ContextSwitch:;
   stw     %r5, 0x1BC(%r4); // OSContext.gqrs[6]
   stw     %r6, 0x1C0(%r4); // OSContext.gqrs[7]
 
-#if defined(PELI_ENABLE_FLOAT)
+CODE_IF_ENABLE_FLOAT(
   beq+    .L_ContextSwitch_Restore;
 
   // Save floating point registers
@@ -136,9 +150,9 @@ L_ContextSwitch:;
   mffs    %f0;
   stfd    %f1, 0x098(%r4); // OSContext.fprs[1]
   stfd    %f0, 0x190(%r4); // OSContext.fpscr
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
-  xoris   %r0, %r0, 0xA000;
-#endif
+CODE_IF_ENABLE_PAIRED_SINGLE(
+  xoris   %r0, %r8, 0xA000;
+) // CODE_IF_ENABLE_PAIRED_SINGLE
   stfd    %f2, 0x0A0(%r4); // OSContext.fprs[2]
   stfd    %f3, 0x0A8(%r4); // OSContext.fprs[3]
   stfd    %f4, 0x0B0(%r4); // OSContext.fprs[4]
@@ -146,9 +160,9 @@ L_ContextSwitch:;
   stfd    %f6, 0x0C0(%r4); // OSContext.fprs[6]
   stfd    %f7, 0x0C8(%r4); // OSContext.fprs[7]
   stfd    %f8, 0x0D0(%r4); // OSContext.fprs[8]
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
+CODE_IF_ENABLE_PAIRED_SINGLE(
   cmplwi  %r0, 0;
-#endif
+) // CODE_IF_ENABLE_PAIRED_SINGLE
   stfd    %f9, 0x0D8(%r4); // OSContext.fprs[9]
   stfd    %f10, 0x0E0(%r4); // OSContext.fprs[10]
   stfd    %f11, 0x0E8(%r4); // OSContext.fprs[11]
@@ -173,7 +187,7 @@ L_ContextSwitch:;
   stfd    %f30, 0x180(%r4); // OSContext.fprs[30]
   stfd    %f31, 0x188(%r4); // OSContext.fprs[31]
 
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
+CODE_IF_ENABLE_PAIRED_SINGLE(
   bne+    .L_ContextSwitch_Restore;
 
   // Save paired single registers
@@ -209,13 +223,13 @@ L_ContextSwitch:;
   psq_st  %f29, 0x2B0(%r4), 0, 0; // OSContext.psfs[29]
   psq_st  %f30, 0x2B8(%r4), 0, 0; // OSContext.psfs[30]
   psq_st  %f31, 0x2C0(%r4), 0, 0; // OSContext.psfs[31]
-#endif // PELI_ENABLE_PAIRED_SINGLE
+) // CODE_IF_ENABLE_PAIRED_SINGLE
 
-#endif // PELI_ENABLE_FLOAT
+) // CODE_IF_ENABLE_FLOAT
 
 .L_ContextSwitch_Restore:;
   b       .L_ContextRestore;
-                  // clang-format on
+                   // clang-format on
 );
 
 PELI_ASM_FUNCTION( // clang-format off
@@ -258,7 +272,7 @@ PELI_ASM_FUNCTION( // clang-format off
   li      %r3, 1;
   stw     %r5, 0x1C0(%r3); // OSContext.gqrs[7]
   blr;
-                  // clang-format on
+                   // clang-format on
 );
 
 } // namespace peli::ppc

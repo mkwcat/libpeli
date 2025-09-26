@@ -71,7 +71,13 @@ public:
   }
 
   IOSError Rename(const char *from, const char *to) const noexcept {
-    return Rename::Request(GetHandle(), from, to) //
+    RenamePaths paths{
+        {},
+        {},
+    };
+    ::strncpy(paths.from, from, PathSize);
+    ::strncpy(paths.to, to, PathSize);
+    return Rename::Request(GetHandle(), paths) //
         .Sync()
         .GetError();
   }
@@ -104,7 +110,7 @@ public:
     alignas(low::Alignment) char path_buffer[TPathCount][PathSize];
     alignas(low::Alignment) u32 size_buffer[TPathCount];
     for (size_t i = 0; i < TPathCount; ++i) {
-      strncpy(path_buffer[i], paths[i], PathSize);
+      ::strncpy(path_buffer[i], paths[i], PathSize);
       vec[i].data = path_buffer[i];
       vec[i].size = PathSize;
       size_buffer[i] = sizes[i];
@@ -122,14 +128,14 @@ public:
         util::AlignUp(low::Alignment, sizeof(low::IOVector) * (count + 1));
     u32 path_buffer_size = util::AlignUp(low::Alignment, PathSize * count);
     u32 size_buffer_size = util::AlignUp(low::Alignment, sizeof(u32) * count);
-    void *buffer = aligned_alloc(low::Alignment, vec_size + path_buffer_size +
-                                                     size_buffer_size);
+    void *buffer = ::aligned_alloc(low::Alignment, vec_size + path_buffer_size +
+                                                       size_buffer_size);
 
     low::IOVector *vec = static_cast<low::IOVector *>(buffer);
     char *path_buffer = static_cast<char *>(buffer) + vec_size;
     u32 *size_buffer = reinterpret_cast<u32 *>(path_buffer + path_buffer_size);
     for (u32 i = 0; i < count; ++i) {
-      strncpy(&path_buffer[i * PathSize], paths[i], PathSize);
+      ::strncpy(&path_buffer[i * PathSize], paths[i], PathSize);
       vec[i].data = &path_buffer[i * PathSize];
       vec[i].size = PathSize;
       size_buffer[i] = sizes[i];
@@ -139,7 +145,7 @@ public:
     IOSError error = static_cast<IOSError>(low::IOS_Ioctlv(
         GetHandle(), static_cast<u32>(Ioctl::CREATE_MULTIPLE_FILES), count, 0,
         vec));
-    free(buffer);
+    ::free(buffer);
     return error;
   }
 };

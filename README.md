@@ -19,7 +19,7 @@ Clone the repository and then in the repository directory, run:
 ```
 mkdir build
 cd build
-cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain-powerpc.cmake
+cmake .. -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=../toolchain-devkitppc.cmake
 cmake --build .
 ```
 

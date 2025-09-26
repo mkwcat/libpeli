@@ -13,6 +13,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#if defined(__cplusplus)
+
+namespace peli {
+
 // Value type definitions
 
 /**
@@ -65,13 +69,37 @@ typedef float f32;
  */
 typedef double f64;
 
+} // namespace peli
+
+#endif // __cplusplus
+
 // Some type-related preprocessor definitions
 
 #define _PELI_PAD(X_START, X_END) char _Pad##X_START[X_END - X_START]
 #define _PELI_PACKED __attribute__((__packed__))
 #define _PELI_PRAGMA(x) _Pragma(#x)
 
+#define _PELI_STRINGIFY_EXPANDED(...) #__VA_ARGS__
+#define _PELI_STRINGIFY(...) _PELI_STRINGIFY_EXPANDED(__VA_ARGS__)
+
 #if defined(__cplusplus)
-#define _PELI_SIZE_ASSERT(X_TYPE, X_SIZE)                                       \
+#define _PELI_SIZE_ASSERT(X_TYPE, X_SIZE)                                      \
   static_assert(sizeof(X_TYPE) == X_SIZE, #X_TYPE " size mismatch")
 #endif
+
+#if defined(__clang__)
+#define _PELI_GNU 1
+#define _PELI_CLANG_ONLY(...) __VA_ARGS__
+#define _PELI_GNU_ONLY(...)
+#elif defined(__GNUC__)
+#define _PELI_CLANG 1
+#define _PELI_CLANG_ONLY(...)
+#define _PELI_GNU_ONLY(...) __VA_ARGS__
+#else
+#define _PELI_CLANG_ONLY(...)
+#define _PELI_GNU_ONLY(...)
+#endif
+
+#define _PELI_DIAGNOSTIC(...) _PELI_PRAGMA(GCC diagnostic __VA_ARGS__)
+#define _PELI_DIAGNOSTIC_CLANG(...)                                            \
+  _PELI_CLANG_ONLY(_PELI_PRAGMA(clang diagnostic __VA_ARGS__))

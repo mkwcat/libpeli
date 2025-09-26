@@ -123,7 +123,7 @@ PELI_ASM_FUNCTION( // clang-format off
 );
 
 PELI_ASM_FUNCTION( // clang-format off
-  void stubExceptionHandler() noexcept,
+  [[maybe_unused]] void stubExceptionHandler() noexcept,
  
   // Just immediately return from the exception
   rfi;
@@ -166,11 +166,11 @@ PELI_ASM_FUNCTION( // clang-format off
   li      %r0, 0x30;
   mtsrr1  %r0;
 
-  lis     %r0, returnFromExternalInterrupt@ha;
+  lis     %r0, returnFromExternalInterrupt@h;
   ori     %r0, %r0, returnFromExternalInterrupt@l;
   mtlr    %r0;
 
-  lis     %r0, handleExternalInterrupt@ha;
+  lis     %r0, handleExternalInterrupt@h;
   ori     %r0, %r0, handleExternalInterrupt@l;
   mtsrr0  %r0;
 
@@ -243,6 +243,8 @@ PELI_ASM_FUNCTION( // clang-format off
                    // clang-format on
 );
 
+#if !defined(PELI_ENABLE_PAIRED_SINGLE)
+
 PELI_ASM_FUNCTION( // clang-format off
   void floatingPointUnavailableHandler() noexcept,
 
@@ -253,13 +255,6 @@ PELI_ASM_FUNCTION( // clang-format off
 
   lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
   stw     %r0, 0x000(%r1); // OSContext.gprs[0]
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
-  mfhid2  %r0; // OSContext.hid2
-  stw     %r3, 0x00C(%r1); // OSContext.gprs[3]
-  xoris   %r0, %r0, 0xA000; // Check HID2.LSQE and HID2.PSE
-  mfcr    %r3;
-  andis.  %r0, %r0, 0xA000;
-#endif // PELI_ENABLE_PAIRED_SINGLE
 
   // Ensure MSR is updated
   isync;
@@ -267,43 +262,6 @@ PELI_ASM_FUNCTION( // clang-format off
   lfd     %f3, 0x190(%r1); // OSContext.fpscr_pad
   mtfsf   0xFF, %f3; // Restore FPSCR
 
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
-  bnea+   0x920; // Skip to just floating point registers
-
-  psq_l   %f0, 0x1C8(%r1), 0, 0; // OSContext.psfs[0]
-  psq_l   %f1, 0x1D0(%r1), 0, 0; // OSContext.psfs[1]
-  psq_l   %f2, 0x1D8(%r1), 0, 0; // OSContext.psfs[2]
-  psq_l   %f3, 0x1E0(%r1), 0, 0; // OSContext.psfs[3]
-  psq_l   %f4, 0x1E8(%r1), 0, 0; // OSContext.psfs[4]
-  psq_l   %f5, 0x1F0(%r1), 0, 0; // OSContext.psfs[5]
-  psq_l   %f6, 0x1F8(%r1), 0, 0; // OSContext.psfs[6]
-  psq_l   %f7, 0x200(%r1), 0, 0; // OSContext.psfs[7]
-  psq_l   %f8, 0x208(%r1), 0, 0; // OSContext.psfs[8]
-  psq_l   %f9, 0x210(%r1), 0, 0; // OSContext.psfs[9]
-  psq_l   %f10, 0x218(%r1), 0, 0; // OSContext.psfs[10]
-  psq_l   %f11, 0x220(%r1), 0, 0; // OSContext.psfs[11]
-  psq_l   %f12, 0x228(%r1), 0, 0; // OSContext.psfs[12]
-  psq_l   %f13, 0x230(%r1), 0, 0; // OSContext.psfs[13]
-  psq_l   %f14, 0x238(%r1), 0, 0; // OSContext.psfs[14]
-  psq_l   %f15, 0x240(%r1), 0, 0; // OSContext.psfs[15]
-  psq_l   %f16, 0x248(%r1), 0, 0; // OSContext.psfs[16]
-  psq_l   %f17, 0x250(%r1), 0, 0; // OSContext.psfs[17]
-  psq_l   %f18, 0x258(%r1), 0, 0; // OSContext.psfs[18]
-  psq_l   %f19, 0x260(%r1), 0, 0; // OSContext.psfs[19]
-  psq_l   %f20, 0x268(%r1), 0, 0; // OSContext.psfs[20]
-  psq_l   %f21, 0x270(%r1), 0, 0; // OSContext.psfs[21]
-  psq_l   %f22, 0x278(%r1), 0, 0; // OSContext.psfs[22]
-  psq_l   %f23, 0x280(%r1), 0, 0; // OSContext.psfs[23]
-  psq_l   %f24, 0x288(%r1), 0, 0; // OSContext.psfs[24]
-  psq_l   %f25, 0x290(%r1), 0, 0; // OSContext.psfs[25]
-  psq_l   %f26, 0x298(%r1), 0, 0; // OSContext.psfs[26]
-  psq_l   %f27, 0x2A0(%r1), 0, 0; // OSContext.psfs[27]
-  psq_l   %f28, 0x2A8(%r1), 0, 0; // OSContext.psfs[28]
-  psq_l   %f29, 0x2B0(%r1), 0, 0; // OSContext.psfs[29]
-  psq_l   %f30, 0x2B8(%r1), 0, 0; // OSContext.psfs[30]
-  psq_l   %f31, 0x2C0(%r1), 0, 0; // OSContext.psfs[31]
-  ba      0x920;
-#else // if !defined(PELI_ENABLE_PAIRED_SINGLE)
   lfd     %f0, 0x090(%r1); // OSContext.fprs[0]
   lfd     %f1, 0x098(%r1); // OSContext.fprs[1]
   lfd     %f2, 0x0A0(%r1); // OSContext.fprs[2]
@@ -343,17 +301,79 @@ PELI_ASM_FUNCTION( // clang-format off
   mtsrr1  %r1; // Write back to MSR
   lwz     %r1, BACKUP_R1(0); // Restore r1
   rfi;
-#endif // !PELI_ENABLE_PAIRED_SINGLE
   .long   0; // Terminator
                    // clang-format on
 );
 
+#else // !PELI_ENABLE_PAIRED_SINGLE
+
+PELI_ASM_FUNCTION(  // clang-format off
+  void floatingPointUnavailableHandler() noexcept,
+
+  stw     %r1, BACKUP_R1(0); // Backup r1
+  // Enable floating-point
+  li      %r1, 0x2000; // MSR.FP
+  mtmsr   %r1;
+
+  lwz     %r1, RM_CURRENT_CONTEXT(0); // r1 = Current context in real mode
+  stw     %r0, 0x000(%r1); // OSContext.gprs[0]
+
+  mfhid2  %r0; // OSContext.hid2
+  stw     %r3, 0x00C(%r1); // OSContext.gprs[3]
+  xoris   %r0, %r0, 0xA000; // Check HID2.LSQE and HID2.PSE
+  mfcr    %r3;
+  andis.  %r0, %r0, 0xA000;
+
+  // Ensure MSR is updated
+  isync;
+  // Restore FPSCR
+  lfd     %f3, 0x190(%r1); // OSContext.fpscr_pad
+  mtfsf   0xFF, %f3; // Restore FPSCR
+
+  bnea+   0x920; // Skip to just floating point registers
+
+  psq_l   %f0, 0x1C8(%r1), 0, 0; // OSContext.psfs[0]
+  psq_l   %f1, 0x1D0(%r1), 0, 0; // OSContext.psfs[1]
+  psq_l   %f2, 0x1D8(%r1), 0, 0; // OSContext.psfs[2]
+  psq_l   %f3, 0x1E0(%r1), 0, 0; // OSContext.psfs[3]
+  psq_l   %f4, 0x1E8(%r1), 0, 0; // OSContext.psfs[4]
+  psq_l   %f5, 0x1F0(%r1), 0, 0; // OSContext.psfs[5]
+  psq_l   %f6, 0x1F8(%r1), 0, 0; // OSContext.psfs[6]
+  psq_l   %f7, 0x200(%r1), 0, 0; // OSContext.psfs[7]
+  psq_l   %f8, 0x208(%r1), 0, 0; // OSContext.psfs[8]
+  psq_l   %f9, 0x210(%r1), 0, 0; // OSContext.psfs[9]
+  psq_l   %f10, 0x218(%r1), 0, 0; // OSContext.psfs[10]
+  psq_l   %f11, 0x220(%r1), 0, 0; // OSContext.psfs[11]
+  psq_l   %f12, 0x228(%r1), 0, 0; // OSContext.psfs[12]
+  psq_l   %f13, 0x230(%r1), 0, 0; // OSContext.psfs[13]
+  psq_l   %f14, 0x238(%r1), 0, 0; // OSContext.psfs[14]
+  psq_l   %f15, 0x240(%r1), 0, 0; // OSContext.psfs[15]
+  psq_l   %f16, 0x248(%r1), 0, 0; // OSContext.psfs[16]
+  psq_l   %f17, 0x250(%r1), 0, 0; // OSContext.psfs[17]
+  psq_l   %f18, 0x258(%r1), 0, 0; // OSContext.psfs[18]
+  psq_l   %f19, 0x260(%r1), 0, 0; // OSContext.psfs[19]
+  psq_l   %f20, 0x268(%r1), 0, 0; // OSContext.psfs[20]
+  psq_l   %f21, 0x270(%r1), 0, 0; // OSContext.psfs[21]
+  psq_l   %f22, 0x278(%r1), 0, 0; // OSContext.psfs[22]
+  psq_l   %f23, 0x280(%r1), 0, 0; // OSContext.psfs[23]
+  psq_l   %f24, 0x288(%r1), 0, 0; // OSContext.psfs[24]
+  psq_l   %f25, 0x290(%r1), 0, 0; // OSContext.psfs[25]
+  psq_l   %f26, 0x298(%r1), 0, 0; // OSContext.psfs[26]
+  psq_l   %f27, 0x2A0(%r1), 0, 0; // OSContext.psfs[27]
+  psq_l   %f28, 0x2A8(%r1), 0, 0; // OSContext.psfs[28]
+  psq_l   %f29, 0x2B0(%r1), 0, 0; // OSContext.psfs[29]
+  psq_l   %f30, 0x2B8(%r1), 0, 0; // OSContext.psfs[30]
+  psq_l   %f31, 0x2C0(%r1), 0, 0; // OSContext.psfs[31]
+  ba      0x920;
+  .long   0; // Terminator
+                    // clang-format on
+);
+
 PELI_ASM_FUNCTION( // clang-format off
-  void decrementerInterruptHandler() noexcept,
+  void decrementerInterruptHandlerWithFloatLoad() noexcept,
 
   // Return from interrupt immediately
   rfi;
-#if defined(PELI_ENABLE_PAIRED_SINGLE)
   // Align to 32-bit boundary
   nop;
   nop;
@@ -406,10 +426,11 @@ PELI_ASM_FUNCTION( // clang-format off
   mtsrr1  %r1; // Write back to MSR
   lwz     %r1, BACKUP_R1(0); // Restore r1
   rfi;
-#endif // PELI_ENABLE_PAIRED_SINGLE
   .long   0; // Terminator
                    // clang-format on
 );
+
+#endif // PELI_ENABLE_PAIRED_SINGLE
 
 extern "C" ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr,
                                                  u32 lr, u32 srr0, u32 srr1,
@@ -464,12 +485,13 @@ void handleIrq(hw::IntCause, ppc::Context *context) {
   }
 }
 
-void writeFunctionToVector(peli::ppc::Exception type, u32 *function) {
+void writeFunctionToVector(peli::ppc::Exception type, void (*function)()) {
+  u32 *instructions = reinterpret_cast<u32 *>(function);
   u32 *vector = peli::ppc::GetExceptionVectorAddress(type);
   if (vector) {
     ppc::Cache::DcZero(vector, 64 * sizeof(u32));
-    for (std::size_t i = 0; i < 64 && function[i]; i++) {
-      u32 instruction = function[i];
+    for (std::size_t i = 0; i < 64 && instructions[i]; i++) {
+      u32 instruction = instructions[i];
       if (instruction == 0x3860DEADu) {
         // li r3, 0xDEAD -> li r3, exception_type
         instruction = 0x38600000u | static_cast<u32>(type);
@@ -668,26 +690,30 @@ void InitExceptions() noexcept {
            ppc::Exception::Reserved,
            ppc::Exception::ThermalManagement,
        }) {
-    writeFunctionToVector(type, reinterpret_cast<u32 *>(panicExceptionVector));
+    writeFunctionToVector(type, panicExceptionVector);
   }
 
   // Write the external interrupt vector
   writeFunctionToVector(ppc::Exception::ExternalInterrupt,
-                        reinterpret_cast<u32 *>(externalInterruptVector));
+                        externalInterruptVector);
 
   // Stub the decrementer exception handler - it's not used
+
   writeFunctionToVector(ppc::Exception::Decrementer,
-                        reinterpret_cast<u32 *>(decrementerInterruptHandler));
+#if defined(PELI_ENABLE_FLOAT) && defined(PELI_ENABLE_PAIRED_SINGLE)
+                        decrementerInterruptHandlerWithFloatLoad
+#else
+                        stubExceptionHandler
+#endif
+  );
 
   // Write the system call handler
-  writeFunctionToVector(ppc::Exception::SystemCall,
-                        reinterpret_cast<u32 *>(systemCallHandler));
+  writeFunctionToVector(ppc::Exception::SystemCall, systemCallHandler);
 
 #if defined(PELI_ENABLE_FLOAT)
   // Write the floating-point unavailable handler
-  writeFunctionToVector(
-      ppc::Exception::FloatingPointUnavailable,
-      reinterpret_cast<u32 *>(floatingPointUnavailableHandler));
+  writeFunctionToVector(ppc::Exception::FloatingPointUnavailable,
+                        floatingPointUnavailableHandler);
 #endif // PELI_ENABLE_FLOAT
 
   ppc::SyncBroadcast();

@@ -104,7 +104,7 @@ s32 IOS_ReadAsync(s32 fd, void *data, s32 size,
 s32 IOS_WriteAsync(s32 fd, void *data, s32 size,
                    host::MessageQueue<IPCCommandBlock *> &queue,
                    IPCCommandBlock *block) noexcept;
-s32 IOS_SeekAsync(s32 fd, s64 where, u32 whence,
+s32 IOS_SeekAsync(s32 fd, s32 where, s32 whence,
                   host::MessageQueue<IPCCommandBlock *> &queue,
                   IPCCommandBlock *block) noexcept;
 s32 IOS_IoctlAsync(s32 fd, u32 cmd, void *in, u32 in_size, void *out,

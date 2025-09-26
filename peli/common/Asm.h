@@ -8,16 +8,14 @@
 
 #include "Types.h"
 
-#define _PELI_ASM_EVAL2(...) __asm__(#__VA_ARGS__)
-#define _PELI_ASM_EVAL(...) _PELI_ASM_EVAL2(__VA_ARGS__)
+#define PELI_ASM(...) __asm__(_PELI_STRINGIFY(__VA_ARGS__))
 
-#define PELI_ASM(...) _PELI_ASM_EVAL(__VA_ARGS__)
-
-#define PELI_ASM_FUNCTION(X_PROTOTYPE, ...)                                     \
-  _PELI_PRAGMA(GCC diagnostic push)                                             \
-  _PELI_PRAGMA(GCC diagnostic ignored "-Wunused-parameter")                     \
+#define PELI_ASM_FUNCTION(X_PROTOTYPE, ...)                                    \
+  _PELI_DIAGNOSTIC(push)                                                       \
+  _PELI_DIAGNOSTIC(ignored "-Wunused-parameter")                               \
+  _PELI_DIAGNOSTIC_CLANG(ignored "-Wunknown-attributes")                       \
   [[__gnu__::__optimize__("Os")]] X_PROTOTYPE {                                \
-    PELI_ASM(__VA_ARGS__);                                                      \
+    PELI_ASM(__VA_ARGS__);                                                     \
     __builtin_unreachable();                                                   \
   }                                                                            \
-  _PELI_PRAGMA(GCC diagnostic pop)
+  _PELI_DIAGNOSTIC(pop)

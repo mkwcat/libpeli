@@ -2,6 +2,7 @@
 
 #include "../common/Types.h"
 #include "../util/Address.hpp"
+#include "../util/Concept.hpp"
 #include "Request.hpp"
 #include "low/Ipc.hpp"
 #include <cstddef>
@@ -10,23 +11,7 @@
 
 namespace peli::ios {
 
-namespace detail {
-
-template <class T, class U>
-concept IsConvertibleTo = __is_nothrow_convertible(T, U);
-
-template <class T>
-concept StandardArrayType = requires(T t) {
-  { t.size() } -> IsConvertibleTo<size_t>;
-  { t.data() } -> IsConvertibleTo<const void *>;
-};
-
-template <class T>
-concept IoctlType = __is_enum(T);
-
-} // namespace detail
-
-template <detail::IoctlType TIoctlCmdType> class Interface {
+template <util::EnumType TIoctlCmdType> class Interface {
 public:
   using IoctlCmdType = TIoctlCmdType;
   using IosInterfaceType = Interface<TIoctlCmdType>;
@@ -51,8 +36,9 @@ public:
   struct InOutOrdered<In<TTypes1...>, Out<TTypes2...>> {
     using InType = In<TTypes1...>;
     using OutType = Out<TTypes2...>;
-    using Vector = Vector<false, sizeof...(TTypes1), sizeof...(TTypes2), 0,
-                          TTypes1..., TTypes2...>;
+    using Vector = Interface<TIoctlCmdType>::Vector<false, sizeof...(TTypes1),
+                                                    sizeof...(TTypes2), 0,
+                                                    TTypes1..., TTypes2...>;
     static constexpr bool Reversed = false;
   };
 
@@ -60,12 +46,25 @@ public:
   struct InOutOrdered<Out<TTypes1...>, Out<TTypes2...>> {
     using InType = In<TTypes2...>;
     using OutType = Out<TTypes1...>;
-    using Vector = Vector<true, sizeof...(TTypes2), sizeof...(TTypes1), 0,
-                          TTypes2..., TTypes2...>;
+    using Vector = Interface<TIoctlCmdType>::Vector<true, sizeof...(TTypes2),
+                                                    sizeof...(TTypes1), 0,
+                                                    TTypes2..., TTypes2...>;
     static constexpr bool Reversed = true;
   };
 
 protected:
+  template <size_t TVectorCount> struct LowVectors {
+    alignas(low::Alignment) low::IOVector m_vectors[TVectorCount];
+
+    constexpr low::IOVector *Vectors() { return m_vectors; }
+  };
+
+  template <size_t TVectorCount>
+    requires(TVectorCount == 0)
+  struct LowVectors<TVectorCount> {
+    constexpr low::IOVector *Vectors() { return nullptr; }
+  };
+
   template <bool TReversed, size_t TInCount, size_t TOutCount,
             size_t TOutPtrCount, class...>
   struct Vector {
@@ -81,13 +80,13 @@ protected:
                      const TDefaults &...) noexcept {
       m_v_stack_ptr =
           alloc_size > 0
-              ? static_cast<u8 *>(aligned_alloc(low::Alignment, alloc_size))
+              ? static_cast<u8 *>(::aligned_alloc(low::Alignment, alloc_size))
               : nullptr;
     }
 
     constexpr ~Vector() noexcept {
       if (m_v_stack_ptr) {
-        free(m_v_stack_ptr);
+        ::free(m_v_stack_ptr);
       }
     }
 
@@ -166,7 +165,7 @@ protected:
       vec[VecIndex].data = const_cast<TThis *>(value);
       if constexpr (__is_same_as(TThis, const char)) {
         // Treat const char* as a null-terminated string
-        vec[VecIndex].size = strlen(value) + 1;
+        vec[VecIndex].size = ::strlen(value) + 1;
       } else {
         vec[VecIndex].size = sizeof(TThis);
       }
@@ -307,7 +306,7 @@ protected:
                      const char *const value, const TDefaults &...defaults)
       requires(IsInput && isArrayOf<char>())
         : Base(alloc_size, vec, defaults...) {
-      strncpy(m_this, value, sizeof(TThis) - 1);
+      ::strncpy(m_this, value, sizeof(TThis) - 1);
       m_this[sizeof(TThis) - 1] = '\0'; // Ensure null-termination
       vec[VecIndex].data = m_this;
       vec[VecIndex].size = sizeof(TThis);
@@ -383,40 +382,53 @@ public:
     static constexpr bool Reversed = OrderedTypes::Reversed;
 
     class Request : public ios::Request {
-      void sendRequest(s32 fd, const low::IOVector (&vectors)[2]) noexcept {
+      void sendRequest(s32 fd, const low::IOVector *vectors) noexcept {
         static constexpr int swap = (!Reversed && sizeof...(TInTypes) == 0) ||
                                     (Reversed && sizeof...(TOutTypes) == 0);
 
-        low::IOS_IoctlAsync(fd, TCmd, vectors[swap].data, vectors[swap].size,
-                            vectors[swap ^ 1].data, vectors[swap ^ 1].size,
-                            &m_queue, &m_cmd_block);
+        low::IOS_IoctlAsync(fd, static_cast<u32>(TCmd), vectors[swap].data,
+                            vectors[swap].size, vectors[swap ^ 1].data,
+                            vectors[swap ^ 1].size, m_queue, &m_cmd_block);
       }
 
     private:
       using TempVector = low::IOVector[2];
 
       Request(TempVector vectors, s32 fd) noexcept
-        requires(sizeof...(TInTypes) == 0 && sizeof...(TOutTypes) == 0)
+        requires(sizeof...(TInTypes) == 0 &&
+                 (sizeof...(TOutTypes) == 0 ||
+                  OrderedTypes::Vector::OutPtrCount == 0))
           : m_stack(0, vectors) {
         sendRequest(fd, vectors);
       }
 
       Request(TempVector vectors, s32 fd, auto in) noexcept
-        requires(sizeof...(TInTypes) > 0)
+        requires(sizeof...(TInTypes) > 0 &&
+                 (sizeof...(TOutTypes) == 0 ||
+                  OrderedTypes::Vector::OutPtrCount == 0))
           : m_stack(0, vectors, in) {
         sendRequest(fd, vectors);
       }
 
       Request(TempVector vectors, s32 fd, auto in, auto out) noexcept
-        requires(sizeof...(TInTypes) > 0)
+        requires(sizeof...(TInTypes) > 0 && sizeof...(TOutTypes) > 0 &&
+                 OrderedTypes::Vector::OutPtrCount == 1)
           : m_stack(0, vectors, in, out) {
         sendRequest(fd, vectors);
       }
 
+      Request(TempVector vectors, s32 fd, auto out) noexcept
+        requires(sizeof...(TInTypes) == 0 && sizeof...(TOutTypes) > 0 &&
+                 OrderedTypes::Vector::OutPtrCount == 1)
+          : m_stack(0, vectors, out) {
+        sendRequest(fd, vectors);
+      }
+
     public:
-      Request(s32 fd) : Request(TempVector{}, fd) {}
-      Request(s32 fd, auto in) : Request(TempVector{}, fd, in) {}
-      Request(s32 fd, auto in, auto out) : Request(TempVector{}, fd, in, out) {}
+      constexpr Request(s32 fd) : Request(TempVector{}, fd) {}
+      constexpr Request(s32 fd, auto in) : Request(TempVector{}, fd, in) {}
+      constexpr Request(s32 fd, auto in, auto out)
+          : Request(TempVector{}, fd, in, out) {}
 
       Request &Sync() noexcept {
         return static_cast<Request &>(ios::Request::Sync());
@@ -522,16 +534,6 @@ public:
       }
 
     private:
-      template <size_t TVectorCount> struct LowVectors {
-        alignas(low::Alignment) low::IOVector m_vectors[TVectorCount];
-
-        constexpr low::IOVector *Vectors() { return m_vectors; }
-      };
-
-      template <> struct LowVectors<0> {
-        constexpr low::IOVector *Vectors() { return nullptr; }
-      };
-
       LowVectors<sizeof...(TInTypes) + sizeof...(TOutTypes)> m_vectors;
       typename OrderedTypes::Vector m_stack;
     };

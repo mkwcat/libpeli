@@ -20,6 +20,10 @@ public:
 
   ~File() noexcept = default;
 
+  static constexpr File FromRequest(const Request &request) noexcept {
+    return request.GetFd();
+  }
+
   using Resource::GetHandle;
   using Resource::IsValid;
   using Resource::Read;

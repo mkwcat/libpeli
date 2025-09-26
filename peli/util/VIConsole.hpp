@@ -75,6 +75,17 @@ public:
   VIConsole(Share *share) noexcept;
 
   /**
+   * Set the alignment width of the TAB character. Does not apply retroactively
+   * to previously printed text. Must be between 1 and 16.
+   */
+  void SetTabWidth(u8 width) noexcept;
+
+  /**
+   * Get the current TAB alignment width.
+   */
+  u8 GetTabWidth() const noexcept;
+
+  /**
    * Get the width of the console framebuffer.
    */
   u16 GetXfbWidth() const noexcept;
