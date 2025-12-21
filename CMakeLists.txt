@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
+include(toolchain-devkitppc.cmake)
+
 project(peli LANGUAGES C CXX ASM)
 
 include_directories(peli/..)
@@ -14,6 +16,7 @@ add_library(peli STATIC ${SOURCE_FILES})
 target_compile_options(peli PRIVATE
     ${MACHDEP}
 
+    -g
     -Wall
     -Wextra
     -Wpedantic

@@ -12,8 +12,8 @@
 namespace peli::ppc {
 
 struct BatBits {
-  static constexpr int ADDRESS_SHIFT = 17;
-  static constexpr u32 MIN_SIZE = 0x20000;
+  static constexpr int AddressShift = 17;
+  static constexpr u32 MinSize = 0x20000;
 
   struct Up {
     /* 0-14 */ u32 BEPI : 15 = 0;
@@ -105,253 +105,268 @@ inline void BatClearAll() {
   Sync();
 }
 
-/**
- * Configure the BATs (Block Address Translation) to their standard values.
- * Expects to be called in real mode.
- */
-inline void BatConfig(u32 mem1Size, u32 mem2Size,
-                      [[maybe_unused]] bool lockedCache, bool allowExecInMem2,
-                      bool allowExecInUncached) noexcept {
-  // Clear old BATs
-  BatClearAll();
+struct BatConfig {
+  BatBits m_ibat[8];
+  BatBits m_dbat[8];
 
-  const auto bit_floor = [](u32 value) -> u32 {
-    if (value == 0) {
-      return 0;
-    }
+  constexpr BatConfig() = default;
 
-    return 1u << (31 - __builtin_clz(value));
-  };
-
-  const auto bit_ceil = [](u32 value) -> u32 {
-    if (value == 0 || value == 1) {
-      return 1;
-    }
-
-    return 1u << (32 - __builtin_clz(value - 1));
-  };
-
-  // Adjust to the minimum size we can expect, in case the caller expects more
-  // than the allocated number of blocks.
-  const auto adjust_block_size = [bit_floor](u32 size, int count) -> u32 {
-    u32 corrected = 0, lastBit = 0, floored;
-
-    for (int i = 0;
-         (floored = bit_floor(size & (lastBit - 1))) >= BatBits::MIN_SIZE &&
-         i < count;
-         i++) {
-      lastBit = floored;
-      corrected |= floored;
-    }
-
-    if (floored != 0) {
-      corrected += lastBit;
-    }
-
-    return corrected;
-  };
-
-  if (mem1Size >= BatBits::MIN_SIZE) {
-    // Create up to 2 blocks for MEM1
-    mem1Size = adjust_block_size(mem1Size, 2);
-    u32 blockSize = bit_floor(mem1Size);
-
-    // BAT0 - MEM1 Cached
-    const BatBits B0Mem1Cached = {
-        {
-            .BEPI = 0x80000000 >> BatBits::ADDRESS_SHIFT,
-            .BL = (blockSize - 1) >> BatBits::ADDRESS_SHIFT,
-            .VS = 1,
-            .VP = 1,
-        },
-        {
-            .BRPN = 0x00000000 >> BatBits::ADDRESS_SHIFT,
-            .WIMG = 0b0000,
-            .PP = 2,
-        },
-    };
-
-    IBat0L::MoveTo(B0Mem1Cached.lo);
-    IBat0U::MoveTo(B0Mem1Cached.up);
-    ISync();
-    DBat0L::MoveTo(B0Mem1Cached.lo);
-    DBat0U::MoveTo(B0Mem1Cached.up);
-    ISync();
-    Sync();
-
-    // BAT1 - MEM1 Uncached and Hardware Interfaces
-    // This is always 256 MB
-    const BatBits B1Mem1Uncached = {
-        {
-            .BEPI = 0xC0000000 >> BatBits::ADDRESS_SHIFT,
-            .BL = 0x0FFFFFFF >> BatBits::ADDRESS_SHIFT,
-            .VS = 1,
-            .VP = 1,
-        },
-        {
-            .BRPN = 0x00000000 >> BatBits::ADDRESS_SHIFT,
-            .WIMG = 0b0101,
-            .PP = 2,
-        },
-    };
-
-    if (allowExecInUncached) {
-      IBat1L::MoveTo(B1Mem1Uncached.lo);
-      IBat1U::MoveTo(B1Mem1Uncached.up);
-      ISync();
-    }
-    DBat1L::MoveTo(B1Mem1Uncached.lo);
-    DBat1U::MoveTo(B1Mem1Uncached.up);
-    ISync();
-    Sync();
-
-    // Extend MEM1 to an extra bit of size
-    u32 blockAddress = blockSize;
-    blockSize = bit_floor(mem1Size & (blockSize - 1));
-
-    if (blockSize >= BatBits::MIN_SIZE) {
-      // BAT2 - Extra MEM1 Cached
-      const BatBits B2Mem1CachedEx = {
-          {
-              .BEPI = (0x80000000 + blockAddress) >> BatBits::ADDRESS_SHIFT,
-              .BL = (blockSize - 1) >> BatBits::ADDRESS_SHIFT,
-              .VS = 1,
-              .VP = 1,
-          },
-          {
-              .BRPN = blockAddress >> BatBits::ADDRESS_SHIFT,
-              .WIMG = 0b0000,
-              .PP = 2,
-          },
-      };
-
-      IBat2L::MoveTo(B2Mem1CachedEx.lo);
-      IBat2U::MoveTo(B2Mem1CachedEx.up);
-      ISync();
-      DBat2L::MoveTo(B2Mem1CachedEx.lo);
-      DBat2U::MoveTo(B2Mem1CachedEx.up);
-      ISync();
-      Sync();
-    }
-  }
-
-  if (mem2Size >= BatBits::MIN_SIZE) {
-    // Create up to 3 blocks for MEM2
-    mem2Size = adjust_block_size(mem2Size, 3);
-    u32 blockSize = bit_floor(mem2Size);
-
-    // BAT4 - MEM2 Cached
-    const BatBits B4Mem2Cached = {
-        {
-            .BEPI = 0x90000000 >> BatBits::ADDRESS_SHIFT,
-            .BL = (blockSize - 1) >> BatBits::ADDRESS_SHIFT,
-            .VS = 1,
-            .VP = 1,
-        },
-        {
-            .BRPN = 0x10000000 >> BatBits::ADDRESS_SHIFT,
-            .WIMG = 0b0000,
-            .PP = 2,
-        },
-    };
-
-    if (allowExecInMem2) {
-      IBat4L::MoveTo(B4Mem2Cached.lo);
-      IBat4U::MoveTo(B4Mem2Cached.up);
-      ISync();
-    }
-    DBat4L::MoveTo(B4Mem2Cached.lo);
-    DBat4U::MoveTo(B4Mem2Cached.up);
-    ISync();
-    Sync();
-
-    // BAT5 - MEM2 Uncached
-    // Always rounded up to power of two.
-    const BatBits B5Mem2Uncached = {
-        {
-            .BEPI = 0xD0000000 >> BatBits::ADDRESS_SHIFT,
-            .BL = (bit_ceil(mem2Size) - 1) >> BatBits::ADDRESS_SHIFT,
-            .VS = 1,
-            .VP = 1,
-        },
-        {
-            .BRPN = 0x10000000 >> BatBits::ADDRESS_SHIFT,
-            .WIMG = 0b0101,
-            .PP = 2,
-        },
-    };
-
-    if (allowExecInUncached && allowExecInMem2) {
-      IBat5L::MoveTo(B5Mem2Uncached.lo);
-      IBat5U::MoveTo(B5Mem2Uncached.up);
-      ISync();
-    }
-    DBat5L::MoveTo(B5Mem2Uncached.lo);
-    DBat5U::MoveTo(B5Mem2Uncached.up);
-    ISync();
-    Sync();
-
-    // Extend MEM2 to another bit of size
-    u32 blockAddress = blockSize;
-    blockSize = bit_floor(mem2Size & (blockSize - 1));
-
-    if (blockSize >= BatBits::MIN_SIZE) {
-      // BAT6 - MEM2 Cached Block 2
-      const BatBits B6Mem2Cached = {
-          {
-              .BEPI = (0x90000000 + blockAddress) >> BatBits::ADDRESS_SHIFT,
-              .BL = (blockSize - 1) >> BatBits::ADDRESS_SHIFT,
-              .VS = 1,
-              .VP = 1,
-          },
-          {
-              .BRPN = (0x10000000 + blockAddress) >> BatBits::ADDRESS_SHIFT,
-              .WIMG = 0b0000,
-              .PP = 2,
-          },
-      };
-
-      if (allowExecInMem2) {
-        IBat6L::MoveTo(B6Mem2Cached.lo);
-        IBat6U::MoveTo(B6Mem2Cached.up);
-        ISync();
+  constexpr BatConfig(u32 mem1_size, u32 mem2_size,
+                      [[maybe_unused]] bool locked_cache,
+                      bool allow_exec_in_mem2,
+                      bool allow_exec_in_uncached) noexcept {
+    const auto bit_floor = [](u32 value) constexpr -> u32 {
+      if (value == 0) {
+        return 0;
       }
-      DBat6L::MoveTo(B6Mem2Cached.lo);
-      DBat6U::MoveTo(B6Mem2Cached.up);
-      ISync();
-      Sync();
 
-      // And then another bit
-      blockAddress = blockAddress | blockSize;
-      blockSize = bit_floor(mem2Size & (blockSize - 1));
+      return 1u << (31 - __builtin_clz(value));
+    };
+    const auto bit_ceil = [](u32 value) constexpr -> u32 {
+      if (value == 0 || value == 1) {
+        return 1;
+      }
 
-      if (blockSize >= BatBits::MIN_SIZE) {
-        const BatBits B7Mem2Cached = {
+      return 1u << (32 - __builtin_clz(value - 1));
+    };
+
+    // Adjust to the minimum size we can expect, in case the caller expects more
+    // than the allocated number of blocks.
+    const auto adjust_block_size = [bit_floor](u32 size,
+                                               int count) constexpr -> u32 {
+      u32 corrected = 0, last_bit = 0, floored;
+
+      for (int i = 0;
+           (floored = bit_floor(size & (last_bit - 1))) >= BatBits::MinSize &&
+           i < count;
+           i++) {
+        last_bit = floored;
+        corrected |= floored;
+      }
+
+      if (floored != 0) {
+        corrected += last_bit;
+      }
+
+      return corrected;
+    };
+
+    if (mem1_size >= BatBits::MinSize) {
+      // Create up to 2 blocks for MEM1
+      mem1_size = adjust_block_size(mem1_size, 2);
+      u32 block_size = bit_floor(mem1_size);
+
+      // BAT0 - MEM1 Cached
+      m_dbat[0] = m_ibat[0] = {
+          {
+              .BEPI = 0x80000000 >> BatBits::AddressShift,
+              .BL = (block_size - 1) >> BatBits::AddressShift,
+              .VS = 1,
+              .VP = 1,
+          },
+          {
+              .BRPN = 0x00000000 >> BatBits::AddressShift,
+              .WIMG = 0b0000,
+              .PP = 2,
+          },
+      };
+
+      // BAT1 - MEM1 Uncached and Hardware Interfaces
+      // This is always 256 MB
+      m_dbat[1] = {
+          {
+              .BEPI = 0xC0000000 >> BatBits::AddressShift,
+              .BL = 0x0FFFFFFF >> BatBits::AddressShift,
+              .VS = 1,
+              .VP = 1,
+          },
+          {
+              .BRPN = 0x00000000 >> BatBits::AddressShift,
+              .WIMG = 0b0101,
+              .PP = 2,
+          },
+      };
+
+      if (allow_exec_in_uncached) {
+        m_ibat[1] = m_dbat[1];
+      }
+
+      // Extend MEM1 to an extra bit of size
+      u32 block_address = block_size;
+      block_size = bit_floor(mem1_size & (block_size - 1));
+
+      if (block_size >= BatBits::MinSize) {
+        // BAT2 - Extra MEM1 Cached
+        m_dbat[2] = m_ibat[2] = {
             {
-                .BEPI = (0x90000000 + blockAddress) >> BatBits::ADDRESS_SHIFT,
-                .BL = (blockSize - 1) >> BatBits::ADDRESS_SHIFT,
+                .BEPI = (0x80000000 + block_address) >> BatBits::AddressShift,
+                .BL = (block_size - 1) >> BatBits::AddressShift,
                 .VS = 1,
                 .VP = 1,
             },
             {
-                .BRPN = (0x10000000 + blockAddress) >> BatBits::ADDRESS_SHIFT,
+                .BRPN = block_address >> BatBits::AddressShift,
+                .WIMG = 0b0000,
+                .PP = 2,
+            },
+        };
+      }
+    }
+
+    if (mem2_size >= BatBits::MinSize) {
+      // Create up to 3 blocks for MEM2
+      mem2_size = adjust_block_size(mem2_size, 3);
+      u32 block_size = bit_floor(mem2_size);
+
+      // BAT4 - MEM2 Cached
+      m_dbat[4] = {
+          {
+              .BEPI = 0x90000000 >> BatBits::AddressShift,
+              .BL = (block_size - 1) >> BatBits::AddressShift,
+              .VS = 1,
+              .VP = 1,
+          },
+          {
+              .BRPN = 0x10000000 >> BatBits::AddressShift,
+              .WIMG = 0b0000,
+              .PP = 2,
+          },
+      };
+
+      if (allow_exec_in_mem2) {
+        m_ibat[4] = m_dbat[4];
+      }
+
+      // BAT5 - MEM2 Uncached
+      // Always rounded up to power of two.
+      m_dbat[5] = {
+          {
+              .BEPI = 0xD0000000 >> BatBits::AddressShift,
+              .BL = (bit_ceil(mem2_size) - 1) >> BatBits::AddressShift,
+              .VS = 1,
+              .VP = 1,
+          },
+          {
+              .BRPN = 0x10000000 >> BatBits::AddressShift,
+              .WIMG = 0b0101,
+              .PP = 2,
+          },
+      };
+
+      if (allow_exec_in_uncached && allow_exec_in_mem2) {
+        m_ibat[5] = m_dbat[5];
+      }
+
+      // Extend MEM2 to another bit of size
+      u32 block_address = block_size;
+      block_size = bit_floor(mem2_size & (block_size - 1));
+
+      if (block_size >= BatBits::MinSize) {
+        // BAT6 - MEM2 Cached Block 2
+        m_dbat[6] = {
+            {
+                .BEPI = (0x90000000 + block_address) >> BatBits::AddressShift,
+                .BL = (block_size - 1) >> BatBits::AddressShift,
+                .VS = 1,
+                .VP = 1,
+            },
+            {
+                .BRPN = (0x10000000 + block_address) >> BatBits::AddressShift,
                 .WIMG = 0b0000,
                 .PP = 2,
             },
         };
 
-        if (allowExecInMem2) {
-          IBat7L::MoveTo(B7Mem2Cached.lo);
-          IBat7U::MoveTo(B7Mem2Cached.up);
-          ISync();
+        if (allow_exec_in_mem2) {
+          m_ibat[6] = m_dbat[6];
         }
-        DBat7L::MoveTo(B7Mem2Cached.lo);
-        DBat7U::MoveTo(B7Mem2Cached.up);
-        ISync();
-        Sync();
+
+        // And then another bit
+        block_address = block_address | block_size;
+        block_size = bit_floor(mem2_size & (block_size - 1));
+
+        if (block_size >= BatBits::MinSize) {
+          m_dbat[7] = {
+              {
+                  .BEPI = (0x90000000 + block_address) >> BatBits::AddressShift,
+                  .BL = (block_size - 1) >> BatBits::AddressShift,
+                  .VS = 1,
+                  .VP = 1,
+              },
+              {
+                  .BRPN = (0x10000000 + block_address) >> BatBits::AddressShift,
+                  .WIMG = 0b0000,
+                  .PP = 2,
+              },
+          };
+
+          if (allow_exec_in_mem2) {
+            m_ibat[7] = m_dbat[7];
+          }
+        }
       }
     }
   }
+
+  constexpr u32 Upper(bool data, int index) const {
+    return __builtin_bit_cast(u32, data ? m_dbat[index].up : m_ibat[index].up);
+  }
+  constexpr u32 Lower(bool data, int index) const {
+    return __builtin_bit_cast(u32, data ? m_dbat[index].lo : m_ibat[index].lo);
+  }
+};
+
+template <BatConfig C>
+[[gnu::optimize("-Os")]] [[gnu::optimize("-fno-schedule-insns")]]
+inline void ConfigureBats() {
+  DBat0L::MoveTo(C.Lower(true, 0));
+  DBat0U::MoveTo(C.Upper(true, 0));
+  ISync();
+  IBat0L::MoveTo(C.Lower(false, 0));
+  IBat0U::MoveTo(C.Upper(false, 0));
+  ISync();
+  DBat1L::MoveTo(C.Lower(true, 1));
+  DBat1U::MoveTo(C.Upper(true, 1));
+  ISync();
+  IBat1L::MoveTo(C.Lower(false, 1));
+  IBat1U::MoveTo(C.Upper(false, 1));
+  ISync();
+  DBat2L::MoveTo(C.Lower(true, 2));
+  DBat2U::MoveTo(C.Upper(true, 2));
+  ISync();
+  IBat2L::MoveTo(C.Lower(false, 2));
+  IBat2U::MoveTo(C.Upper(false, 2));
+  ISync();
+  DBat3L::MoveTo(C.Lower(true, 3));
+  DBat3U::MoveTo(C.Upper(true, 3));
+  ISync();
+  IBat3L::MoveTo(C.Lower(false, 3));
+  IBat3U::MoveTo(C.Upper(false, 3));
+  ISync();
+  DBat4L::MoveTo(C.Lower(true, 4));
+  DBat4U::MoveTo(C.Upper(true, 4));
+  ISync();
+  IBat4L::MoveTo(C.Lower(false, 4));
+  IBat4U::MoveTo(C.Upper(false, 4));
+  ISync();
+  DBat5L::MoveTo(C.Lower(true, 5));
+  DBat5U::MoveTo(C.Upper(true, 5));
+  ISync();
+  IBat5L::MoveTo(C.Lower(false, 5));
+  IBat5U::MoveTo(C.Upper(false, 5));
+  ISync();
+  DBat6L::MoveTo(C.Lower(true, 6));
+  DBat6U::MoveTo(C.Upper(true, 6));
+  ISync();
+  IBat6L::MoveTo(C.Lower(false, 6));
+  IBat6U::MoveTo(C.Upper(false, 6));
+  ISync();
+  DBat7L::MoveTo(C.Lower(true, 7));
+  DBat7U::MoveTo(C.Upper(true, 7));
+  ISync();
+  IBat7L::MoveTo(C.Lower(false, 7));
+  IBat7U::MoveTo(C.Upper(false, 7));
+  ISync();
 }
 
 } // namespace peli::ppc

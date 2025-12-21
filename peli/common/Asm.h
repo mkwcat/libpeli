@@ -11,11 +11,11 @@
 #define _PELI_ASM_EVAL_ARGS2(...) __VA_ARGS__
 #define _PELI_ASM_EVAL_ARGS(...) _PELI_ASM_EVAL_ARGS2(__VA_ARGS__)
 
-#define PELI_ASM(...) __asm__(_PELI_STRINGIFY(__VA_ARGS__))
+#define PELI_ASM(...) (_PELI_STRINGIFY(__VA_ARGS__))
 
 #define PELI_ASM_EXTENDED(X_ARGS, ...)                                         \
-  __asm__(_PELI_STRINGIFY(__VA_ARGS__)                                         \
-          : _PELI_ASM_EVAL_ARGS(_PELI_ASM_EVAL_ARGS2 X_ARGS))
+  (_PELI_STRINGIFY(__VA_ARGS__) : _PELI_ASM_EVAL_ARGS(                         \
+      _PELI_ASM_EVAL_ARGS2 X_ARGS))
 
 #define PELI_ASM_METHOD(X_PROTOTYPE, X_ARGS, ...)                              \
   _PELI_DIAGNOSTIC(push)                                                       \

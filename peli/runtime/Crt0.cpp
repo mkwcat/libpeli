@@ -38,6 +38,8 @@ namespace peli::runtime {
 namespace {
 void peliMain(Args *input_args) noexcept;
 void peliCrt0() noexcept;
+void clearMemory(void *start, u32 size) noexcept;
+void initPowerPC();
 } // namespace
 
 extern "C" {
@@ -64,14 +66,17 @@ PELI_ASM_METHOD( // clang-format off
 namespace {
 
 constinit Args s_args;
-[[gnu::used]] alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
+
+alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
 
 PELI_ASM_METHOD( // clang-format off
   void peliCrt0() noexcept,
 
-  (PELI_ASM_IMPORT(i, s_crt0_stack), PELI_ASM_IMPORT(i, peliMain)),
+  (PELI_ASM_IMPORT(i, s_crt0_stack), PELI_ASM_IMPORT(i, peliMain), 
+   PELI_ASM_IMPORT(i, clearMemory), PELI_ASM_IMPORT(i, initPowerPC)
+  ),
 
-  // Set temporary stack pointer
+  // Set stack pointer
   lis     r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@ha;
   la      r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@l(r1);
 
@@ -87,28 +92,169 @@ PELI_ASM_METHOD( // clang-format off
 
   // Set GQR0 as it may be used by the compiler
   li      r0, 0;
-  mtspr   912, 0;
+  mtspr   PELI_SPR_GQR0, r0;
 
-  mflr    r3;
-                 
+  // Load the return address this way as we don't know what kind of address
+  // mapping we're running in right now
+  lis     r3, .L%=ReturnFromInitPPC@ha;
+  la      r3, .L%=ReturnFromInitPPC@l(r3);
+  mtlr    r3;
+  b       %[initPowerPC];
+.L%=ReturnFromInitPPC:;
+
+  // Clear bss before we use the stack again
+  lis     r3, __bss_start@ha;
+  la      r3, __bss_start@l(r3);
+  lis     r4, __bss_end@ha;
+  la      r4, __bss_end@l(r4);
+  sub     r4, r3, r4;
+  bl      %[clearMemory];
+
+  lis     r3, __sbss_start@ha;
+  la      r3, __sbss_start@l(r3);
+  lis     r4, __sbss_end@ha;
+  la      r4, __sbss_end@l(r4);
+  sub     r4, r3, r4;
+  bl      %[clearMemory];
+
+  // Set first parameter to homebrew loader args
+  lis     r3, (_start + 4)@ha;
+  la      r3, (_start + 4)@l(r3);
+
   // Call the main init function
   bl      %[peliMain];
                  // clang-format on
 );
 
+PELI_ASM_METHOD( // clang-format off
+  void clearMemory(void* start, u32 size) noexcept,
+  (),
+
+  // clang-format off
+  li      r5, 0;
+  cmpwi   r4, 4;
+  blt-    .L%=VeryShort;
+
+  // Align up to 4 bytes in case it's misaligned
+  rlwinm. r6, r3, 0, 3;
+  beq+    .L%=PreWordAligned;
+  cmpwi   r6, 2;
+  subfic  r6, r6, 4;
+  stb     r5, 0(r3);
+  bgt-    .L%=PreWordAlignDone;
+  stb     r5, 1(r3);
+  beq+    .L%=PreWordAlignDone;
+  stb     r5, 2(r3);
+.L%=PreWordAlignDone:;
+  sub     r4, r4, r6;
+
+.L%=PreWordAligned:;
+  add     r6, r3, r6;
+
+  // Cache line stop boundary
+  addi    r7, r6, 31;
+  rlwinm  r9, r7, 0, ~31;
+  // r9 = align_up(r6, 32)
+  subc.   r7, r9, r6;
+  // r7 = distance to next cache line boundary
+
+  rlwinm  r8, r4, 0, ~3;
+  // r8 = n word aligned down
+
+  cmplw   cr7, r7, r8;
+  blt-    cr7, .L%=PreWordMinBoundary;
+  mr.     r7, r8;
+  // r7 = min(r7, r8)
+
+.L%=PreWordMinBoundary:;
+  beq-    .L%=CacheAligned;
+
+  srwi    r8, r7, 2;
+  mtctr   r8;
+  stw     r5, 0x0(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0x4(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0x8(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0xC(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0x10(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0x14(r6);
+  bdz-    .L%=PreWordOut;
+  stw     r5, 0x18(r6);
+.L%=PreWordOut:;
+  sub     r4, r4, r7;
+
+.L%=CacheAligned:;
+  rlwinm. r7, r4, 0, ~31;
+  beq+    .L%=PostWordAligned;
+
+  add     r6, r7, r9;
+  // r6 = align_down(r3 + n, 32)
+  sub     r4, r4, r7;
+  // r4 = amount left after cache line finishes
+
+.L%=CacheAlignedZeroLoop:;
+  subic.  r7, r7, 32;
+  dcbz    r7, r9;
+  bgt+    .L%=CacheAlignedZeroLoop;
+
+.L%=PostWordAligned:;
+  rlwinm. r7, r4, 0, ~3;
+  beq-    .L%=PostWordOut;
+
+  cmplwi  r7, 0x8;
+  stw     r5, 0x0(r6);
+  blt-    .L%=PostWordOut;
+  stw     r5, 0x4(r6);
+  beq-    .L%=PostWordOut;
+  stw     r5, 0x8(r6);
+  cmpwi   r7, 0x8+0x8;
+  blt-    .L%=PostWordOut;
+  stw     r5, 0xC(r6);
+  beq-    .L%=PostWordOut;
+  stw     r5, 0x10(r6);
+  cmpwi   r7, 0x10+0x8;
+  blt-    .L%=PostWordOut;
+  stw     r5, 0x14(r6);
+  beq-    .L%=PostWordOut;
+  stw     r5, 0x18(r6);
+
+.L%=PostWordOut:;
+  sub.    r4, r4, r7;
+  beqlr-;
+
+  add     r6, r6, r4;
+  cmpwi   r4, 2;
+  stb     r5, -1(r6);
+  bltlr-;
+  stb     r5, -2(r6);
+  beqlr+;
+  stb     r5, -3(r6);
+  blr;
+
+.L%=VeryShort:;
+  cmpwi   r5, 0;
+  beqlr-;
+
+  cmpwi   r5, 2;
+  stb     r4, 0(r3);
+  bltlr-;
+  stb     r4, 1(r3);
+  beqlr+;
+  stb     r4, 2(r3);
+  blr;
+                 // clang-format on
+);
+
+[[gnu::noinline]] [[gnu::optimize("-Os")]] [[gnu::optimize(
+    "-fno-schedule-insns")]]
 void initPowerPC() {
-#if 0
-  // These values are set by IOS. Note that IOS versions after IOS28 expanded
-  // the size of MEM2 addressable to PPC. In the future we should probably
-  // select the MEM2 size based on the expected IOS version or the IOS version
-  // we'll launch later, rather than whatever we're launched with.
-  u32 mem1_size = std::max(ios::g_lo_mem.os_globals.mem1_end - 0x80000000u, 0x01800000u);
-  u32 mem2_size = std::max(ios::g_lo_mem.os_globals.mem2_end - 0x90000000u, 0x03400000u);
-#else
-  // For now, use constants for MEM1 and MEM2 sizes
+  // Use constants for MEM1 and MEM2 sizes
   constexpr u32 mem1_size = 0x01800000u;
   constexpr u32 mem2_size = 0x03400000u;
-#endif
 
   // Switch to Real Mode
   {
@@ -147,7 +293,8 @@ void initPowerPC() {
     ppc::ISync();
 
     // Configure the Block Address Translation registers
-    ppc::BatConfig(mem1_size, mem2_size, false, false, false);
+    ppc::ConfigureBats<ppc::BatConfig(mem1_size, mem2_size, false, false,
+                                      false)>();
 
     // Set MSR before leaving real mode
     scope.msr = ppc::Msr(ppc::MsrBits{
@@ -160,7 +307,7 @@ void initPowerPC() {
     });
   }
 
-  StubExceptionHandlers();
+  // StubExceptionHandlers();
 
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
@@ -174,8 +321,6 @@ void initPowerPC() {
 }
 
 void peliMain(Args *input_args) noexcept {
-  initPowerPC();
-
   Memory::InitArena();
 
   s_args.Build(input_args);

@@ -8,6 +8,9 @@
 #define _PELI_STRINGIFY_EXPANDED(...) #__VA_ARGS__
 #define _PELI_STRINGIFY(...) _PELI_STRINGIFY_EXPANDED(__VA_ARGS__)
 
+#define _PELI_CONCAT_EXPANDED(X, ...) X##__VA_ARGS__
+#define _PELI_CONCAT(X, ...) _PELI_CONCAT_EXPANDED(X, __VA_ARGS__)
+
 #if defined(__cplusplus)
 #define _PELI_SIZE_ASSERT(X_TYPE, X_SIZE)                                      \
   static_assert(sizeof(X_TYPE) == X_SIZE, #X_TYPE " size mismatch")
@@ -35,4 +38,3 @@
   _PELI_GNU_CLANG_ONLY(_PELI_PRAGMA(GCC diagnostic __VA_ARGS__))
 #define _PELI_DIAGNOSTIC_CLANG(...)                                            \
   _PELI_CLANG_ONLY(_PELI_PRAGMA(clang diagnostic __VA_ARGS__))
-

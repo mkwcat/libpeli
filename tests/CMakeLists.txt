@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
+include(../toolchain-devkitppc.cmake)
+
 project(peli-tests LANGUAGES C CXX ASM)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -25,6 +27,7 @@ set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 add_compile_options(
     ${MACHDEP}
 
+    -g
     -Wall
     -Wextra
     -Wpedantic
@@ -32,6 +35,11 @@ add_compile_options(
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fstrict-volatile-bitfields>
 )
 
+add_link_options(
+    -Wl,--section-start,.init=0x80104000
+)
+
+add_executable(SimpleApp SimpleApp.cpp)
 add_executable(HardReset HardReset.cpp)
 add_executable(SysConfReader SysConfReader.cpp)
 add_executable(SpecialPurposeRegisters SpecialPurposeRegisters.cpp)

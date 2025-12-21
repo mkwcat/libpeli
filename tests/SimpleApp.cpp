@@ -24,7 +24,7 @@ int testIoctl() {
       .GetResult();
 }
 
-int main(int argc, char **argv) {
+int main() {
   peli::util::VIConsole console(false);
 
   console.Print("\nmeow!\n");
@@ -40,6 +40,11 @@ int main(int argc, char **argv) {
   thread.Join((void **)&num);
 
   printf("Thread exited and joined with Arden's favorite number %d\n", num);
+  printf("Thread exited and joined with Arden's favorite number %d\n", num);
+  printf("Thread exited and joined with Arden's favorite number %d\n", num);
+  printf("Thread exited and joined with Arden's favorite number %d\n", num);
+
+  fflush(stdout);
 
   peli::s32 fd = peli::ios::low::IOS_Open("/dev/es", 0);
   printf("Opened /dev/es with fd %d\n", fd);
