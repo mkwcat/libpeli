@@ -32,5 +32,6 @@ add_compile_options(
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fstrict-volatile-bitfields>
 )
 
+add_executable(HardReset HardReset.cpp)
 add_executable(SysConfReader SysConfReader.cpp)
 add_executable(SpecialPurposeRegisters SpecialPurposeRegisters.cpp)
