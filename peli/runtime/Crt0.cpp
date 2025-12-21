@@ -110,9 +110,6 @@ void initPowerPC() {
   constexpr u32 mem2_size = 0x03400000u;
 #endif
 
-  ppc::Cache::DcStore(util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
-  ppc::Sync();
-
   // Switch to Real Mode
   {
     ppc::Msr::RealModeScope scope;

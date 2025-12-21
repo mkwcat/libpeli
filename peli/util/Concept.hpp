@@ -52,8 +52,8 @@ template <class T>
 concept MemoryAddressType = IntegralType<T> || PointerType<T>;
 
 template <class T>
-concept StdArrayType = requires(T t) {
-  { t.size() } -> IsConvertibleTo<__SIZE_TYPE__>;
+concept StdArrayType = requires(const T t) {
+  { t.size() } -> IsConvertibleTo<decltype(sizeof(0))>;
   { t.data() } -> IsConvertibleTo<const void *>;
   typename T::value_type;
 };
@@ -61,12 +61,10 @@ concept StdArrayType = requires(T t) {
 template <class T>
 concept EnumType = __is_enum(T);
 
-template <class T>
-struct NoInferStruct {
+template <class T> struct NoInferStruct {
   using Type = T;
 };
 
-template <class T>
-using NoInfer = typename NoInferStruct<T>::Type;
+template <class T> using NoInfer = typename NoInferStruct<T>::Type;
 
 } // namespace peli::util

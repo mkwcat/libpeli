@@ -13,6 +13,6 @@
 #include <peli/util/Halt.hpp>
 
 int main() {
-  peli::hw::WOOD->RSTCTRL.RSTB = false;
+  peli::hw::WOODIOP->RSTCTRL = 0;
   peli::util::Halt();
 }

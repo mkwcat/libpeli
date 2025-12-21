@@ -375,7 +375,9 @@ struct Wood {
 
   _PELI_PAD(0x198, 0x400);
 
-} inline *const WOOD = reinterpret_cast<Wood *>(0xCD000000);
+} inline *const WOODPPC = reinterpret_cast<Wood *>(0xCD000000),
+                *const WOODIOP = reinterpret_cast<Wood *>(0xCD800000),
+                *const WOOD = WOODPPC;
 
 static_assert(sizeof(Wood) == 0x400);
 
