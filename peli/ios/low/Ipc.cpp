@@ -129,6 +129,7 @@ void handleReply() {
     }
     break;
   case IOS_CMD_IOCTLV:
+    reply->ioctlv.vec = util::Effective(reply->ioctlv.vec);
     for (u32 i = 0; i < reply->ioctlv.in_count + reply->ioctlv.out_count; i++) {
       if (reply->ioctlv.vec[i].size != 0) {
         reply->ioctlv.vec[i].data = util::Effective(reply->ioctlv.vec[i].data);
