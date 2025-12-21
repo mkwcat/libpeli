@@ -5,7 +5,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "../common/Asm.h"
-#include "../common/Types.h"
+#include "../common/Macro.h"
+#include "../common/Types.hpp"
 #include "../host/Config.h"
 #include "../ppc/Bat.hpp"
 #include "../ppc/Cache.hpp"
@@ -21,13 +22,14 @@
 #include "Exception.hpp"
 #include "Memory.hpp"
 #include "Thread.hpp"
-#include <cstdlib>
 
 #ifndef PELI_CRT0_STACK_SIZE
 #define PELI_CRT0_STACK_SIZE 0x8000
 #endif
 
 int main(int argc, char **argv);
+
+extern "C" _PELI_GNU_CLANG_ONLY([[gnu::noreturn]]) void exit(int status);
 
 extern "C" peli::runtime::Args *__system_argv;
 
@@ -179,7 +181,7 @@ void peliMain(Args *input_args) noexcept {
   _PELI_DIAGNOSTIC(push)
   // Ignore the warning on use of ::main
   _PELI_DIAGNOSTIC(ignored "-Wpedantic")
-  std::exit(::main(s_args.argc, s_args.argv));
+  ::exit(::main(s_args.argc, s_args.argv));
   _PELI_DIAGNOSTIC(pop)
 }
 

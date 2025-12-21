@@ -68,15 +68,7 @@ using DBat6L = BatLo<Spr::DBAT6L>;
 using DBat7U = BatUp<Spr::DBAT7U>;
 using DBat7L = BatLo<Spr::DBAT7L>;
 
-/**
- * Configure the BATs (Block Address Translation) to their standard values.
- * Expects to be called in real mode.
- */
-static inline void BatConfig(u32 mem1Size, u32 mem2Size,
-                             [[maybe_unused]] bool lockedCache,
-                             bool allowExecInMem2,
-                             bool allowExecInUncached) noexcept {
-  // Clear old BATs
+inline void BatClearAll() {
   IBat0U::MoveTo(0);
   IBat0L::MoveTo(0);
   IBat1U::MoveTo(0);
@@ -111,6 +103,17 @@ static inline void BatConfig(u32 mem1Size, u32 mem2Size,
   DBat7L::MoveTo(0);
   ISync();
   Sync();
+}
+
+/**
+ * Configure the BATs (Block Address Translation) to their standard values.
+ * Expects to be called in real mode.
+ */
+inline void BatConfig(u32 mem1Size, u32 mem2Size,
+                      [[maybe_unused]] bool lockedCache, bool allowExecInMem2,
+                      bool allowExecInUncached) noexcept {
+  // Clear old BATs
+  BatClearAll();
 
   const auto bit_floor = [](u32 value) -> u32 {
     if (value == 0) {

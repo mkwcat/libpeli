@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "Spr.hpp"
 #include "SprRwCtl.hpp"
 #include "detail/SprInterface.hpp"
@@ -105,7 +105,7 @@ struct Hid0Bits {
 
 using Hid0 = detail::SprInterface<Hid0Bits>;
 
-static inline void EnableSpeculation(bool enable) noexcept {
+inline void EnableSpeculation(bool enable) noexcept {
   SprRwCtl<Hid0>()->SGE = enable;
 }
 

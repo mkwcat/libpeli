@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "../util/Optimize.hpp"
 #include "Hid2.hpp"
 #include "SprRwCtl.hpp"
@@ -15,19 +15,19 @@ namespace peli::ppc::Ps {
 
 template <u32 GQR>
   requires(GQR < 8)
-static inline void SetGQR(u32 value) noexcept {
+inline void SetGQR(u32 value) noexcept {
   constexpr u32 gqr = static_cast<u32>(Spr::GQR0) + GQR;
   SetSpr<static_cast<Spr>(gqr)>(value);
 }
 
 template <u32 GQR>
   requires(GQR < 8)
-static inline u32 GetGQR() noexcept {
+inline u32 GetGQR() noexcept {
   constexpr u32 gqr = static_cast<u32>(Spr::GQR0) + GQR;
   return GetSpr<static_cast<Spr>(gqr)>();
 }
 
-static inline void SetGQR(u32 gqr, u32 value) noexcept {
+inline void SetGQR(u32 gqr, u32 value) noexcept {
   switch (gqr) {
   case 0:
     SetSpr<Spr::GQR0>(value);
@@ -59,7 +59,7 @@ static inline void SetGQR(u32 gqr, u32 value) noexcept {
   }
 }
 
-static inline u32 GetGQR(u32 gqr) noexcept {
+inline u32 GetGQR(u32 gqr) noexcept {
   switch (gqr) {
   case 0:
     return GetSpr<Spr::GQR0>();
@@ -84,7 +84,7 @@ static inline u32 GetGQR(u32 gqr) noexcept {
   }
 }
 
-static inline void ResetGQRs() noexcept {
+inline void ResetGQRs() noexcept {
   // Skip GQR0 as it's always assumed to be 0
   SetSpr<Spr::GQR1>(0);
   SetSpr<Spr::GQR2>(0);
@@ -95,7 +95,7 @@ static inline void ResetGQRs() noexcept {
   SetSpr<Spr::GQR7>(0);
 }
 
-static inline void Init() noexcept {
+inline void Init() noexcept {
   // Set HID2 |= 0xA0000000
   SprRwCtl<Hid2>() |= Hid2Bits{
       .LSQE = 1, // Load/Store Quantized Enable
@@ -105,7 +105,7 @@ static inline void Init() noexcept {
   ResetGQRs();
 }
 
-static inline void Disable() noexcept {
+inline void Disable() noexcept {
   // Set HID2 &= ~0xA0000000
   SprRwCtl<Hid2>().Clear(Hid2Bits{
       .LSQE = 1, // Load/Store Quantized Disable

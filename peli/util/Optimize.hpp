@@ -40,4 +40,6 @@ namespace peli::util {
 #define _PELI_UNREACHABLE_1(X_LINE) _PELI_UNREACHABLE_2(X_LINE)
 #define _PELI_UNREACHABLE() _PELI_UNREACHABLE_1(__LINE__)
 
+#define _PELI_RESTRICT __restrict
+
 } // namespace peli::util

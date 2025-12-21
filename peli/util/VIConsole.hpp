@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "../host/Config.h"
 #include "../util/Address.hpp"
 

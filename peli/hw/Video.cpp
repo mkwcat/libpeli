@@ -5,12 +5,11 @@
 // SPDX-License-Identifier: MIT
 
 #include "Video.hpp"
+#include "../host/Host.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
 #include "../util/Time.hpp"
 #include "VideoInterface.hpp"
-#include <cstdlib>
-#include <utility>
 
 namespace peli::hw {
 
@@ -61,7 +60,10 @@ Video::Video(const RenderMode &rmode) noexcept
       .PRB = timings.VTE.PRB + u32(rmode.vi_y_origin << is_progressive),
   };
   if (rmode.vi_y_origin & 1) {
-    std::swap(VTO, VTE);
+    // Swap even and odd fields
+    auto vto = VTO;
+    VTO = VTE;
+    VTE = vto;
   }
 
   m_changed_vertical = true;
@@ -214,7 +216,7 @@ u16 Video::GetXfbHeight() const noexcept {
 }
 
 void *Video::AllocateXfb() noexcept {
-  return std::aligned_alloc(XfbAlignment, GetXfbSize());
+  return host::Alloc(XfbAlignment, GetXfbSize());
 }
 
 } // namespace peli::hw

@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Macro.h"
+#include "../common/Types.hpp"
 #include "Register.hpp"
 
 namespace peli::hw {

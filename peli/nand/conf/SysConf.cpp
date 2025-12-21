@@ -7,11 +7,10 @@
 #include "SysConf.hpp"
 #include "../../host/Mutex.hpp"
 #include "../../ios/fs/Types.hpp"
+#include "../../util/Address.hpp"
 #include "../../util/Defer.hpp"
-#include <cstddef>
-#include <cstdlib>
-#include <cstring>
-#include <new>
+#include "../../util/Memory.hpp"
+#include "../../util/String.hpp"
 
 namespace peli::nand::conf {
 
@@ -26,7 +25,7 @@ SysConf::SysConf(const char *path) noexcept : m_state(State::Error) {
     return;
   }
   m_state = State::Invalid;
-  new (&m_request) ios::Request::Read(fd, m_data, Size);
+  new (m_request) ios::Request::Read(fd, m_data, Size);
 }
 
 void SysConf::clear() noexcept {}
@@ -51,10 +50,10 @@ host::Mutex *SysConf::lock() noexcept {
     }
 
     // Validate SysConf data
-    if (util::ImmRead<u32, true>(m_data) != HeaderMagic) {
+    if (util::ImmRead<u32, host::Endian::Big>(m_data) != HeaderMagic) {
       return nullptr;
     }
-    if (util::ImmRead<u32, true>(m_data + Size - 4) != EndMagic) {
+    if (util::ImmRead<u32, host::Endian::Big>(m_data + Size - 4) != EndMagic) {
       return nullptr;
     }
     if (u16 size = getHeaderSize(); size < 8 || size > LookupTableOffset) {
@@ -68,46 +67,47 @@ host::Mutex *SysConf::lock() noexcept {
   return &m_mutex;
 }
 
-std::size_t SysConf::getEntryOffset(std::size_t index) const noexcept {
-  std::size_t offset = util::ImmRead<u16, true>(m_data, 0x6 + index * 2);
+size_t SysConf::getEntryOffset(size_t index) const noexcept {
+  size_t offset =
+      util::ImmRead<u16, host::Endian::Big>(m_data, 0x6 + index * 2);
   if (offset < getHeaderSize() || !testEntryLength(offset)) {
     return 0;
   }
   return offset;
 }
 
-std::size_t SysConf::findEntryOffset(const char *key,
-                                     std::size_t lookup) const noexcept {
-  std::size_t key_len = std::strlen(key);
+size_t SysConf::findEntryOffset(const char *key, size_t lookup) const noexcept {
+  size_t key_len = util::StrLen(key);
   if (key_len == 0) {
     return 0;
   }
 
   if (lookup < LookupTableCount) {
-    std::size_t entry_offset =
-        util::ImmRead<u16, true>(m_data, (Size - 0x6) - lookup * 0x2);
+    size_t entry_offset = util::ImmRead<u16, host::Endian::Big>(
+        m_data, (Size - 0x6) - lookup * 0x2);
     if (entry_offset >= 0x0006 && entry_offset < getHeaderSize() &&
         util::IsAligned(sizeof(u16), entry_offset)) {
-      std::size_t offset = util::ImmRead<u16, true>(m_data, entry_offset);
+      size_t offset =
+          util::ImmRead<u16, host::Endian::Big>(m_data, entry_offset);
       if (offset >= getHeaderSize() && testEntryLength(offset)) {
         u8 length = getEntryKeyLength(offset);
         if (length == key_len && testEntryLength(offset, length) &&
-            std::memcmp(m_data + offset + 1, key, length) == 0) {
+            util::MemoryEqual(m_data + offset + 1, key, length)) {
           return offset;
         }
       }
     }
   }
 
-  std::size_t count = getCount();
+  size_t count = getCount();
 
-  for (std::size_t i = 0; i < count; ++i) {
-    std::size_t offset = getEntryOffset(i);
+  for (size_t i = 0; i < count; ++i) {
+    size_t offset = getEntryOffset(i);
     u8 length = getEntryKeyLength(offset);
     if (length != key_len || !testEntryLength(offset, length)) {
       continue;
     }
-    if (std::memcmp(m_data + offset + 1, key, length) == 0) {
+    if (util::MemoryEqual(m_data + offset + 1, key, length)) {
       return offset;
     }
   }
@@ -116,7 +116,7 @@ std::size_t SysConf::findEntryOffset(const char *key,
 }
 
 SysConf::EntryType SysConf::Get(const char *key, u64 &out,
-                                std::size_t lookup) noexcept {
+                                size_t lookup) noexcept {
   if (key == nullptr) {
     return EntryType::None;
   }
@@ -127,13 +127,13 @@ SysConf::EntryType SysConf::Get(const char *key, u64 &out,
   }
   auto defer_unlock = util::Defer([mutex]() { mutex->Unlock(); });
 
-  ::size_t offset = findEntryOffset(key, lookup);
+  size_t offset = findEntryOffset(key, lookup);
   if (offset == 0) {
     return EntryType::None;
   }
 
   const u8 *data;
-  std::size_t size;
+  size_t size;
   switch (getEntry(offset, data, size, key, size)) {
   default:
     return EntryType::None;
@@ -143,15 +143,15 @@ SysConf::EntryType SysConf::Get(const char *key, u64 &out,
     return EntryType::Byte;
 
   case EntryType::Short:
-    out = util::ImmReadMisaligned<s16, true>(data);
+    out = util::ImmReadMisaligned<s16, host::Endian::Big>(data);
     return EntryType::Short;
 
   case EntryType::Long:
-    out = util::ImmReadMisaligned<s32, true>(data);
+    out = util::ImmReadMisaligned<s32, host::Endian::Big>(data);
     return EntryType::Long;
 
   case EntryType::LongLong:
-    out = util::ImmReadMisaligned<s64, true>(data);
+    out = util::ImmReadMisaligned<s64, host::Endian::Big>(data);
     return EntryType::LongLong;
 
   case EntryType::Bool:
@@ -161,7 +161,7 @@ SysConf::EntryType SysConf::Get(const char *key, u64 &out,
 }
 
 SysConf::EntryType SysConf::Get(const char *key, const u8 *&out,
-                                ::size_t &out_size, ::size_t lookup) noexcept {
+                                size_t &out_size, size_t lookup) noexcept {
   if (key == nullptr) {
     return EntryType::None;
   }
@@ -172,18 +172,18 @@ SysConf::EntryType SysConf::Get(const char *key, const u8 *&out,
   }
   auto defer_unlock = util::Defer([mutex]() { mutex->Unlock(); });
 
-  ::size_t offset = findEntryOffset(key, lookup);
+  size_t offset = findEntryOffset(key, lookup);
   if (offset == 0) {
     return EntryType::None;
   }
 
-  ::size_t key_length;
+  size_t key_length;
   return getEntry(offset, out, out_size, key, key_length);
 }
 
-SysConf::EntryType SysConf::Get(::size_t index, const u8 *&out_data,
-                                ::size_t &out_size, const char *&out_key,
-                                ::size_t &out_key_length) noexcept {
+SysConf::EntryType SysConf::Get(size_t index, const u8 *&out_data,
+                                size_t &out_size, const char *&out_key,
+                                size_t &out_key_length) noexcept {
   if (index >= GetCount()) {
     return EntryType::None;
   }
@@ -199,7 +199,7 @@ SysConf::EntryType SysConf::Get(::size_t index, const u8 *&out_data,
     return EntryType::None;
   }
 
-  ::size_t offset = getEntryOffset(index);
+  size_t offset = getEntryOffset(index);
   if (offset == 0) {
     return EntryType::None;
   }
@@ -207,17 +207,17 @@ SysConf::EntryType SysConf::Get(::size_t index, const u8 *&out_data,
   return getEntry(offset, out_data, out_size, out_key, out_key_length);
 }
 
-SysConf::EntryType SysConf::getEntry(::size_t offset, const u8 *&out_data,
-                                     ::size_t &out_size, const char *&out_key,
-                                     ::size_t &out_key_length) const noexcept {
+SysConf::EntryType SysConf::getEntry(size_t offset, const u8 *&out_data,
+                                     size_t &out_size, const char *&out_key,
+                                     size_t &out_key_length) const noexcept {
 
   u8 type_len = util::ImmRead<u8>(m_data, offset);
   EntryType type = static_cast<EntryType>(type_len >> 5);
   u8 key_length = getEntryKeyLength(offset);
-  ::size_t data_offset = getEntryDataOffset(offset, key_length);
+  size_t data_offset = getEntryDataOffset(offset, key_length);
 
   u16 array_size = 1;
-  ::size_t size;
+  size_t size;
   switch (type) {
   case EntryType::None:
     out_data = nullptr;
@@ -242,7 +242,8 @@ SysConf::EntryType SysConf::getEntry(::size_t offset, const u8 *&out_data,
     break;
 
   case EntryType::BigArray:
-    array_size = (util::ImmRead<u8, true>(m_data, data_offset++) << 1) + 1;
+    array_size =
+        (util::ImmRead<u8, host::Endian::Big>(m_data, data_offset++) << 1) + 1;
     [[fallthrough]];
   case EntryType::SmallArray:
     if (!testEntryLength(offset, key_length, 2)) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "Error.hpp"
 #include "Interface.hpp"
 #include "Request.hpp"

@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
+#include "Concept.hpp"
 
 namespace peli::util {
 
@@ -29,16 +30,28 @@ template <bool BigEndian = true> constexpr u32 BitMask(int bit) noexcept {
   return 1 << (BigEndian ? 31 - bit : bit);
 }
 
-template <bool BigEndian = true, class Enum>
-  requires(__is_enum(Enum))
-constexpr u32 BitMask(Enum value) noexcept {
+template <bool BigEndian = true>
+constexpr u32 BitMask(EnumType auto value) noexcept {
   return BitMask<BigEndian>(static_cast<int>(value));
 }
 
-template <bool BigEndian = true, class Enum>
-  requires(__is_enum(Enum))
-constexpr u32 BitMask(Enum left, Enum right) noexcept {
+template <bool BigEndian = true>
+constexpr u32 BitMask(EnumType auto left, EnumType auto right) noexcept {
   return BitMask<BigEndian>(static_cast<int>(left), static_cast<int>(right));
+}
+
+constexpr size_t CountLeadingZero(IntegralType auto value) {
+#if defined(__GNUC__)
+  return __builtin_clzg(value);
+#else // __GNUC__
+  int count = 0;
+  constexpr decltype(value) mask = 1 << (sizeof(value) * 8 - 1);
+  while ((value & mask) == 0) {
+    ++count;
+    value <<= 1;
+  }
+  return count;
+#endif
 }
 
 } // namespace peli::util

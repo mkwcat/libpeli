@@ -28,4 +28,14 @@ namespace peli::host {
  */
 #define PELI_CRT0_STACK_SIZE 0x8000
 
+/**
+ * Override for the default memory allocation function.
+ */
+// #define PELI_FUNC_ALLOC(X_ALIGN, X_SIZE) ::aligned_alloc(X_ALIGN, X_SIZE)
+
+/**
+ * Override for the default memory free function.
+ */
+// #define PELI_FUNC_FREE(X_PTR, X_SIZE) ::free(X_PTR)
+
 } // namespace peli::host

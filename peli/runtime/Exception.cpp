@@ -6,7 +6,7 @@
 
 #include "Exception.hpp"
 #include "../common/Asm.h"
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "../host/Config.h"
 #include "../hw/Bit.hpp"
 #include "../hw/Interrupt.hpp"
@@ -18,9 +18,7 @@
 #include "../ppc/Sync.hpp"
 #include "../util/Halt.hpp"
 #include "../util/VIConsole.hpp"
-#include <array>
-#include <cstddef>
-#include <cstring>
+#include "SystemCall.hpp"
 
 namespace peli::runtime {
 
@@ -216,32 +214,6 @@ PELI_ASM_FUNCTION( // clang-format off
                    // clang-format on
 );
 } // extern "C"
-
-PELI_ASM_FUNCTION( // clang-format off
-  void systemCallHandler() noexcept,
-
-  // Branch if bit 28 is false
-  bc      0b00100, 28, .SC_DisableInterrupts;
-
-.SC_Sync:;
-  mfhid0  %r0;
-  ori     %r3, %r0, 0x8; // Set HID0.ABE
-  mthid0  %r3; // Write back to HID0
-  isync;
-  sync;
-  mthid0  %r0; // Restore HID0
-  rfi;
-
-.SC_DisableInterrupts:;
-  // r0 = 0 disable, 1 = enable
-  mfsrr1  %r0; // Stored MSR
-  rlwinm  %r0, %r0, 0, ~0x8000; // Clear MSR.EE
-  mtsrr1  %r0;
-  rfi;
-
-  .long   0; // Terminator
-                   // clang-format on
-);
 
 #if !defined(PELI_ENABLE_PAIRED_SINGLE)
 
@@ -490,7 +462,7 @@ void writeFunctionToVector(peli::ppc::Exception type, void (*function)()) {
   u32 *vector = peli::ppc::GetExceptionVectorAddress(type);
   if (vector) {
     ppc::Cache::DcZero(vector, 64 * sizeof(u32));
-    for (std::size_t i = 0; i < 64 && instructions[i]; i++) {
+    for (size_t i = 0; i < 64 && instructions[i]; i++) {
       u32 instruction = instructions[i];
       if (instruction == 0x3860DEADu) {
         // li r3, 0xDEAD -> li r3, exception_type
@@ -515,8 +487,9 @@ u32 *checkStackAddr(u32 stackAddr) {
 void printHex(util::VIConsole &console, u32 value) noexcept {
   static constexpr char HexDigits[] = "0123456789ABCDEF";
 
+  using CharArray = char[10];
   console.Print(
-      std::array<char, 10>{
+      CharArray{
           '0',
           'x',
           HexDigits[(value >> 28) & 0xF],
@@ -527,15 +500,14 @@ void printHex(util::VIConsole &console, u32 value) noexcept {
           HexDigits[(value >> 8) & 0xF],
           HexDigits[(value >> 4) & 0xF],
           HexDigits[value & 0xF],
-      }
-          .data(),
+      },
       10);
 }
 
-[[gnu::noinline]]
-void printStringList(util::VIConsole &console, std::size_t count,
+_PELI_GNU_CLANG_ONLY([[gnu::noinline]])
+void printStringList(util::VIConsole &console, size_t count,
                      const char *const *strings, u32 *values) {
-  for (std::size_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     if ((i % 2) == 0) {
       console.Print(strings[i >> 1]);
     } else {
@@ -569,13 +541,12 @@ void defaultErrorHandler(peli::ppc::Exception type,
                           context->xer, ppc::GetSpr<ppc::Spr::DAR>()});
 
   // Print registers
-  for (std::size_t i = 0; i < 32; i++) {
-    std::size_t reg = i % 4 * 8 + i / 4;
-    console.Print(std::array<char, 8>{i % 4 == 0 ? '\n' : ' ', ' ', ' ', 'r',
-                                      static_cast<char>('0' + reg / 10),
-                                      static_cast<char>('0' + reg % 10), ':',
-                                      ' '}
-                      .data(),
+  for (size_t i = 0; i < 32; i++) {
+    size_t reg = i % 4 * 8 + i / 4;
+    using CharArray = char[10];
+    console.Print(CharArray{i % 4 == 0 ? '\n' : ' ', ' ', ' ', 'r',
+                            static_cast<char>('0' + reg / 10),
+                            static_cast<char>('0' + reg % 10), ':', ' '},
                   8);
     printHex(console, context->gprs[reg]);
   }
@@ -586,7 +557,7 @@ void defaultErrorHandler(peli::ppc::Exception type,
   if (stack == nullptr || stack[1] != context->lr) {
     if (stack == nullptr || (stack = checkStackAddr(stack[0])) == nullptr ||
         stack[1] != context->lr) {
-      console.Print("\n   ----------:   ----------    ");
+      console.Print("\n  ----------:   ----------    ");
       printHex(console, context->lr);
     }
   }
@@ -632,7 +603,7 @@ void SetExceptionHandler(peli::ppc::Exception type,
     return;
   }
 
-  ios::g_lo_mem.os_globals.os_interrupt_table[static_cast<std::size_t>(type)] =
+  ios::g_lo_mem.os_globals.os_interrupt_table[static_cast<size_t>(type)] =
       reinterpret_cast<u32>(handler);
 }
 
@@ -642,7 +613,7 @@ void SetInterruptEventHandler(hw::IntCause type,
     return;
   }
 
-  s_interrupt_handlers[static_cast<std::size_t>(type)] = handler;
+  s_interrupt_handlers[static_cast<size_t>(type)] = handler;
 
   hw::PI->INTMR |= (1 << static_cast<u32>(type));
 }
@@ -652,7 +623,7 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
     return;
   }
 
-  s_irq_handlers[static_cast<std::size_t>(type)] = handler;
+  s_irq_handlers[static_cast<size_t>(type)] = handler;
 
   hw::WOOD->PPCINTEN |= (1 << static_cast<u32>(type));
   ppc::Eieio();
@@ -665,31 +636,34 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
 
 void InitExceptions() noexcept {
   // Set all default exception handlers
-  for (size_t i = 0; i < std::size(ios::g_lo_mem.os_globals.os_interrupt_table);
+  for (size_t i = 0;
+       i < sizeof(ios::g_lo_mem.os_globals.os_interrupt_table) / sizeof(u32);
        i++) {
     ios::g_lo_mem.os_globals.os_interrupt_table[i] =
         reinterpret_cast<u32>(defaultErrorHandler);
   }
 
-  // Setup error vectors
-  for (ppc::Exception type : {
-           ppc::Exception::SystemReset,
-           ppc::Exception::MachineCheck,
-           ppc::Exception::DataStorageInterrupt,
-           ppc::Exception::InstructionStorageInterrupt,
-           ppc::Exception::Alignment,
-           ppc::Exception::Program,
+  constexpr ppc::Exception types[] = {
+      ppc::Exception::SystemReset,
+      ppc::Exception::MachineCheck,
+      ppc::Exception::DataStorageInterrupt,
+      ppc::Exception::InstructionStorageInterrupt,
+      ppc::Exception::Alignment,
+      ppc::Exception::Program,
 #if !defined(PELI_ENABLE_FLOAT)
-           ppc::Exception::FloatingPointUnavailable,
+      ppc::Exception::FloatingPointUnavailable,
 #endif // !PELI_ENABLE_FLOAT
-           ppc::Exception::SystemCall,
-           ppc::Exception::Trace,
-           ppc::Exception::FloatingPointAssist,
-           ppc::Exception::PerformanceMonitor,
-           ppc::Exception::InstructionAddressBreakpoint,
-           ppc::Exception::Reserved,
-           ppc::Exception::ThermalManagement,
-       }) {
+      ppc::Exception::SystemCall,
+      ppc::Exception::Trace,
+      ppc::Exception::FloatingPointAssist,
+      ppc::Exception::PerformanceMonitor,
+      ppc::Exception::InstructionAddressBreakpoint,
+      ppc::Exception::Reserved,
+      ppc::Exception::ThermalManagement,
+  };
+
+  // Setup error vectors
+  for (ppc::Exception type : types) {
     writeFunctionToVector(type, panicExceptionVector);
   }
 
@@ -708,7 +682,7 @@ void InitExceptions() noexcept {
   );
 
   // Write the system call handler
-  writeFunctionToVector(ppc::Exception::SystemCall, systemCallHandler);
+  writeFunctionToVector(ppc::Exception::SystemCall, SystemCall::detail::SystemCallHandler);
 
 #if defined(PELI_ENABLE_FLOAT)
   // Write the floating-point unavailable handler

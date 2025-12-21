@@ -10,8 +10,8 @@
 
 #if defined(PELI_NEWLIB)
 
-#include "../common/Types.h"
 #include "VIConsole.hpp"
+#include <stdio.h>
 
 struct _reent;
 struct stat;
@@ -24,9 +24,8 @@ public:
   static void Deregister();
 
 private:
-  static _PELI_CLANG_ONLY(long) int SysWrite(struct _reent *r, void *fd,
-                                             const char *ptr,
-                                             __SIZE_TYPE__ len);
+  static ::ssize_t SysWrite(struct _reent *r, void *fd, const char *ptr,
+                            __SIZE_TYPE__ len);
   static int SysFstat(struct _reent *r, void *fd, struct stat *st);
 
   static VIConsole *s_console;

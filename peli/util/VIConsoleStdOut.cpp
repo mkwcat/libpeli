@@ -8,8 +8,7 @@
 
 #if defined(PELI_NEWLIB)
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
 #include <sys/iosupport.h>
 #include <sys/reent.h>
 #include <sys/stat.h>
@@ -73,17 +72,16 @@ void VIConsoleStdOut::Deregister() {
     return;
   }
 
-  std::fflush(stdout);
+  ::fflush(stdout);
   devoptab_list[STD_OUT] = static_cast<const devoptab_t *>(s_default_stdout);
-  std::fflush(stderr);
+  ::fflush(stderr);
   devoptab_list[STD_ERR] = static_cast<const devoptab_t *>(s_default_stderr);
   s_console = nullptr;
 }
 
-_PELI_CLANG_ONLY(long)
-int VIConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
-                              [[maybe_unused]] void *fd, const char *ptr,
-                              __SIZE_TYPE__ len) {
+::ssize_t VIConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
+                                    [[maybe_unused]] void *fd, const char *ptr,
+                                    __SIZE_TYPE__ len) {
   s_console->Print(ptr, len);
   return len;
 }
@@ -97,4 +95,4 @@ int VIConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
 
 } // namespace peli::util
 
-#endif
+#endif // PELI_NEWLIB

@@ -13,8 +13,8 @@
 #include "../../runtime/Exception.hpp"
 #include "../../util/Address.hpp"
 #include "../../util/CpuCache.hpp"
+#include "../../util/String.hpp"
 #include "../Error.hpp"
-#include <cstring>
 
 namespace peli::ios::low {
 
@@ -170,11 +170,13 @@ void ipcAsync(IPCCommandBlock *request) {
 } // namespace
 
 s32 IOS_Open(const char *path, u32 flags) noexcept {
+  alignas(Alignment) char path_fixed[PathSize] = {};
+  if (util::StrCopy<PathSize>(path_fixed, path) == PathSize) {
+    return IOSError::IOS_ERROR_INVALID;
+  }
+
   alignas(Alignment) IPCCommandBlock request = {};
   host::MessageQueue<IPCCommandBlock *, 1> queue;
-
-  alignas(Alignment) char path_fixed[64] = {};
-  std::strncpy(path_fixed, path, sizeof(path_fixed) - 1);
 
   s32 result = IOS_OpenAsync(path_fixed, flags, queue, &request);
   return result != IOSError::IOS_ERROR_OK ? result : queue.Receive()->result;

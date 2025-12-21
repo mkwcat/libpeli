@@ -10,7 +10,6 @@
 #include "../Resource.hpp"
 #include "../low/Ipc.hpp"
 #include "Interface.hpp"
-#include <stdlib.h>
 
 namespace peli::ios::fs {
 

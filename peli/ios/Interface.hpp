@@ -1,13 +1,11 @@
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
+#include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/Concept.hpp"
 #include "Request.hpp"
 #include "low/Ipc.hpp"
-#include <cstddef>
-#include <stdlib.h>
-#include <string.h>
 
 namespace peli::ios {
 
@@ -74,19 +72,21 @@ protected:
     static constexpr size_t OutPtrCount = TOutPtrCount;
 
     u8 *m_v_stack_ptr;
+    size_t m_alloc_size;
 
     template <class... TDefaults>
     constexpr Vector(size_t alloc_size, low::IOVector *,
                      const TDefaults &...) noexcept {
+      m_alloc_size = alloc_size;
       m_v_stack_ptr =
           alloc_size > 0
-              ? static_cast<u8 *>(::aligned_alloc(low::Alignment, alloc_size))
+              ? static_cast<u8 *>(host::Alloc(low::Alignment, alloc_size))
               : nullptr;
     }
 
     constexpr ~Vector() noexcept {
       if (m_v_stack_ptr) {
-        ::free(m_v_stack_ptr);
+        host::Free(m_v_stack_ptr, m_alloc_size);
       }
     }
 
@@ -165,9 +165,12 @@ protected:
       vec[VecIndex].data = const_cast<TThis *>(value);
       if constexpr (__is_same_as(TThis, const char)) {
         // Treat const char* as a null-terminated string
-        vec[VecIndex].size = ::strlen(value) + 1;
+        for (vec[VecIndex].size = 0;
+             value != nullptr && value[vec[VecIndex].size];
+             vec[VecIndex].size++) {
+        }
       } else {
-        vec[VecIndex].size = sizeof(TThis);
+        vec[VecIndex].size = value != nullptr ? sizeof(TThis) : 0;
       }
     }
 
@@ -306,8 +309,11 @@ protected:
                      const char *const value, const TDefaults &...defaults)
       requires(IsInput && isArrayOf<char>())
         : Base(alloc_size, vec, defaults...) {
-      ::strncpy(m_this, value, sizeof(TThis) - 1);
-      m_this[sizeof(TThis) - 1] = '\0'; // Ensure null-termination
+      size_t i;
+      for (i = 0; i < sizeof(TThis) - 1 && value[i]; i++) {
+        m_this[i] = value[i];
+      }
+      m_this[i] = '\0';
       vec[VecIndex].data = m_this;
       vec[VecIndex].size = sizeof(TThis);
     }

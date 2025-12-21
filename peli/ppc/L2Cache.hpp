@@ -13,13 +13,30 @@
 
 namespace peli::ppc::L2Cache {
 
-static inline void Enable(bool enable) noexcept {
-  SprRwCtl<L2cr>()->L2E = enable;
+inline void Enable(bool enable) noexcept { SprRwCtl<L2cr>()->L2E = enable; }
+
+inline bool IsEnabled() noexcept { return SprRwCtl<L2cr>()->L2E; }
+
+inline void Invalidate() noexcept {
+  // Enable Global Invalidate
+  SprRwCtl<L2cr>()->L2I = true;
+  Sync();
+
+  // Wait for completion
+  while (L2cr::MoveFrom().L2IP) {
+  }
+
+  SprRwCtl<L2cr>()->L2I = false;
+  Sync();
+
+  // Wait for completion, although this should never be 1
+  while (L2cr::MoveFrom().L2IP) {
+  }
 }
 
-static inline bool IsEnabled() noexcept { return SprRwCtl<L2cr>()->L2E; }
+inline void Flush() noexcept {}
 
-static inline void Init() noexcept {
+inline void Init() noexcept {
   {
     Msr::OverrideScope msrOvr(MsrBits{
         .IR = true, // Instruction Address Translation
@@ -27,33 +44,23 @@ static inline void Init() noexcept {
     });
 
     Sync();
+
+    // Disable L2 Cache and reset configuration
+    L2cr{}.MoveTo();
     Sync();
 
-    // Disable in case it's enabled
-    SprRwCtl<L2cr>()->L2E = false;
-    Sync();
-    Sync();
-
-    // Enable Global Invalidate
-    SprRwCtl<L2cr>()->L2I = true;
-    Sync();
-
-    // Wait for completion
-    while (L2cr::MoveFrom().L2IP) {
-    }
-
-    SprRwCtl<L2cr>()->L2I = false;
-    Sync();
-
-    // Wait for completion, although this should never be 1
-    while (L2cr::MoveFrom().L2IP) {
-    }
+    Invalidate();
   }
 
   SprRwCtl<L2cr>() <=> [](L2cr l2cr) {
     l2cr.L2E = true;
-    return l2cr.L2I = false;
+    l2cr.L2I = false;
+    return l2cr;
   };
+}
+
+inline void SetWriteThrough(bool enable) noexcept {
+  SprRwCtl<L2cr>()->L2WT = enable;
 }
 
 } // namespace peli::ppc::L2Cache

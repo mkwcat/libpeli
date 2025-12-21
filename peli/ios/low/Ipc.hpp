@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../common/Types.h"
+#include "../../common/Types.hpp"
 #include "../../host/MessageQueue.hpp"
 
 namespace peli::ios::low {
@@ -16,6 +16,7 @@ namespace peli::ios::low {
  * from the processor cache line size of both the PPC and ARM CPUs.
  */
 constexpr size_t Alignment = 32;
+constexpr size_t PathSize = 64;
 
 enum {
   IOS_CMD_OPEN = 1,

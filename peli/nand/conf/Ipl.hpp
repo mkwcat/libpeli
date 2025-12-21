@@ -74,7 +74,7 @@ struct IdleMode {
 
 inline bool GetIdleMode(IdleMode &value) noexcept {
   const u8 *data;
-  ::size_t size;
+  size_t size;
   if (auto type = GetSysConf().Get("IPL.IDL", data, size, 9);
       (type != SysConf::EntryType::SmallArray &&
        type != SysConf::EntryType::BigArray) ||
@@ -115,7 +115,7 @@ struct ConsoleNickname {
 
 inline bool GetConsoleNickname(ConsoleNickname &value) noexcept {
   const u8 *data;
-  ::size_t size;
+  size_t size;
   if (auto type = GetSysConf().Get("IPL.NIK", data, size, 12);
       (type != SysConf::EntryType::SmallArray &&
        type != SysConf::EntryType::BigArray) ||
@@ -124,9 +124,9 @@ inline bool GetConsoleNickname(ConsoleNickname &value) noexcept {
   }
 
   for (int i = 0; i < 20; i++) {
-    value.name[i] = util::ImmRead<u16, true>(data, i * 2);
+    value.name[i] = util::ImmRead<u16, host::Endian::Big>(data, i * 2);
   }
-  value.length = util::ImmRead<u16, true>(data, 20);
+  value.length = util::ImmRead<u16, host::Endian::Big>(data, 20);
   return true;
 }
 
@@ -156,7 +156,7 @@ struct ParentalControls {
 
 inline bool GetParentalControls(ParentalControls &value) noexcept {
   const u8 *data;
-  ::size_t size;
+  size_t size;
   if (auto type = GetSysConf().Get("IPL.PC", data, size, 13);
       (type != SysConf::EntryType::SmallArray &&
        type != SysConf::EntryType::BigArray) ||
@@ -173,9 +173,9 @@ inline bool GetParentalControls(ParentalControls &value) noexcept {
   value.secret_question =
       static_cast<ParentalControls::SecretQuestion>(data[7]);
   for (int i = 0; i < 20; i++) {
-    value.answer[i] = util::ImmRead<u16, true>(data, 8 + i * 2);
+    value.answer[i] = util::ImmRead<u16, host::Endian::Big>(data, 8 + i * 2);
   }
-  value.answer_length = util::ImmRead<u16, true>(data, 72);
+  value.answer_length = util::ImmRead<u16, host::Endian::Big>(data, 72);
   return true;
 }
 
@@ -209,7 +209,7 @@ struct SimpleAddress {
 
 inline bool GetSimpleAddress(SimpleAddress &value) noexcept {
   const u8 *data;
-  ::size_t size;
+  size_t size;
   if (auto type = GetSysConf().Get("IPL.SAD", data, size, 16);
       (type != SysConf::EntryType::SmallArray &&
        type != SysConf::EntryType::BigArray) ||
@@ -219,21 +219,21 @@ inline bool GetSimpleAddress(SimpleAddress &value) noexcept {
 
   value.country = data[0];
   value.region = data[1];
-  value.city = util::ImmRead<u16, true>(data, 2);
+  value.city = util::ImmRead<u16, host::Endian::Big>(data, 2);
   for (int i = 0; i < 16; i++) {
     for (int j = 0; j < 64; j++) {
       value.country_name[i][j] =
-          util::ImmRead<u16, true>(data, 4 + (i * 64 + j) * 2);
+          util::ImmRead<u16, host::Endian::Big>(data, 4 + (i * 64 + j) * 2);
     }
   }
   for (int i = 0; i < 16; i++) {
     for (int j = 0; j < 64; j++) {
       value.region_name[i][j] =
-          util::ImmRead<u16, true>(data, 2052 + (i * 64 + j) * 2);
+          util::ImmRead<u16, host::Endian::Big>(data, 2052 + (i * 64 + j) * 2);
     }
   }
-  value.latitude = util::ImmRead<u16, true>(data, 4100);
-  value.longitude = util::ImmRead<u16, true>(data, 4102);
+  value.latitude = util::ImmRead<u16, host::Endian::Big>(data, 4100);
+  value.longitude = util::ImmRead<u16, host::Endian::Big>(data, 4102);
   return true;
 }
 

@@ -20,6 +20,11 @@ inline void Halt() noexcept {
   ::__builtin_unreachable();
 }
 
+[[__noreturn__]]
+inline void Trap() noexcept {
+  ::__builtin_trap();
+}
+
 #if defined(PELI_DEBUG)
 
 #define _PELI_ASSERT_2(X_CONDITION, X_LINE, ...)                               \
@@ -40,29 +45,34 @@ inline void Halt() noexcept {
 #define _PELI_PANIC_1(X_MESSAGE, X_LINE) _PELI_PANIC_2(X_MESSAGE, X_LINE)
 #define _PELI_PANIC(X_MESSAGE) _PELI_PANIC_1(X_MESSAGE, __LINE__)
 
+namespace detail {
+constexpr void Puts(const char *s) { ::fputs(s, stdout); }
+constexpr void PutsLf(const char *s) { ::puts(s); }
+} // namespace detail
+
 [[__noreturn__]]
 inline void AssertFail(const char *condition, const char *message,
                        const char *function, const char *file,
                        const char *line) noexcept {
-  ::puts("Assertion ");
-  if (condition) {
-    ::puts(condition);
-  }
-  ::puts(" failed");
-  if (message) {
-    ::puts(": ");
-    ::puts(message);
-  }
-  ::puts("\nIn: ");
-  ::puts(function);
-  ::puts("\nFile: ");
-  ::puts(file);
-  ::puts("\nLine: ");
-  ::puts(line);
-  ::puts("\n");
+  using namespace detail;
 
-  ::__builtin_trap();
-  ::__builtin_unreachable();
+  Puts("Assertion ");
+  if (condition) {
+    Puts(condition);
+  }
+  Puts(" failed");
+  if (message) {
+    Puts(": ");
+    PutsLf(message);
+  }
+  Puts("In: ");
+  PutsLf(function);
+  Puts("File: ");
+  PutsLf(file);
+  Puts("Line: ");
+  PutsLf(line);
+
+  Trap();
 }
 
 [[__noreturn__]]
@@ -74,26 +84,25 @@ inline void AssertFail(const char *condition, const char *function,
 [[__noreturn__]]
 inline void Panic(const char *message, const char *function, const char *file,
                   const char *line) noexcept {
-  ::puts("Panic: ");
-  ::puts(message);
-  ::puts("\nIn: ");
-  ::puts(function);
-  ::puts("\nFile: ");
-  ::puts(file);
-  ::puts("\nLine: ");
-  ::puts(line);
-  ::puts("\n");
+  using namespace detail;
 
-  ::__builtin_trap();
-  ::__builtin_unreachable();
+  Puts("Panic: ");
+  PutsLf(message);
+  Puts("In: ");
+  PutsLf(function);
+  Puts("File: ");
+  PutsLf(file);
+  Puts("Line: ");
+  PutsLf(line);
+
+  Trap();
 }
 
 #else // PELI_DEBUG
 
 #define _PELI_ASSERT(X_CONDITION, ...)                                         \
   while (!(X_CONDITION)) {                                                     \
-    ::__builtin_trap();                                                        \
-    ::__builtin_unreachable();                                                 \
+    ::peli::util::Trap();                                                      \
   }
 
 #define _PELI_DEBUG_ASSERT(X_CONDITION, ...)                                   \
@@ -102,8 +111,7 @@ inline void Panic(const char *message, const char *function, const char *file,
 
 #define _PELI_PANIC(X_MESSAGE)                                                 \
   do {                                                                         \
-    ::__builtin_trap();                                                        \
-    ::__builtin_unreachable();                                                 \
+    ::peli::util::Trap();                                                      \
   } while (false)
 
 #endif

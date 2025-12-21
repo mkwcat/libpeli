@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Macro.h"
+#include "../common/Types.hpp"
 #include "Error.hpp"
 #include "low/Ipc.hpp"
 
@@ -16,7 +17,15 @@ public:
   class Ioctl;
   class Ioctlv;
 
-  [[__gnu__::__const__]]
+  static constexpr void *operator new(size_t size, Request &request) noexcept {
+    if (size != sizeof(Request)) {
+      return nullptr;
+    }
+
+    return &request;
+  }
+
+  _PELI_GNU_CLANG_ONLY([[__gnu__::__const__]])
   const Request &Sync() const noexcept {
     m_queue.Peek();
     return *this;

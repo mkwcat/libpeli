@@ -5,12 +5,16 @@
 // SPDX-License-Identifier: MIT
 
 #include "Memory.hpp"
-#include "../common/Types.h"
+#include "../common/Types.hpp"
+#include "../host/Config.h"
 #include "../ios/LoMem.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
-#include <cerrno>
+
+#if defined(PELI_NEWLIB)
+#include <errno.h>
 #include <reent.h>
+#endif
 
 namespace peli::runtime {
 
@@ -63,7 +67,7 @@ void Memory::InitArena() {
   }
 }
 
-u8 *Memory::AllocFromMem1ArenaLo(std::size_t size, std::size_t align) {
+u8 *Memory::AllocFromMem1ArenaLo(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
   u8 *ptr = util::AlignUp(align, Mem1ArenaStart);
@@ -77,7 +81,7 @@ u8 *Memory::AllocFromMem1ArenaLo(std::size_t size, std::size_t align) {
   return ptr;
 }
 
-u8 *Memory::AllocFromMem1ArenaHi(std::size_t size, std::size_t align) {
+u8 *Memory::AllocFromMem1ArenaHi(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
   u8 *ptr = util::AlignDown(align, Mem1ArenaEnd - size);
@@ -89,7 +93,7 @@ u8 *Memory::AllocFromMem1ArenaHi(std::size_t size, std::size_t align) {
   return ptr;
 }
 
-u8 *Memory::AllocFromMem2ArenaLo(std::size_t size, std::size_t align) {
+u8 *Memory::AllocFromMem2ArenaLo(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
   u8 *ptr = util::AlignUp(align, Mem2ArenaStart);
@@ -103,7 +107,7 @@ u8 *Memory::AllocFromMem2ArenaLo(std::size_t size, std::size_t align) {
   return ptr;
 }
 
-u8 *Memory::AllocFromMem2ArenaHi(std::size_t size, std::size_t align) {
+u8 *Memory::AllocFromMem2ArenaHi(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
   u8 *ptr = util::AlignDown(align, Mem2ArenaEnd - size);
@@ -115,7 +119,7 @@ u8 *Memory::AllocFromMem2ArenaHi(std::size_t size, std::size_t align) {
   return ptr;
 }
 
-u8 *Memory::SbrkAlloc(std::size_t size) {
+u8 *Memory::SbrkAlloc(size_t size) {
   ppc::Msr::NoInterruptsScope nis;
 
   // Check if the requested size exceeds the available memory
@@ -135,11 +139,13 @@ u8 *Memory::SbrkAlloc(std::size_t size) {
   }
 }
 
-u8 *Memory::SbrkFree(std::size_t size) {
+u8 *Memory::SbrkFree(size_t size) {
   // TODO
   Mem1ArenaStart -= size;
   return Mem1ArenaStart;
 }
+
+#if defined(PELI_NEWLIB)
 
 extern "C" void *_sbrk_r(struct _reent *r, ptrdiff_t size) {
   // Check if the requested size is valid
@@ -167,5 +173,7 @@ extern "C" void *_sbrk_r(struct _reent *r, ptrdiff_t size) {
 
   return ptr;
 }
+
+#endif
 
 } // namespace peli::runtime

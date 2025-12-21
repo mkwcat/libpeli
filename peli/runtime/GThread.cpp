@@ -9,7 +9,6 @@
 #include "Once.hpp"
 #include "Thread.hpp"
 #include <bits/gthr-default.h>
-#include <cstdlib>
 #include <new>
 
 namespace peli::runtime {

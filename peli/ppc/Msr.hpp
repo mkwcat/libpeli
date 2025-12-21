@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "detail/SprInterface.hpp"
+#include "../runtime/SystemCall.hpp"
 
 namespace peli::ppc {
 
@@ -66,7 +67,7 @@ struct Msr : public detail::SprInterface<MsrBits> {
       return false;
     }
     // Call DisableInterrupts syscall to ensure atomic write to MSR
-    __asm__ __volatile__("crclr 28; sc" ::: "cr7", "r0");
+    runtime::SystemCall::DisableInterrupts();
     return true;
   }
 

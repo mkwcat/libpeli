@@ -11,9 +11,9 @@
 // SPDX-License-Identifier: MIT
 
 #include "VIConsole.hpp"
+#include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/CpuCache.hpp"
-#include <cstdlib>
 
 #if defined(PELI_HOST_PPC)
 #include "../hw/Video.hpp"
@@ -43,7 +43,7 @@ enum Option {
  * Create and configure VI for the debug console.
  */
 VIConsole::VIConsole(bool sideways) noexcept {
-  m_share_block = static_cast<Share *>(std::aligned_alloc(32, sizeof(Share)));
+  m_share_block = static_cast<Share *>(host::Alloc(32, sizeof(Share)));
   *m_share_block = {};
 
   CpuCache::DcFlush(m_share_block, sizeof(Share));

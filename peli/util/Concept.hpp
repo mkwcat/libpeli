@@ -8,8 +8,26 @@
 
 namespace peli::util {
 
+#if !defined(__GNUC__)
+
+namespace detail {
+template <class T, class U> struct TestSameAs {
+  static constexpr bool value = false;
+};
+template <class T> struct TestSameAs<T, T> {
+  static constexpr bool value = true;
+};
+} // namespace detail
+
+template <class T, class U>
+concept SameAs = detail::TestSameAs<T, U>::value;
+
+#else
+
 template <class T, class U>
 concept SameAs = __is_same_as(T, U);
+
+#endif
 
 template <class T, class U>
 concept IsConvertibleTo = __is_nothrow_convertible(T, U);
@@ -42,5 +60,13 @@ concept StdArrayType = requires(T t) {
 
 template <class T>
 concept EnumType = __is_enum(T);
+
+template <class T>
+struct NoInferStruct {
+  using Type = T;
+};
+
+template <class T>
+using NoInfer = typename NoInferStruct<T>::Type;
 
 } // namespace peli::util

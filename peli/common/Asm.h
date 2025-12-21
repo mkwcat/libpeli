@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "Types.h"
+#include "Macro.h"
 
 #define PELI_ASM(...) __asm__(_PELI_STRINGIFY(__VA_ARGS__))
 

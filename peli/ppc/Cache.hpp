@@ -6,13 +6,16 @@
 
 #pragma once
 
-#include "../common/Types.h"
+#include "../common/Types.hpp"
 #include "Hid0.hpp"
 #include "Sync.hpp"
+#include "../runtime/SystemCall.hpp"
 
 namespace peli::ppc::Cache {
 
-constexpr u32 BlockSize = 32;
+constexpr size_t BlockSize = 32;
+constexpr size_t SetCount = 128;
+constexpr size_t WayCount = 8;
 
 enum class Op {
   DcStore,
@@ -24,7 +27,7 @@ enum class Op {
   IcInvalidate,
 };
 
-template <Op XOp> inline void OpRange(const void *block, u32 size) noexcept {
+template <Op XOp> inline void OpRange(const void *block, size_t size) noexcept {
   if (size == 0) {
     return;
   }
@@ -52,25 +55,25 @@ template <Op XOp> inline void OpRange(const void *block, u32 size) noexcept {
   }
 }
 
-inline void DcStore(const void *start, u32 size) noexcept {
+inline void DcStore(const void *start, size_t size) noexcept {
   OpRange<Op::DcStore>(start, size);
 }
-inline void DcFlush(const void *start, u32 size) noexcept {
+inline void DcFlush(const void *start, size_t size) noexcept {
   OpRange<Op::DcFlush>(start, size);
 }
-inline void DcInvalidate(const void *start, u32 size) noexcept {
+inline void DcInvalidate(const void *start, size_t size) noexcept {
   OpRange<Op::DcInvalidate>(start, size);
 }
-inline void DcZero(const void *start, u32 size) noexcept {
+inline void DcZero(const void *start, size_t size) noexcept {
   OpRange<Op::DcZero>(start, size);
 }
-inline void DcTouch(const void *start, u32 size) noexcept {
+inline void DcTouch(const void *start, size_t size) noexcept {
   OpRange<Op::DcTouch>(start, size);
 }
-inline void DcTouchStore(const void *start, u32 size) noexcept {
+inline void DcTouchStore(const void *start, size_t size) noexcept {
   OpRange<Op::DcTouchStore>(start, size);
 }
-inline void IcInvalidate(const void *start, u32 size) noexcept {
+inline void IcInvalidate(const void *start, size_t size) noexcept {
   OpRange<Op::IcInvalidate>(start, size);
 }
 
@@ -91,6 +94,10 @@ inline void IcFlashInvalidate() noexcept {
   SprRwCtl<Hid0>()->ICFI = true;
   ISync();
   Sync();
+}
+
+inline void DcLockAndFlush() noexcept {
+  runtime::SystemCall::DcLockAndFlush();
 }
 
 } // namespace peli::ppc::Cache

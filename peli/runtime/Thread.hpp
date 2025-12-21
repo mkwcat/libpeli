@@ -134,7 +134,7 @@ private:
   State m_state = State::Disabled;
   u8 *m_stack_top = nullptr;
   u8 *m_stack_bottom = nullptr;
-  bool m_stack_owned = false;
+  size_t m_stack_size = 0;
   ThreadId m_unique_id = 0;
 
 #if defined(PELI_NEWLIB)
@@ -168,6 +168,7 @@ private:
   static u64 s_run_queue_mask;
   static ppc::Context s_none_context;
   static u8 *s_stray_stack;
+  static size_t s_stray_stack_size;
 };
 
 } // namespace peli::runtime

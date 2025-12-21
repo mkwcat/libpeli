@@ -5,16 +5,15 @@
 // SPDX-License-Identifier: MIT
 
 #include "Thread.hpp"
+#include "../host/Host.hpp"
 #include "../ios/LoMem.hpp"
 #include "../ppc/Gpr.hpp"
 #include "../ppc/Msr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
+#include "../util/Bit.hpp"
 #include "../util/Halt.hpp"
 #include "ThreadQueue.hpp"
-#include <bit>
-#include <cstdio>
-#include <cstdlib>
 
 namespace peli::runtime {
 
@@ -30,6 +29,7 @@ constinit Thread::List Thread::s_run_queue[64] = {};
 constinit u64 Thread::s_run_queue_mask = 0;
 constinit ppc::Context Thread::s_none_context = {};
 constinit u8 *Thread::s_stray_stack = nullptr;
+constinit size_t Thread::s_stray_stack_size = 0;
 
 void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
   constinit static bool s_is_init = false;
@@ -54,7 +54,7 @@ void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
 
   s_main_thread.m_stack_bottom = reinterpret_cast<u8 *>(stack);
   s_main_thread.m_stack_top = s_main_thread.m_stack_bottom + stackSize;
-  s_main_thread.m_stack_owned = false;
+  s_main_thread.m_stack_size = 0;
 
   s_thread_list = {nullptr, nullptr};
   s_current = &s_main_thread;
@@ -100,13 +100,13 @@ Thread::Thread(ThreadFunc func, void *arg, void *stack, u32 stackSize,
 
   if (stack && stackSize != 0) {
     m_stack_bottom = reinterpret_cast<u8 *>(stack);
-    m_stack_owned = false;
+    m_stack_size = 0;
   } else {
     if (stackSize == 0) {
       stackSize = PELI_THREAD_MIN_STACK_SIZE;
     }
-    m_stack_bottom = static_cast<u8 *>(std::aligned_alloc(32, stackSize));
-    m_stack_owned = true;
+    m_stack_bottom = static_cast<u8 *>(host::Alloc(32, stackSize));
+    m_stack_size = stackSize;
   }
   m_stack_top = m_stack_bottom + stackSize;
 
@@ -142,10 +142,11 @@ Thread::~Thread() noexcept {
 
   ppc::Msr::NoInterruptsScope guard;
 
-  if (s_stray_stack) {
+  if (s_stray_stack_size != 0) {
     // Free the stray stack if there is one leftover
-    std::free(s_stray_stack);
+    host::Free(s_stray_stack, s_stray_stack_size);
     s_stray_stack = nullptr;
+    s_stray_stack_size = 0;
   }
 
   m_state = State::Disabled;
@@ -165,16 +166,17 @@ Thread::~Thread() noexcept {
 
     // Can't delete the stack while it's in use, so pass it along to be freed by
     // another thread
-    m_stack_owned = false;
     s_stray_stack = m_stack_bottom;
+    s_stray_stack_size = m_stack_size;
+    m_stack_size = 0;
 
     // Exit the current thread, shouldn't return
     dispatchAny();
     _PELI_PANIC("Dispatched thread is deleted");
   }
 
-  if (m_stack_owned) {
-    std::free(m_stack_bottom);
+  if (m_stack_size != 0) {
+    host::Free(m_stack_bottom, m_stack_size);
   }
 
   // Remove from the run queue
@@ -321,7 +323,7 @@ void Thread::dispatchAny() noexcept {
   }
 
   // Find the next thread to run
-  int priority = std::countl_zero(s_run_queue_mask);
+  int priority = util::CountLeadingZero(s_run_queue_mask);
 
   if (current && current->m_state == State::Running) {
     if (!yield && current->m_priority < priority) {
@@ -357,9 +359,10 @@ void Thread::dispatch() noexcept {
 
   // Hook here to free an old stack, which is kinda weird. If this doesn't get
   // called, worst case scenario it lives until another thread gets destroyed
-  if (s_stray_stack) {
-    std::free(s_stray_stack);
+  if (s_stray_stack_size != 0) {
+    host::Free(s_stray_stack, s_stray_stack_size);
     s_stray_stack = nullptr;
+    s_stray_stack_size = 0;
   }
 }
 
