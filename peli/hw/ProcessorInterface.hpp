@@ -12,7 +12,7 @@
 
 namespace peli::hw {
 
-static struct ProcessorInterface {
+struct ProcessorInterface {
   enum class Interrupt {
     Pi = 0,
     Rsw = 1,
@@ -141,7 +141,7 @@ static struct ProcessorInterface {
   Register<InterruptBits> INTMR;
 
   _PELI_PAD(0x008, 0x100);
-} *const PI = reinterpret_cast<ProcessorInterface *>(0xCC003000);
+} inline *const PI = reinterpret_cast<ProcessorInterface *>(0xCC003000);
 
 static_assert(sizeof(ProcessorInterface) == 0x100);
 

@@ -12,7 +12,7 @@
 
 namespace peli::hw {
 
-static struct Wood {
+struct Wood {
   struct IpcMsg {
     using Size = u32;
 
@@ -222,9 +222,160 @@ static struct Wood {
    */
   Register<IrqBits> IOPIRQINTEN;
 
-  _PELI_PAD(0x040, 0x400);
+  _PELI_PAD(0x040, 0x194);
 
-} *const WOOD = reinterpret_cast<Wood *>(0xCD000000);
+  struct RstCtrl {
+    using Size = u32;
+
+    /* 27-31 */ u32 : 5;
+
+    /**
+     * Unlock external DRAM reset?
+     */
+    /* 26 */ volatile u32 NLCKB_EDRAM : 1;
+
+    /**
+     * External DRAM reset.
+     */
+    /* 25 */ volatile u32 EDRAM : 1;
+
+    /**
+     * AHB reset; kills DI, sets slot LED on, hangs IOP...
+     */
+    /* 24 */ volatile u32 AHB : 1;
+
+    /**
+     * IOP reset.
+     */
+    /* 23 */ volatile u32 IOP : 1;
+
+    /**
+     * DSP reset.
+     */
+    /* 22 */ volatile u32 DSP : 1;
+
+    /**
+     * VI1 reset?
+     */
+    /* 21 */ volatile u32 VI1 : 1;
+
+    /**
+     * Video Interface reset.
+     */
+    /* 20 */ volatile u32 VI : 1;
+
+    /**
+     * Processor Interface IO reset.
+     */
+    /* 19 */ volatile u32 IOPI : 1;
+
+    /**
+     * MEM IO reset.
+     */
+    /* 18 */ volatile u32 IOMEM : 1;
+
+    /**
+     * Drive Interface IO reset.
+     */
+    /* 17 */ volatile u32 IODI : 1;
+
+    /**
+     * Expansion Interface IO reset.
+     */
+    /* 16 */ volatile u32 IOEXI : 1;
+
+    /**
+     * Serial Interface IO reset.
+     */
+    /* 15 */ volatile u32 IOSI : 1;
+
+    /**
+     * Audio Interface I2S3 reset.
+     */
+    /* 14 */ volatile u32 AI_I2S3 : 1;
+
+    /**
+     * GPU (GX) reset.
+     */
+    /* 13 */ volatile u32 GFX : 1;
+
+    /**
+     * GPU (GX) TC/CP/PE reset.
+     */
+    /* 12 */ volatile u32 GFXTCPE : 1;
+
+    /**
+     * MEM reset.
+     */
+    /* 11 */ volatile u32 MEM : 1;
+
+    /**
+     * Drive Interface reset.
+     */
+    /* 10 */ volatile u32 DI : 1;
+
+    /**
+     * Processor Interface reset.
+     */
+    /* 9 */ volatile u32 PI : 1;
+
+    /**
+     * MEM reset again?
+     */
+    /* 8 */ volatile u32 MEMRSTB : 1;
+
+    /**
+     * Unlock SYSPLL reset?
+     */
+    /* 7 */ volatile u32 NLCKB_SYSPLL : 1;
+
+    /**
+     * SYSPLL reset.
+     */
+    /* 6 */ volatile u32 SYSPLL : 1;
+
+    /**
+     * PowerPC SRESET.
+     */
+    /* 5 */ volatile u32 CPU_SRESET : 1;
+
+    /**
+     * PowerPC HRESET.
+     */
+    /* 4 */ volatile u32 CPU_HRESET : 1;
+
+    /**
+     * DSKPLL reset.
+     */
+    /* 3 */ volatile u32 DSKPLL : 1;
+
+    /**
+     * General reset.
+     */
+    /* 2 */ volatile u32 RSTB : 1;
+
+    /**
+     * CPU reset?
+     */
+    /* 1 */ volatile u32 CRSTB : 1;
+
+    /**
+     * System reset.
+     */
+    /* 0 */ volatile u32 RSTINB : 1;
+  };
+
+  /**
+   * Reset control register. Reset/off = 0, run/on = 1.
+   *
+   * Address: 0x0D000194
+   * Size: u32
+   */
+  Register<RstCtrl> RSTCTRL;
+
+  _PELI_PAD(0x198, 0x400);
+
+} inline *const WOOD = reinterpret_cast<Wood *>(0xCD000000);
 
 static_assert(sizeof(Wood) == 0x400);
 

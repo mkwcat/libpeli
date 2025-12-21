@@ -11,7 +11,7 @@
 
 namespace peli::hw {
 
-static struct VideoInterface {
+struct VideoInterface {
 public:
   struct Vtr {
     using Size = u16;
@@ -836,7 +836,7 @@ public:
    * Pad to 0x80 size block. The values are always 0x00FF.
    */
   u16 PAD[5];
-} *const VI = reinterpret_cast<VideoInterface *>(0xCC002000);
+} inline *const VI = reinterpret_cast<VideoInterface *>(0xCC002000);
 
 static_assert(sizeof(VideoInterface) == 0x80);
 
