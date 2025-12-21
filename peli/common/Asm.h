@@ -30,3 +30,6 @@
 
 #define PELI_ASM_IMPORT(X_CONSTRAINT, X_SYMBOL)                                \
   [X_SYMBOL] #X_CONSTRAINT(X_SYMBOL)
+
+#define PELI_ASM_IMPORT_AS(X_CONSTRAINT, X_SYMBOL, X_LABEL)                    \
+  [X_LABEL] #X_CONSTRAINT(X_SYMBOL)

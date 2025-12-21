@@ -36,7 +36,7 @@ add_compile_options(
 )
 
 add_link_options(
-    -Wl,--section-start,.init=0x80104000
+    -Wl,--section-start,.init=0x80100000
 )
 
 add_executable(SimpleApp SimpleApp.cpp)

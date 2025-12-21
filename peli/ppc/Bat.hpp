@@ -318,7 +318,7 @@ struct BatConfig {
 
 template <BatConfig C>
 [[gnu::optimize("-Os")]] [[gnu::optimize("-fno-schedule-insns")]]
-inline void ConfigureBats() {
+inline void BatConfigure() {
   DBat0L::MoveTo(C.Lower(true, 0));
   DBat0U::MoveTo(C.Upper(true, 0));
   ISync();

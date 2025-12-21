@@ -37,20 +37,13 @@ inline void Invalidate() noexcept {
 inline void Flush() noexcept {}
 
 inline void Init() noexcept {
-  {
-    Msr::OverrideScope msrOvr(MsrBits{
-        .IR = true, // Instruction Address Translation
-        .DR = true, // Data Address Translation
-    });
+  Sync();
 
-    Sync();
+  // Disable L2 Cache and reset configuration
+  L2cr{}.MoveTo();
+  Sync();
 
-    // Disable L2 Cache and reset configuration
-    L2cr{}.MoveTo();
-    Sync();
-
-    Invalidate();
-  }
+  Invalidate();
 
   SprRwCtl<L2cr>() <=> [](L2cr l2cr) {
     l2cr.L2E = true;

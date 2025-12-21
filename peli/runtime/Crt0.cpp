@@ -19,6 +19,7 @@
 #include "../ppc/SprRwCtl.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
+#include "../util/Bit.hpp"
 #include "Args.hpp"
 #include "Exception.hpp"
 #include "Memory.hpp"
@@ -39,7 +40,6 @@ namespace {
 void peliMain(Args *input_args) noexcept;
 void peliCrt0() noexcept;
 void clearMemory(void *start, u32 size) noexcept;
-void initPowerPC();
 } // namespace
 
 extern "C" {
@@ -69,11 +69,55 @@ constinit Args s_args;
 
 alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
 
+constexpr u32 s_hid0_default = util::BitCast<u32>(ppc::Hid0Bits{
+    .DOZE = true,  // Doze Mode Available
+    .DPM = true,   // Dynamic Power Management
+    .NHR = true,   // Not Hard Reset
+    .ICE = true,   // Instruction Cache Enable
+    .DCE = true,   // Data Cache Enable
+    .ICFI = true,  // Instruction Cache Flash Invalidate
+    .DCFI = true,  // Data Cache Flash Invalidate
+    .SGE = false,  // Disable Speculation Guard
+    .DCFA = false, // Data Cache Flush Assist
+    .BTIC = true,  // Branch Target Instruction Cache
+    .ABE = false,  // Address Broadcast Disabled
+    .BHT = true,   // Branch History Table
+});
+
+constexpr u32 s_hid4_default = util::BitCast<u32>(ppc::Hid4Bits{
+    .H4A = true, // HID4 Access
+    .SBE = true, // Secondary BAT Enable
+});
+
+constexpr u32 s_msr_default = util::BitCast<u32>(ppc::MsrBits{
+    .IR = 1, // Enable Instruction Address Translation
+    .DR = 1, // Enable Data Address Translation
+});
+
+// Use constants for MEM1 and MEM2 sizes
+constexpr u32 s_mem1_size = 0x01800000u;
+constexpr u32 s_mem2_size = 0x03400000u;
+
+constexpr ppc::BatConfig s_bats_default =
+    ppc::BatConfig(s_mem1_size, s_mem2_size, false, false, false);
+
 PELI_ASM_METHOD( // clang-format off
   void peliCrt0() noexcept,
 
-  (PELI_ASM_IMPORT(i, s_crt0_stack), PELI_ASM_IMPORT(i, peliMain), 
-   PELI_ASM_IMPORT(i, clearMemory), PELI_ASM_IMPORT(i, initPowerPC)
+  (PELI_ASM_IMPORT(i, s_crt0_stack),
+   PELI_ASM_IMPORT(i, peliMain), 
+   PELI_ASM_IMPORT(i, clearMemory),
+
+   PELI_ASM_IMPORT(i, s_hid0_default),
+   PELI_ASM_IMPORT(i, s_hid4_default),
+   PELI_ASM_IMPORT(i, s_msr_default),
+
+   PELI_ASM_IMPORT_AS(i, ppc::Msr::EnterRealMode, EnterRealMode),
+   PELI_ASM_IMPORT_AS(i, ppc::Msr::ExitRealMode, ExitRealMode),
+   PELI_ASM_IMPORT_AS(i, ppc::BatClearAll, BatClearAll),
+   PELI_ASM_IMPORT_AS(i, ppc::BatConfigure<s_bats_default>, BatConfigure),
+   PELI_ASM_IMPORT_AS(i, ppc::L2Cache::Init, L2CacheInit),
+   PELI_ASM_IMPORT(i, StubExceptionHandlers)
   ),
 
   // Set stack pointer
@@ -90,17 +134,37 @@ PELI_ASM_METHOD( // clang-format off
   lis     r13, _SDA_BASE_@ha;
   la      r13, _SDA_BASE_@l(r13);
 
+  lis     r4, %[s_hid0_default]@h;
+  ori     r4, r4, %[s_hid0_default]@l;
+  mtspr   PELI_SPR_HID0, r4;
+
+  lis     r4, %[s_hid4_default]@h;
+  ori     r4, r4, %[s_hid4_default]@l;
+  mtspr   PELI_SPR_HID4, r4;
+
+  isync;
+
   // Set GQR0 as it may be used by the compiler
   li      r0, 0;
   mtspr   PELI_SPR_GQR0, r0;
 
   // Load the return address this way as we don't know what kind of address
   // mapping we're running in right now
-  lis     r3, .L%=ReturnFromInitPPC@ha;
-  la      r3, .L%=ReturnFromInitPPC@l(r3);
+  lis     r3, .L%=ReturnFromEnterRealMode@ha;
+  la      r3, .L%=ReturnFromEnterRealMode@l(r3);
   mtlr    r3;
-  b       %[initPowerPC];
-.L%=ReturnFromInitPPC:;
+  b       %[EnterRealMode];
+.L%=ReturnFromEnterRealMode:;
+  // Real mode {
+  bl      %[BatClearAll];
+  bl      %[BatConfigure];
+
+  li      r3, %[s_msr_default];
+  bl      %[ExitRealMode];
+  // }
+
+  bl      %[StubExceptionHandlers];
+  bl      %[L2CacheInit];
 
   // Clear bss before we use the stack again
   lis     r3, __bss_start@ha;
@@ -159,7 +223,7 @@ PELI_ASM_METHOD( // clang-format off
   // r7 = distance to next cache line boundary
 
   rlwinm  r8, r4, 0, ~3;
-  // r8 = n word aligned down
+  // r8 = size word aligned down
 
   cmplw   cr7, r7, r8;
   blt-    cr7, .L%=PreWordMinBoundary;
@@ -249,66 +313,7 @@ PELI_ASM_METHOD( // clang-format off
                  // clang-format on
 );
 
-[[gnu::noinline]] [[gnu::optimize("-Os")]] [[gnu::optimize(
-    "-fno-schedule-insns")]]
-void initPowerPC() {
-  // Use constants for MEM1 and MEM2 sizes
-  constexpr u32 mem1_size = 0x01800000u;
-  constexpr u32 mem2_size = 0x03400000u;
-
-  // Switch to Real Mode
-  {
-    ppc::Msr::RealModeScope scope;
-
-    // Store temporary stack before flash invalidate
-    if (ppc::Hid0::MoveFrom().DCE) {
-      ppc::Cache::DcStore(util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
-      ppc::Sync();
-      ppc::SprRwCtl<ppc::Hid0>()->ABE = true; // Address Broadcast Enable
-      ppc::ISync();
-      ppc::Sync();
-    }
-
-    // HID0 = 0x00910C64
-    ppc::Hid0::MoveTo(ppc::Hid0Bits{
-        .DOZE = true, // Doze Mode Available
-        .DPM = true,  // Dynamic Power Management
-        .NHR = true,  // Not Hard Reset
-        .ICE = true,  // Instruction Cache Enable
-        .DCE = true,  // Data Cache Enable
-        .ICFI = true, // Instruction Cache Flash Invalidate
-        .DCFI = true, // Data Cache Flash Invalidate
-        .SGE = false, // Disable Speculation Guard
-        .DCFA = true, // Data Cache Flush Assist
-        .BTIC = true, // Branch Target Instruction Cache
-        .ABE = false, // Address Broadcast Disabled
-        .BHT = true,  // Branch History Table
-    });
-
-    // HID4 = 0x82000000
-    ppc::Hid4::MoveTo(ppc::Hid4Bits{
-        .H4A = true, // HID4 Access
-        .SBE = true, // Secondary BAT Enable
-    });
-    ppc::ISync();
-
-    // Configure the Block Address Translation registers
-    ppc::ConfigureBats<ppc::BatConfig(mem1_size, mem2_size, false, false,
-                                      false)>();
-
-    // Set MSR before leaving real mode
-    scope.msr = ppc::Msr(ppc::MsrBits{
-        .EE = 0, // External Interrupt Disabled
-        .FP = 0, // Floating Point Unavailable
-        .ME = 0, // Machine Check Disabled
-        .IR = 1, // Enable Instruction Address Translation
-        .DR = 1, // Enable Data Address Translation
-        .RI = 0, // Interrupt is not recoverable
-    });
-  }
-
-  // StubExceptionHandlers();
-
+void peliMain(Args *input_args) noexcept {
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
   ppc::Ps::Init();
@@ -316,11 +321,6 @@ void initPowerPC() {
   ppc::Ps::Disable();
 #endif
 
-  // Init and enable L2 cache
-  ppc::L2Cache::Init();
-}
-
-void peliMain(Args *input_args) noexcept {
   Memory::InitArena();
 
   s_args.Build(input_args);

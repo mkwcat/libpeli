@@ -54,4 +54,8 @@ constexpr size_t CountLeadingZero(IntegralType auto value) {
 #endif
 }
 
+template <class T> constexpr T BitCast(auto &&from) {
+  return __builtin_bit_cast(T, from);
+}
+
 } // namespace peli::util
