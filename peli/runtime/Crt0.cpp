@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "../common/Asm.h"
+#include "../common/AsmRegisters.h"
 #include "../common/Macro.h"
 #include "../common/Types.hpp"
 #include "../host/Config.h"
@@ -28,21 +29,25 @@
 #endif
 
 int main(int argc, char **argv);
-
-extern "C" _PELI_GNU_CLANG_ONLY([[gnu::noreturn]]) void exit(int status);
+extern "C" [[gnu::noreturn]] void exit(int status);
 
 extern "C" peli::runtime::Args *__system_argv;
 
 namespace peli::runtime {
 
-// Make the entire file extern "C" for easier accessing from assembly.
-extern "C" {
+namespace {
+void peliMain(Args *input_args) noexcept;
+void peliCrt0() noexcept;
+} // namespace
 
-PELI_ASM_FUNCTION( // clang-format off
+extern "C" {
+PELI_ASM_METHOD( // clang-format off
   [[gnu::weak]]
   void _start() noexcept,
 
-  bl      peliCrt0;
+  (PELI_ASM_IMPORT(i, peliCrt0)),
+
+  bl      %[peliCrt0];
 
   // Homebrew loader arguments
   .ascii  "_arg"; // Indicator
@@ -52,41 +57,43 @@ PELI_ASM_FUNCTION( // clang-format off
   .long   0;      // Argc
   .long   0;      // Argv
   .long   0;      // Argv End
-                   // clang-format on
+                 // clang-format on
 );
+}
 
 namespace {
 
 constinit Args s_args;
-alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
+[[gnu::used]] alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
 
-void peliMain(Args *input_args) noexcept;
-void peliCrt0() noexcept;
-
-PELI_ASM_FUNCTION( // clang-format off
+PELI_ASM_METHOD( // clang-format off
   void peliCrt0() noexcept,
 
+  (PELI_ASM_IMPORT(i, s_crt0_stack), PELI_ASM_IMPORT(i, peliMain)),
+
   // Set temporary stack pointer
-  lis     %r1, (s_crt0_stack + PELI_CRT0_STACK_SIZE - 0x8)@ha;
-  la      %r1, (s_crt0_stack + PELI_CRT0_STACK_SIZE - 0x8)@l(%r1);
+  lis     r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@ha;
+  la      r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@l(r1);
 
   // Set the read-only Small Data Area 2 (SDA2) base pointer
-  lis     %r2, _SDA2_BASE_@ha;
-  la      %r2, _SDA2_BASE_@l(%r2);
+  .extern _SDA2_BASE_;
+  lis     r2, _SDA2_BASE_@ha;
+  la      r2, _SDA2_BASE_@l(r2);
 
   // Set the read-write Small Data Area (SDA) base pointer
-  lis     %r13, _SDA_BASE_@ha;
-  la      %r13, _SDA_BASE_@l(%r13);
+  .extern _SDA_BASE_;
+  lis     r13, _SDA_BASE_@ha;
+  la      r13, _SDA_BASE_@l(r13);
 
   // Set GQR0 as it may be used by the compiler
-  li      %r0, 0;
-  mtspr   912, %r0;
+  li      r0, 0;
+  mtspr   912, 0;
 
-  mflr    %r3;
+  mflr    r3;
                  
   // Call the main init function
-  bl      peliMain;
-                   // clang-format on
+  bl      %[peliMain];
+                 // clang-format on
 );
 
 void initPowerPC() {
@@ -102,6 +109,9 @@ void initPowerPC() {
   constexpr u32 mem1_size = 0x01800000u;
   constexpr u32 mem2_size = 0x03400000u;
 #endif
+
+  ppc::Cache::DcStore(util::Physical(s_crt0_stack), sizeof(s_crt0_stack));
+  ppc::Sync();
 
   // Switch to Real Mode
   {
@@ -186,7 +196,6 @@ void peliMain(Args *input_args) noexcept {
 }
 
 } // namespace
-} // extern "C"
 } // namespace peli::runtime
 
 constinit peli::runtime::Args *__system_argv = &peli::runtime::s_args;

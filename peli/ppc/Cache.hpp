@@ -7,15 +7,15 @@
 #pragma once
 
 #include "../common/Types.hpp"
+#include "../runtime/SystemCall.hpp"
 #include "Hid0.hpp"
 #include "Sync.hpp"
-#include "../runtime/SystemCall.hpp"
 
 namespace peli::ppc::Cache {
 
-constexpr size_t BlockSize = 32;
-constexpr size_t SetCount = 128;
-constexpr size_t WayCount = 8;
+constexpr inline size_t BlockSize = 32;
+constexpr inline size_t SetCount = 128;
+constexpr inline size_t WayCount = 8;
 
 enum class Op {
   DcStore,
@@ -96,8 +96,14 @@ inline void IcFlashInvalidate() noexcept {
   Sync();
 }
 
-inline void DcLockAndFlush() noexcept {
-  runtime::SystemCall::DcLockAndFlush();
+inline void DcFlushAndLock() noexcept {
+  // Set DLOCK
+  runtime::SystemCall::DcFlush(1 << 31 >> 19, ~0);
+}
+
+inline void DcFlushAndDisable() noexcept {
+  // Clear DCE
+  runtime::SystemCall::DcFlush(0, ~(1 << 31 >> 17));
 }
 
 } // namespace peli::ppc::Cache

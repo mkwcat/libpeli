@@ -1,4 +1,8 @@
-// SpecialPurposeRegisters.cpp - Dump values of SPRs
+// peli/tests/SpecialPurposeRegisters.cpp - Dump values of SPRs
+//   Written by mkwcat
+//
+// Copyright (c) 2025 mkwcat
+// SPDX-License-Identifier: MIT
 
 #include <cstdio>
 #include <iterator>
@@ -103,7 +107,7 @@ constexpr std::pair<peli::u32 (*)(), const char *> s_spr_list[] = {
 
 } // namespace
 
-int main(int argc, char **argv) noexcept {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) noexcept {
   peli::util::VIConsole console(false);
 
   console.Print("\nPowerPC SPR listing:\n");
