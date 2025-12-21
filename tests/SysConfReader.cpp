@@ -1,13 +1,14 @@
 // SysConfReader.cpp - Print all SYSCONF values
 
 #include <cstdio>
-#include <peli/common/Types.h>
+#include <peli/common/Types.hpp>
 #include <peli/ios/low/Ipc.hpp>
 #include <peli/nand/conf/Ipl.hpp>
 #include <peli/util/VIConsole.hpp>
 #include <peli/util/VIConsoleStdOut.hpp>
 
 namespace {
+
 template <class T> T error() {
   std::fputs("Error: ", stdout);
   return T();
@@ -57,8 +58,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
   auto &conf = peli::nand::conf::GetSysConf();
 
   std::printf("\n=== SYSCONF dump ===\n");
-  for (std::size_t i = 0; i < conf.GetCount(); i++) {
-    std::size_t size, key_length;
+  for (size_t i = 0; i < conf.GetCount(); i++) {
+    size_t size, key_length;
     const char *key;
     const peli::u8 *data;
 
@@ -69,6 +70,8 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     }
 
     std::printf("%.*s: ", key_length, key);
+
+    constexpr auto be = peli::host::Endian::Big;
 
     switch (type) {
     default:
@@ -86,17 +89,17 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
     case decltype(type)::Short:
       std::printf("s(%d)\t",
-                  peli::util::ImmReadMisaligned<peli::s16, true>(data));
+                  peli::util::ImmReadMisaligned<peli::s16, be>(data));
       break;
 
     case decltype(type)::Long:
       std::printf("l(%d)\t",
-                  peli::util::ImmReadMisaligned<peli::s32, true>(data));
+                  peli::util::ImmReadMisaligned<peli::s32, be>(data));
       break;
 
     case decltype(type)::LongLong:
       std::printf("ll(%lld)\t",
-                  peli::util::ImmReadMisaligned<peli::s64, true>(data));
+                  peli::util::ImmReadMisaligned<peli::s64, be>(data));
       break;
 
     case decltype(type)::Bool:

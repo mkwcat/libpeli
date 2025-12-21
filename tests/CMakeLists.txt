@@ -33,3 +33,4 @@ add_compile_options(
 )
 
 add_executable(SysConfReader SysConfReader.cpp)
+add_executable(SpecialPurposeRegisters SpecialPurposeRegisters.cpp)
