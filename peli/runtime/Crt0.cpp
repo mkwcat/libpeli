@@ -9,6 +9,7 @@
 #include "../common/Macro.h"
 #include "../common/Types.hpp"
 #include "../host/Config.h"
+#include "../ios/low/Ipc.hpp"
 #include "../ppc/Bat.hpp"
 #include "../ppc/Cache.hpp"
 #include "../ppc/Hid0.hpp"
@@ -338,7 +339,11 @@ void peliMain(Args *input_args) noexcept {
   // Initialize the thread system
   Thread::SystemInit(s_crt0_stack, PELI_CRT0_STACK_SIZE);
 
+  // Initialize exception handlers
   InitExceptions();
+
+  // Initialize Inter-process Communication with IOS
+  ios::low::Init();
 
   _PELI_DIAGNOSTIC(push)
   // Ignore the warning on use of ::main

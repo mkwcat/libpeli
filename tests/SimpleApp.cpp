@@ -32,8 +32,6 @@ int main() {
   // Register the console as stdout
   peli::util::VIConsoleStdOut::Register(console);
 
-  peli::ios::low::Init();
-
   peli::runtime::Thread thread(ThreadEntryTest, nullptr, nullptr, 0x1000, 80,
                                false);
   int num = 4;

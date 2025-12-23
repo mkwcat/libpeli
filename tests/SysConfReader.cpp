@@ -24,8 +24,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
   // Register the console as stdout
   peli::util::VIConsoleStdOut::Register(console);
 
-  peli::ios::low::Init();
-
   peli::u32 value_u32;
   std::printf("IPL.CB: 0x%08x\t", peli::nand::conf::GetCounterBias(value_u32)
                                       ? value_u32
