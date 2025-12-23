@@ -34,11 +34,11 @@ public:
 
   [[nodiscard]]
   static SprInterface MoveFrom() noexcept {
-    return SprInterface(GetSpr<SPR>());
+    return SprInterface(ppc::MoveFrom<SPR>());
   }
 
-  void MoveTo() const noexcept { SetSpr<SPR>(Hex()); }
-  static void MoveTo(u32 value) noexcept { SetSpr<SPR>(value); }
+  void MoveTo() const noexcept { ppc::MoveTo<SPR>(Hex()); }
+  static void MoveTo(u32 value) noexcept { ppc::MoveTo<SPR>(value); }
   static void MoveTo(const T &value) noexcept {
     MoveTo(SprInterface(value).Hex());
   }

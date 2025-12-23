@@ -15,7 +15,7 @@
 namespace {
 
 template <peli::ppc::Spr SPR> constexpr peli::u32 G() {
-  return peli::ppc::GetSpr<SPR>();
+  return peli::ppc::MoveFrom<SPR>();
 }
 
 constexpr std::pair<peli::u32 (*)(), const char *> s_spr_list[] = {

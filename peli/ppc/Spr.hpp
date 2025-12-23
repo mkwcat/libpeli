@@ -400,37 +400,35 @@ enum class Spr {
   SR15,
 };
 
-template <Spr Reg> inline u32 SetSpr(u32 value) noexcept {
+template <Spr Reg> inline u32 MoveTo(u32 value) noexcept {
   if constexpr (Reg == Spr::MSR) {
-    __asm__ __volatile__("mtmsr %0;" : : "r"(value));
+    __asm__ __volatile__("mtmsr %0" : : "r"(value));
     return value;
   } else {
-    __asm__ __volatile__("mtspr %0, %1;"
+    __asm__ __volatile__("mtspr %0, %1"
                          :
                          : "i"(static_cast<u32>(Reg)), "r"(value));
     return value;
   }
 }
 
-template <Spr Reg> inline u32 GetSpr() noexcept {
+template <Spr Reg> inline u32 MoveFrom() noexcept {
   u32 value;
   if (Reg == Spr::MSR) {
-    __asm__ __volatile__("mfmsr %0;" : "=r"(value));
+    __asm__("mfmsr %0" : "=r"(value));
     return value;
   } else {
-    __asm__ __volatile__("mfspr %0, %1;"
-                         : "=r"(value)
-                         : "i"(static_cast<u32>(Reg)));
+    __asm__("mfspr %0, %1" : "=r"(value) : "i"(static_cast<u32>(Reg)));
   }
   return value;
 }
 
 template <Spr Reg> inline u32 ClearSprBit(u32 value) {
-  return SetSpr<Reg>(GetSpr<Reg>() & ~value);
+  return MoveTo<Reg>(MoveFrom<Reg>() & ~value);
 }
 
 template <Spr Reg> inline u32 SetSprBit(u32 value) {
-  return SetSpr<Reg>(GetSpr<Reg>() | value);
+  return MoveTo<Reg>(MoveFrom<Reg>() | value);
 }
 
 } // namespace peli::ppc

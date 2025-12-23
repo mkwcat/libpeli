@@ -15,7 +15,7 @@
 #include "../ppc/Hid4.hpp"
 #include "../ppc/L2Cache.hpp"
 #include "../ppc/Msr.hpp"
-#include "../ppc/Ps.hpp"
+#include "../ppc/PairedSingle.hpp"
 #include "../ppc/SprRwCtl.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Address.hpp"
@@ -59,9 +59,12 @@ PELI_ASM_METHOD( // clang-format off
   .long   0;      // Argc
   .long   0;      // Argv
   .long   0;      // Argv End
+
+  // Workaround for HBC loader_reloc.c:27 patch_crt0
+  .long   0x40000000;
                  // clang-format on
 );
-}
+} // extern "C"
 
 namespace {
 
@@ -76,12 +79,16 @@ constexpr u32 s_hid0_default = util::BitCast<u32>(ppc::Hid0Bits{
     .ICE = true,   // Instruction Cache Enable
     .DCE = true,   // Data Cache Enable
     .ICFI = true,  // Instruction Cache Flash Invalidate
-    .DCFI = true,  // Data Cache Flash Invalidate
+    .DCFI = false, // Not Data Cache Flash Invalidate
     .SGE = false,  // Disable Speculation Guard
     .DCFA = false, // Data Cache Flush Assist
     .BTIC = true,  // Branch Target Instruction Cache
     .ABE = false,  // Address Broadcast Disabled
     .BHT = true,   // Branch History Table
+});
+
+constexpr u32 s_hid0_dcfi = util::BitCast<u32>(ppc::Hid0Bits{
+    .DCFI = true, // Data Cache Flash Invalidate
 });
 
 constexpr u32 s_hid4_default = util::BitCast<u32>(ppc::Hid4Bits{
@@ -109,6 +116,7 @@ PELI_ASM_METHOD( // clang-format off
    PELI_ASM_IMPORT(i, clearMemory),
 
    PELI_ASM_IMPORT(i, s_hid0_default),
+   PELI_ASM_IMPORT(i, s_hid0_dcfi),
    PELI_ASM_IMPORT(i, s_hid4_default),
    PELI_ASM_IMPORT(i, s_msr_default),
 
@@ -134,20 +142,6 @@ PELI_ASM_METHOD( // clang-format off
   lis     r13, _SDA_BASE_@ha;
   la      r13, _SDA_BASE_@l(r13);
 
-  lis     r4, %[s_hid0_default]@h;
-  ori     r4, r4, %[s_hid0_default]@l;
-  mtspr   PELI_SPR_HID0, r4;
-
-  lis     r4, %[s_hid4_default]@h;
-  ori     r4, r4, %[s_hid4_default]@l;
-  mtspr   PELI_SPR_HID4, r4;
-
-  isync;
-
-  // Set GQR0 as it may be used by the compiler
-  li      r0, 0;
-  mtspr   PELI_SPR_GQR0, r0;
-
   // Load the return address this way as we don't know what kind of address
   // mapping we're running in right now
   lis     r3, .L%=ReturnFromEnterRealMode@ha;
@@ -155,13 +149,29 @@ PELI_ASM_METHOD( // clang-format off
   mtlr    r3;
   b       %[EnterRealMode];
 .L%=ReturnFromEnterRealMode:;
-  // Real mode {
+  // { // Begin real mode
+
+  // Set default HID0
+  lis     r4, %[s_hid0_default]@h;
+  ori     r4, r4, %[s_hid0_default]@l;
+  // Enable data cache flash invalidate only if data cache is enabled
+  mfspr   r0, PELI_SPR_HID0;
+  rlwimi  r0, r0, 31 - 4, %[s_hid0_dcfi]; // Move DCE to DCFI and insert
+  mtspr   PELI_SPR_HID0, r4;
+
+  // Set default HID4
+  lis     r4, %[s_hid4_default]@h;
+  ori     r4, r4, %[s_hid4_default]@l;
+  mtspr   PELI_SPR_HID4, r4;
+
+  isync;
+
   bl      %[BatClearAll];
   bl      %[BatConfigure];
 
   li      r3, %[s_msr_default];
   bl      %[ExitRealMode];
-  // }
+  // } // End real mode
 
   bl      %[StubExceptionHandlers];
   bl      %[L2CacheInit];
@@ -316,9 +326,9 @@ PELI_ASM_METHOD( // clang-format off
 void peliMain(Args *input_args) noexcept {
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
-  ppc::Ps::Init();
+  ppc::PairedSingle::Init();
 #else
-  ppc::Ps::Disable();
+  ppc::PairedSingle::Disable();
 #endif
 
   Memory::InitArena();

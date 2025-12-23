@@ -11,9 +11,9 @@ constexpr u64 CoreClock = 729000000ull; // 729 MHz
 inline u64 GetTime() {
   u32 time_low, time_high;
   do {
-    time_high = ppc::GetSpr<ppc::Spr::TBU>();
-    time_low = ppc::GetSpr<ppc::Spr::TBL>();
-  } while (time_high != ppc::GetSpr<ppc::Spr::TBU>());
+    time_high = ppc::MoveFrom<ppc::Spr::TBU>();
+    time_low = ppc::MoveFrom<ppc::Spr::TBL>();
+  } while (time_high != ppc::MoveFrom<ppc::Spr::TBU>());
   return (static_cast<u64>(time_high) << 32) | time_low;
 }
 

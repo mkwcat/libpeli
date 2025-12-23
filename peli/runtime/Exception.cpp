@@ -16,6 +16,7 @@
 #include "../ppc/Cache.hpp"
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
+#include "../ppc/Spr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Halt.hpp"
 #include "../util/VIConsole.hpp"
@@ -433,9 +434,9 @@ ppc::Context *handleExternalInterrupt(ppc::Context *context, u32 cr, u32 lr,
 
   context->cr = cr;
   context->lr = lr;
-  ppc::SetSpr<ppc::Spr::SRR0>(srr0);
-  ppc::SetSpr<ppc::Spr::SRR1>(srr1);
-  ppc::SetSpr<ppc::Spr::XER>(xer);
+  ppc::MoveTo<ppc::Spr::SRR0>(srr0);
+  ppc::MoveTo<ppc::Spr::SRR1>(srr1);
+  ppc::MoveTo<ppc::Spr::XER>(xer);
 
   return context;
 }
@@ -545,8 +546,8 @@ void defaultErrorHandler(peli::ppc::Exception type,
                                             "\n\n  Registers:"};
   printStringList(console, 13, s_strings0,
                   IntList{context->srr0, context->srr1,
-                          ppc::GetSpr<ppc::Spr::DSISR>(), context->ctr,
-                          context->xer, ppc::GetSpr<ppc::Spr::DAR>()});
+                          ppc::MoveFrom<ppc::Spr::DSISR>(), context->ctr,
+                          context->xer, ppc::MoveFrom<ppc::Spr::DAR>()});
 
   // Print registers
   for (size_t i = 0; i < 32; i++) {
@@ -643,6 +644,9 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
 }
 
 void InitExceptions() noexcept {
+  // Initialize decrementer
+  ppc::MoveTo<ppc::Spr::DEC>(-1);
+
   // Set all default exception handlers
   for (size_t i = 0;
        i < sizeof(ios::g_lo_mem.os_globals.os_interrupt_table) / sizeof(u32);

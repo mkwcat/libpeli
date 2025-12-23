@@ -82,17 +82,17 @@ Thread::Thread(ThreadFunc func, void *arg, void *stack, u32 stackSize,
   m_unique_id = s_next_id++;
 
   // Initialize the thread context
-  m_context.gqrs[0] = ppc::GetSpr<ppc::Spr::GQR0>();
-  m_context.gqrs[1] = ppc::GetSpr<ppc::Spr::GQR1>();
-  m_context.gqrs[2] = ppc::GetSpr<ppc::Spr::GQR2>();
-  m_context.gqrs[3] = ppc::GetSpr<ppc::Spr::GQR3>();
-  m_context.gqrs[4] = ppc::GetSpr<ppc::Spr::GQR4>();
-  m_context.gqrs[5] = ppc::GetSpr<ppc::Spr::GQR5>();
-  m_context.gqrs[6] = ppc::GetSpr<ppc::Spr::GQR6>();
-  m_context.gqrs[7] = ppc::GetSpr<ppc::Spr::GQR7>();
+  m_context.gqrs[0] = ppc::MoveFrom<ppc::Spr::GQR0>();
+  m_context.gqrs[1] = ppc::MoveFrom<ppc::Spr::GQR1>();
+  m_context.gqrs[2] = ppc::MoveFrom<ppc::Spr::GQR2>();
+  m_context.gqrs[3] = ppc::MoveFrom<ppc::Spr::GQR3>();
+  m_context.gqrs[4] = ppc::MoveFrom<ppc::Spr::GQR4>();
+  m_context.gqrs[5] = ppc::MoveFrom<ppc::Spr::GQR5>();
+  m_context.gqrs[6] = ppc::MoveFrom<ppc::Spr::GQR6>();
+  m_context.gqrs[7] = ppc::MoveFrom<ppc::Spr::GQR7>();
 
   m_context.srr0 = reinterpret_cast<u32>(func);
-  m_context.srr1 = ppc::GetSpr<ppc::Spr::MSR>(); // TODO
+  m_context.srr1 = ppc::MoveFrom<ppc::Spr::MSR>(); // TODO
   m_context.gprs[2] = ppc::GetGpr<2>();
   m_context.gprs[13] = ppc::GetGpr<13>();
   m_context.gprs[3] = reinterpret_cast<u32>(arg);
