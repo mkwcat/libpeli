@@ -9,10 +9,15 @@
 // This is a bare minimum test that doesn't require any video initialization to
 // verify that it worked.
 
+#include <peli/hw/Latte.hpp>
 #include <peli/hw/Wood.hpp>
 #include <peli/util/Halt.hpp>
 
 int main() {
-  peli::hw::WOODIOP->RSTCTRL = 0;
+  if (peli::hw::Wood::IsLatte()) {
+    peli::hw::iop::LATTE->RSTCTRL.RSTINB = false;
+  } else {
+    peli::hw::iop::WOOD->RSTCTRL.RSTINB = false;
+  }
   peli::util::Halt();
 }

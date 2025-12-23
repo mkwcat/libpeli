@@ -8,11 +8,19 @@
 
 #include "../common/Macro.h"
 #include "../common/Types.hpp"
+#include "Namespace.hpp"
 #include "Register.hpp"
 
 namespace peli::hw {
 
 struct Wood {
+  /**
+   * Test if the host chip is Latte. This can be used to tell if the console is
+   * a Wii U.
+   */
+  [[__gnu__::__const__]]
+  static inline bool IsLatte();
+
   struct IpcMsg {
     using Size = u32;
 
@@ -210,7 +218,7 @@ struct Wood {
    * IOP IRQ status register.
    *
    * Address: 0x0D000038
-   * Size: u32
+   * Size: 32
    */
   Register<IrqBits> IOPINTSTS;
 
@@ -218,11 +226,81 @@ struct Wood {
    * IOP IRQ mask register.
    *
    * Address: 0x0D00003C
-   * Size: u32
+   * Size: 32
    */
   Register<IrqBits> IOPIRQINTEN;
 
-  _PELI_PAD(0x040, 0x194);
+  _PELI_PAD(0x040, 0x0C0);
+
+  struct Gpio {
+    using Size = u32;
+
+    enum Dir : Size {
+      In = 0,
+      Out = 1,
+    };
+
+    // TODO
+    /* 0-31 */ u32 : 32;
+  };
+
+  /**
+   * GPIO outputs (PPC access).
+   *
+   * Address: 0x0D0000C0
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCOUT;
+
+  /**
+   * GPIO directions (PPC access). 0 = in, 1 = out.
+   *
+   * Address: 0x0D0000C4
+   * size: 32
+   */
+  Register<Gpio> GPIOPPCOE;
+
+  /**
+   * GPIO inputs (PPC access).
+   *
+   * Address: 0x0D0000C8
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCIN;
+
+  /**
+   * GPIO input interrupt polarity (PPC access).
+   *
+   * Address: 0x0D0000CC
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCINTPOL;
+
+  /**
+   * GPIO input interrupt status (PPC access).
+   *
+   * Address: 0x0D0000D0
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCINTSTS;
+
+  /**
+   * GPIO input interrupt enable (PPC access).
+   *
+   * Address: 0x0D0000D4
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCINTEN;
+
+  /**
+   * GPIO straps (PPC access; read-only).
+   *
+   * Address: 0x0D0000D8
+   * Size: 32
+   */
+  Register<Gpio> GPIOPPCSTRAPS;
+
+  _PELI_PAD(0x0DC, 0x194);
 
   struct RstCtrl {
     using Size = u32;
@@ -373,12 +451,46 @@ struct Wood {
    */
   Register<RstCtrl> RSTCTRL;
 
-  _PELI_PAD(0x198, 0x400);
+  _PELI_PAD(0x198, 0x214);
 
-} inline *const WOODPPC = reinterpret_cast<Wood *>(0xCD000000),
-                *const WOODIOP = reinterpret_cast<Wood *>(0xCD800000),
-                *const WOOD = WOODPPC;
+  struct ChipRevId {
+    using Size = u32;
+
+    /* 8-31 */ u32 : 24;
+
+    /* 4-8 */ volatile u32 HI : 4;
+
+    /* 0-4 */ volatile u32 LO : 4;
+  };
+
+  /**
+   * Hardware version number (read only).
+   *
+   * Address: 0x0D000214
+   * Size: u32
+   */
+  Register<ChipRevId> CHIPREVID;
+
+  _PELI_PAD(0x218, 0x400);
+};
 
 static_assert(sizeof(Wood) == 0x400);
+
+namespace ppc {
+inline Wood *const WOOD = reinterpret_cast<Wood *>(0xCD000000);
+}
+namespace iop {
+inline Wood *const WOOD = reinterpret_cast<Wood *>(0xCD800000);
+}
+using PELI_HW_HOST_NAME::WOOD;
+
+[[__gnu__::__const__]]
+inline bool Wood::IsLatte() {
+  // On original Wii, WOOD[3] would mirror and reflect the same values as
+  // WOOD[0]; on Wii U it would be zero, and on Dolphin it would be -1.
+  // GPIOPPCSTRAPS is used as it's read-only and accessible from PPC without
+  // PPCKERN.
+  return WOOD[3].GPIOPPCSTRAPS == 0;
+}
 
 } // namespace peli::hw
