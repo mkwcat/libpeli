@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include "../common/Types.hpp"
+
 namespace peli::ios {
 
-enum IOSError : signed int {
+enum IOSError : s32 {
   // IOS errors
 
   IOS_ERROR_OK = 0,
@@ -216,6 +218,16 @@ enum IOSError : signed int {
   SSL_ERROR_VERIFY_CERT_DATE = -12,
   SSL_ERROR_INVALID_SERVER_CERT = -13,
 
+  // SDIO errors
+
+  SD_ERROR_OK = 0,
+  SD_ERROR_FAIL = -0x3F000000,
+  SD_ERROR_SWTIMEOUT = SD_ERROR_FAIL + 1,
+  SD_ERROR_IRQ = SD_ERROR_FAIL + 2,
+  SD_ERROR_TIMEOUT = SD_ERROR_FAIL + 3,
+  SD_ERROR_REMOVE = SD_ERROR_FAIL + 4,
+  SD_ERROR_BUSY = SD_ERROR_FAIL + 5,
+  SD_ERROR_HC = SD_ERROR_FAIL + 6,
 };
 
 }

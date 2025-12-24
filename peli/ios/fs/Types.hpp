@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "../../common/Macro.h"
 #include "../../common/Types.hpp"
 
 namespace peli::ios::fs {

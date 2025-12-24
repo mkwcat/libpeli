@@ -15,8 +15,8 @@ namespace peli::ios::low {
  * The byte alignment necessary for buffers passed through IPC. This is derived
  * from the processor cache line size of both the PPC and ARM CPUs.
  */
-constexpr size_t Alignment = 32;
-constexpr size_t PathSize = 64;
+constexpr inline size_t Alignment = 32;
+constexpr inline size_t PathSize = 64;
 
 enum {
   IOS_CMD_OPEN = 1,
