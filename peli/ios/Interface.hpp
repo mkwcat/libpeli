@@ -4,6 +4,7 @@
 #include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/Concept.hpp"
+#include "../util/NoConstruct.hpp"
 #include "Request.hpp"
 #include "low/Ipc.hpp"
 
@@ -74,6 +75,8 @@ protected:
     u8 *m_v_stack_ptr;
     size_t m_alloc_size;
 
+    constexpr Vector() = default;
+
     template <class... TDefaults>
     constexpr Vector(size_t alloc_size, low::IOVector *,
                      const TDefaults &...) noexcept {
@@ -110,6 +113,8 @@ protected:
     static constexpr size_t ExpectedParamCount = TInCount + TOutPtrCount;
     static constexpr size_t OutPtrCount = TOutPtrCount;
 
+    constexpr Vector() = default;
+
     template <class... TDefaults>
     constexpr Vector(size_t, low::IOVector *, const TDefaults &...) noexcept {}
 
@@ -145,6 +150,8 @@ protected:
     using Base =
         Vector<TReversed, TInCount, TOutCount,
                TOutPtrCount + (sizeof...(TExtra) < TOutCount), TExtra...>;
+
+    constexpr Vector() = default;
 
     // Non-const for output data
     template <class... TDefaults>
@@ -245,6 +252,8 @@ protected:
       alignas(low::Alignment) TThis m_this;
     };
 
+    constexpr Vector() : m_stub() {}
+
     // For input data
     template <class... TDefaults>
     constexpr Vector(size_t alloc_size, low::IOVector *vec, const TThis &value,
@@ -295,19 +304,12 @@ protected:
       vec[VecIndex].size = sizeof(TThis);
     }
 
-  private:
-    // Can't use builtin directly in function signature
-    template <class TType, size_t TSize = sizeof(TThis) / sizeof(TType)>
-    consteval bool isArrayOf() const noexcept {
-      return __is_same_as(TThis, TType[TSize]);
-    }
-
   public:
     // const char* for string input
     template <class... TDefaults>
     constexpr Vector(size_t alloc_size, low::IOVector *vec,
                      const char *const value, const TDefaults &...defaults)
-      requires(IsInput && isArrayOf<char>())
+      requires(IsInput && util::ArrayOf<TThis, char>)
         : Base(alloc_size, vec, defaults...) {
       size_t i;
       for (i = 0; i < sizeof(TThis) - 1 && value[i]; i++) {
@@ -395,6 +397,7 @@ public:
         low::IOS_IoctlAsync(fd, static_cast<u32>(TCmd), vectors[swap].data,
                             vectors[swap].size, vectors[swap ^ 1].data,
                             vectors[swap ^ 1].size, m_queue, &m_cmd_block);
+        m_synced = false;
       }
 
     private:
@@ -431,13 +434,19 @@ public:
       }
 
     public:
-      constexpr Request(s32 fd) : Request(TempVector{}, fd) {}
+      Request() : ios::Request() {}
+      constexpr Request(util::NoConstruct)
+          : ios::Request(util::NoConstruct{}) {}
+
+      explicit constexpr Request(s32 fd) : Request(TempVector{}, fd) {}
       constexpr Request(s32 fd, auto in) : Request(TempVector{}, fd, in) {}
       constexpr Request(s32 fd, auto in, auto out)
           : Request(TempVector{}, fd, in, out) {}
 
-      Request &Sync() noexcept {
-        return static_cast<Request &>(ios::Request::Sync());
+      static constexpr void *operator new(size_t size,
+                                          Request &request) noexcept {
+        _PELI_ASSERT(size == sizeof(Request));
+        return &request;
       }
 
       template <size_t TOutputIndex = 0> constexpr auto GetOutput() {
@@ -496,37 +505,32 @@ public:
     static constexpr bool Reversed = OrderedTypes::Reversed;
 
     class Request : public ios::Request {
-      template <size_t TDefaultCount>
-      static constexpr bool checkExpectedParamCount() {
-        if constexpr (TDefaultCount ==
-                      OrderedTypes::Vector::ExpectedParamCount) {
-          return true;
-        } else {
-          static_assert(TDefaultCount ==
-                            OrderedTypes::Vector::ExpectedParamCount,
-                        "invalid number of parameters for the Ioctlv request");
-          return false;
-        }
+    public:
+      Request() : ios::Request() {}
+      constexpr Request(util::NoConstruct)
+          : ios::Request(util::NoConstruct{}) {}
+
+      static constexpr void *operator new(size_t size,
+                                          Request &request) noexcept {
+        _PELI_ASSERT(size == sizeof(Request));
+        return &request;
       }
 
-    public:
       template <class... TCallArgs>
-        requires(checkExpectedParamCount<sizeof...(TCallArgs)>())
-      explicit Request(s32 fd, const TCallArgs &...args) noexcept
+      explicit Request(s32 fd, TCallArgs &&...args) noexcept
           : m_stack(0, m_vectors.Vectors(), args...) {
+        static_assert(sizeof...(TCallArgs) ==
+                      OrderedTypes::Vector::ExpectedParamCount);
         low::IOS_IoctlvAsync(fd, static_cast<u32>(Command), InType::Count,
                              OutType::Count, m_vectors.Vectors(), m_queue,
                              &m_cmd_block);
+        m_synced = false;
       }
 
       Request(const Request &) = delete;
       Request(Request &&) = delete;
 
       ~Request() noexcept {}
-
-      Request &Sync() noexcept {
-        return static_cast<Request &>(ios::Request::Sync());
-      }
 
       template <size_t TOutputIndex> constexpr auto GetOutput() {
         return m_stack.template Get<OutputVecIndex<

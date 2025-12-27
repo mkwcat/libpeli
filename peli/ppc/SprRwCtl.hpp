@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 
 namespace peli::ppc {
 
@@ -15,7 +15,7 @@ namespace peli::ppc {
  * from the SPR on construct, and then moves the updated value back to the SPR
  * on destruction.
  */
-template <detail::SprInterfaceConcept T> class SprRwCtl : public T {
+template <SprInterfaceConcept T> class SprRwCtl : public T {
 public:
   constexpr T *operator->() noexcept { return this; }
 

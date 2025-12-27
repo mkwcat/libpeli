@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../common/Macro.h"
 #include "../common/Types.hpp"
+#include "../util/Halt.hpp"
+#include "../util/NoConstruct.hpp"
+#include "../util/Transform.hpp"
 #include "Error.hpp"
 #include "low/Ipc.hpp"
 
@@ -17,24 +19,39 @@ public:
   class Ioctl;
   class Ioctlv;
 
-  static constexpr void *operator new(size_t size, Request &request) noexcept {
-    if (size != sizeof(Request)) {
-      return nullptr;
-    }
+  Request() : m_synced(true) {}
+  constexpr Request(util::NoConstruct)
+      : m_queue(util::NoConstruct{}), m_synced(true) {}
 
+  constexpr ~Request() { _PELI_ASSERT(m_synced); }
+
+  template <class T>
+  static constexpr void *operator new(size_t size, T &request) noexcept {
+    _PELI_ASSERT(size == sizeof(T));
     return &request;
   }
 
-  _PELI_GNU_CLANG_ONLY([[__gnu__::__const__]])
-  const Request &Sync() const noexcept {
-    m_queue.Peek();
-    return *this;
+private:
+  void Peek() const noexcept { m_queue.Peek(); }
+
+public:
+  constexpr inline auto Sync(this auto &&self) noexcept -> decltype(self) {
+    if (!self.m_synced) {
+      self.Peek();
+      self.m_synced = true;
+    }
+    return self;
   }
 
-  Request &Sync() noexcept {
-    m_queue.Peek();
-    return *this;
+  constexpr inline auto New(this auto &&self, auto &&...args) noexcept
+      -> decltype(self) {
+    using Self = typename util::Transform<decltype(self)>::RemCVR::T;
+    self.~Self();
+    new (self) Self(args...);
+    return self;
   }
+
+  operator bool() noexcept { return m_synced; }
 
   constexpr s32 GetResult() const noexcept { return m_cmd_block.result; }
   constexpr IOSError GetError() const noexcept {
@@ -74,33 +91,34 @@ public:
   }
 
 protected:
-  alignas(low::Alignment) low::IPCCommandBlock m_cmd_block;
+  alignas(low::Alignment) low::IPCCommandBlock m_cmd_block = {};
   host::MessageQueue<low::IPCCommandBlock *, 1> m_queue;
+  bool m_synced = true;
 };
 
 class Request::Open : public Request {
 public:
   Open(const char *path, u32 flags) noexcept {
     low::IOS_OpenAsync(path, flags, m_queue, &m_cmd_block);
+    m_synced = false;
   }
-
-  Open &Sync() noexcept { return static_cast<Open &>(Request::Sync()); }
 };
 
 class Request::Close : public Request {
 public:
-  Close(s32 fd) noexcept { low::IOS_CloseAsync(fd, m_queue, &m_cmd_block); }
-
-  Close &Sync() noexcept { return static_cast<Close &>(Request::Sync()); }
+  Close(s32 fd) noexcept {
+    low::IOS_CloseAsync(fd, m_queue, &m_cmd_block);
+    m_synced = false;
+  }
 };
 
 class Request::Read : public Request {
 public:
+  using Request::Request;
   Read(s32 fd, void *data, s32 size) noexcept {
     low::IOS_ReadAsync(fd, data, size, m_queue, &m_cmd_block);
+    m_synced = false;
   }
-
-  Read &Sync() noexcept { return static_cast<Read &>(Request::Sync()); }
 
   constexpr void *GetData() const noexcept { return m_cmd_block.read.data; }
   constexpr s32 GetSize() const noexcept { return m_cmd_block.read.size; }
@@ -108,11 +126,11 @@ public:
 
 class Request::Write : public Request {
 public:
+  using Request::Request;
   Write(s32 fd, void *data, s32 size) noexcept {
     low::IOS_WriteAsync(fd, data, size, m_queue, &m_cmd_block);
+    m_synced = false;
   }
-
-  Write &Sync() noexcept { return static_cast<Write &>(Request::Sync()); }
 
   constexpr void *GetData() const noexcept { return m_cmd_block.write.data; }
   constexpr s32 GetSize() const noexcept { return m_cmd_block.write.size; }
@@ -120,11 +138,11 @@ public:
 
 class Request::Seek : public Request {
 public:
+  using Request::Request;
   Seek(s32 fd, s32 where, s32 whence) noexcept {
     low::IOS_SeekAsync(fd, where, whence, m_queue, &m_cmd_block);
+    m_synced = false;
   }
-
-  Seek &Sync() noexcept { return static_cast<Seek &>(Request::Sync()); }
 
   constexpr s32 GetOffset() const noexcept { return m_cmd_block.seek.where; }
   constexpr s32 GetOrigin() const noexcept { return m_cmd_block.seek.whence; }
@@ -132,13 +150,13 @@ public:
 
 class Request::Ioctl : public Request {
 public:
+  using Request::Request;
   Ioctl(s32 fd, u32 command, void *in, u32 in_size, void *out,
         u32 out_size) noexcept {
     low::IOS_IoctlAsync(fd, command, in, in_size, out, out_size, m_queue,
                         &m_cmd_block);
+    m_synced = false;
   }
-
-  Ioctl &Sync() noexcept { return static_cast<Ioctl &>(Request::Sync()); }
 
   constexpr void *GetInput() const noexcept { return m_cmd_block.ioctl.in; }
   constexpr u32 GetInputSize() const noexcept {
@@ -153,15 +171,12 @@ public:
 
 class Request::Ioctlv : public Request {
 public:
+  using Request::Request;
   Ioctlv(s32 fd, u32 command, u32 in_count, u32 out_count,
          low::IOVector *vec) noexcept {
     low::IOS_IoctlvAsync(fd, command, in_count, out_count, vec, m_queue,
                          &m_cmd_block);
-  }
-
-  Ioctlv &Sync() noexcept {
-    Request::Sync();
-    return *this;
+    m_synced = false;
   }
 };
 

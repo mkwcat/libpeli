@@ -34,6 +34,8 @@ public:
   constexpr s32 GetHandle() const noexcept { return m_handle; }
   constexpr bool IsValid() const noexcept { return m_handle >= 0; }
 
+  constexpr operator s32() const noexcept { return GetHandle(); }
+
   constexpr Request::Read Read(void *data, s32 size) noexcept {
     return Request::Read(m_handle, data, size);
   }
@@ -70,6 +72,11 @@ template <class TInterfaceType>
 class Resource : public Resource<typename TInterfaceType::IosInterfaceType> {
 public:
   using Resource<typename TInterfaceType::IosInterfaceType>::Resource;
+
+  template <class TIoctlDef, class... TArgs>
+  constexpr TIoctlDef::Request Ioctl(TArgs &&...args) const {
+    return typename TIoctlDef::Request(Resource::GetHandle(), args...);
+  }
 };
 
 } // namespace peli::ios

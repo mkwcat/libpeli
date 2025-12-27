@@ -20,6 +20,8 @@ target_compile_options(peli PRIVATE
     -Wall
     -Wextra
     -Wpedantic
+    -ffunction-sections
+    -fdata-sections
     -O3
     $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-finline-limit=1400>
