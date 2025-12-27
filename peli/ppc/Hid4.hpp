@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 
 namespace peli::ppc {
 
@@ -26,6 +26,6 @@ struct Hid4Bits {
   /* 12-31 */ u32 RESV0 : 20 = 0;
 };
 
-using Hid4 = detail::SprInterface<Hid4Bits>;
+using Hid4 = SprInterface<Hid4Bits>;
 
 } // namespace peli::ppc

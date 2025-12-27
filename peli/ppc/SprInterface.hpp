@@ -1,4 +1,4 @@
-// peli/ppc/detail/SprInterface.hpp
+// peli/ppc/SprInterface.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include "../../common/Types.hpp"
-#include "../Spr.hpp"
+#include "../common/Types.hpp"
+#include "Spr.hpp"
 
-namespace peli::ppc::detail {
+namespace peli::ppc {
 
 template <class T, Spr Reg = T::SPR> class SprInterface : public T {
 public:
@@ -259,4 +259,4 @@ concept SprInterfaceConcept = requires(T t) {
   T().MoveTo();
 };
 
-} // namespace peli::ppc::detail
+} // namespace peli::ppc

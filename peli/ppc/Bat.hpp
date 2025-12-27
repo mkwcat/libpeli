@@ -7,7 +7,7 @@
 #pragma once
 
 #include "Sync.hpp"
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 
 namespace peli::ppc {
 
@@ -32,8 +32,8 @@ struct BatBits {
   } lo;
 };
 
-template <Spr BatReg> using BatUp = detail::SprInterface<BatBits::Up, BatReg>;
-template <Spr BatReg> using BatLo = detail::SprInterface<BatBits::Lo, BatReg>;
+template <Spr BatReg> using BatUp = SprInterface<BatBits::Up, BatReg>;
+template <Spr BatReg> using BatLo = SprInterface<BatBits::Lo, BatReg>;
 
 using IBat0U = BatUp<Spr::IBAT0U>;
 using IBat0L = BatLo<Spr::IBAT0L>;

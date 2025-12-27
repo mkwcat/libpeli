@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 
 namespace peli::ppc {
 
@@ -25,6 +25,6 @@ struct L2crBits {
   /* 31 */ u32 L2IP : 1 = 0;
 };
 
-using L2cr = detail::SprInterface<L2crBits>;
+using L2cr = SprInterface<L2crBits>;
 
 } // namespace peli::ppc

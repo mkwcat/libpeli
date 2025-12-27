@@ -7,7 +7,7 @@
 #pragma once
 
 #include "../common/Types.hpp"
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 #include "../runtime/SystemCall.hpp"
 
 namespace peli::ppc {
@@ -37,11 +37,11 @@ struct MsrBits {
   /* 31 */ u32 LE : 1 = 0;
 };
 
-struct Msr : public detail::SprInterface<MsrBits> {
-  Msr() noexcept : detail::SprInterface<MsrBits>() {}
-  Msr(u32 value) noexcept : detail::SprInterface<MsrBits>(value) {}
-  Msr(const Msr &rhs) noexcept : detail::SprInterface<MsrBits>(rhs) {}
-  Msr(const MsrBits &rhs) noexcept : detail::SprInterface<MsrBits>(rhs) {}
+struct Msr : public SprInterface<MsrBits> {
+  Msr() noexcept : SprInterface<MsrBits>() {}
+  Msr(u32 value) noexcept : SprInterface<MsrBits>(value) {}
+  Msr(const Msr &rhs) noexcept : SprInterface<MsrBits>(rhs) {}
+  Msr(const MsrBits &rhs) noexcept : SprInterface<MsrBits>(rhs) {}
 
   static u32 EnterRealMode() noexcept;
   static void ExitRealMode(u32 prevMsr) noexcept;
@@ -85,7 +85,7 @@ struct Msr : public detail::SprInterface<MsrBits> {
 
     ~RealModeScope() noexcept { ExitRealMode(msr.Hex()); }
 
-    detail::SprInterface<MsrBits> msr;
+    SprInterface<MsrBits> msr;
   };
 
   class OverrideScope {
@@ -97,7 +97,7 @@ struct Msr : public detail::SprInterface<MsrBits> {
 
     ~OverrideScope() noexcept { msr.MoveTo(); }
 
-    detail::SprInterface<MsrBits> msr;
+    SprInterface<MsrBits> msr;
   };
 
   class NoInterruptsScope {

@@ -9,7 +9,7 @@
 #include "../common/Types.hpp"
 #include "Spr.hpp"
 #include "SprRwCtl.hpp"
-#include "detail/SprInterface.hpp"
+#include "SprInterface.hpp"
 
 namespace peli::ppc {
 
@@ -103,7 +103,7 @@ struct Hid0Bits {
   /* 31 */ u32 NOOPTI : 1 = 0;
 };
 
-using Hid0 = detail::SprInterface<Hid0Bits>;
+using Hid0 = SprInterface<Hid0Bits>;
 
 inline void EnableSpeculation(bool enable) noexcept {
   SprRwCtl<Hid0>()->SGE = enable;
