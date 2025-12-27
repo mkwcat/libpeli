@@ -8,6 +8,7 @@
 
 #include "../common/Types.hpp"
 #include "../ppc/Msr.hpp"
+#include "../util/NoConstruct.hpp"
 #include "ThreadQueue.hpp"
 
 namespace peli::runtime {
@@ -16,6 +17,9 @@ template <class MessageType, u32 Count = 0> class MessageQueue;
 
 template <class MessageType> class MessageQueue<MessageType, 0> {
 public:
+  constexpr MessageQueue(util::NoConstruct)
+      : m_max_count(0), m_messages(nullptr) {}
+
   MessageQueue(MessageType *messages, u32 count)
       : m_max_count(count), m_messages(messages) {}
 
@@ -171,6 +175,8 @@ template <class MessageType, u32 Count>
 class MessageQueue : public MessageQueue<MessageType, 0> {
 public:
   MessageQueue() : MessageQueue<MessageType, 0>(m_messages_data, Count) {}
+  constexpr MessageQueue(util::NoConstruct)
+      : MessageQueue<MessageType, 0>(util::NoConstruct{}) {}
 
 private:
   MessageType m_messages_data[Count] = {};
