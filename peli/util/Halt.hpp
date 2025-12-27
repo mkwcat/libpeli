@@ -60,19 +60,19 @@ inline void AssertFail(const char *condition, const char *message,
   if (condition) {
     Puts(condition);
   }
-  Puts(" failed");
+  Puts("failed");
   if (message) {
     Puts(": ");
-    PutsLf(message);
+    Puts(message);
   }
-  Puts("In: ");
+  Puts("\nIn: ");
   PutsLf(function);
   Puts("File: ");
   PutsLf(file);
   Puts("Line: ");
   PutsLf(line);
 
-  Trap();
+  Halt();
 }
 
 [[__noreturn__]]
@@ -95,7 +95,7 @@ inline void Panic(const char *message, const char *function, const char *file,
   Puts("Line: ");
   PutsLf(line);
 
-  Trap();
+  Halt();
 }
 
 #else // PELI_DEBUG

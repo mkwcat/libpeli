@@ -61,10 +61,7 @@ concept StdArrayType = requires(const T t) {
 template <class T>
 concept EnumType = __is_enum(T);
 
-template <class T> struct NoInferStruct {
-  using Type = T;
-};
-
-template <class T> using NoInfer = typename NoInferStruct<T>::Type;
+template <class T, class U>
+concept ArrayOf = SameAs<T, U[sizeof(T) / sizeof(U)]>;
 
 } // namespace peli::util

@@ -9,6 +9,7 @@
 #include "../common/Types.hpp"
 #include "../host/Host.hpp"
 #include "Concept.hpp"
+#include "Transform.hpp"
 
 namespace peli::util {
 
@@ -47,41 +48,43 @@ template <host::Endian TEndian = host::Endian::Native, class T> T SwapTo(T v) {
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-NoInfer<T> ImmRead(size_t address, size_t offset = 0) noexcept {
+typename Transform<T>::T ImmRead(size_t address, size_t offset = 0) noexcept {
   return SwapTo<TEndian>(*reinterpret_cast<const T *>(address + offset));
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-NoInfer<T> ImmRead(const auto *ptr, size_t offset = 0) {
+typename Transform<T>::T ImmRead(const auto *ptr, size_t offset = 0) {
   return ImmRead<T, TEndian>(
       reinterpret_cast<size_t>(static_cast<const void *>(ptr)), offset);
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-void ImmWrite(size_t address, const NoInfer<T> &value) noexcept {
+void ImmWrite(size_t address, const typename Transform<T>::T &value) noexcept {
   *reinterpret_cast<T *>(address) = SwapTo<TEndian>(value);
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-void ImmWrite(size_t address, size_t offset, const NoInfer<T> &value) noexcept {
+void ImmWrite(size_t address, size_t offset,
+              const typename Transform<T>::T &value) noexcept {
   *reinterpret_cast<T *>(address + offset) = SwapTo<TEndian>(value);
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-void ImmWrite(const auto *ptr, const NoInfer<T> &value) {
+void ImmWrite(const auto *ptr, const typename Transform<T>::T &value) {
   return ImmWrite<T, TEndian>(
       reinterpret_cast<size_t>(static_cast<const void *>(ptr)), value);
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-void ImmWrite(const auto *ptr, size_t offset, const NoInfer<T> &value) {
+void ImmWrite(const auto *ptr, size_t offset,
+              const typename Transform<T>::T &value) {
   return ImmWrite<T, TEndian>(
       reinterpret_cast<size_t>(static_cast<const void *>(ptr)) + offset, value);
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>
-NoInfer<T> ImmReadMisaligned(MemoryAddressType auto const ptr,
-                             size_t offset = 0) noexcept {
+typename Transform<T>::T ImmReadMisaligned(MemoryAddressType auto const ptr,
+                                           size_t offset = 0) noexcept {
 #if defined(__POWERPC__)
   return ImmRead<T, TEndian>(ptr, offset);
 #else
