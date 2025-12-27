@@ -31,15 +31,21 @@ add_compile_options(
     -Wall
     -Wextra
     -Wpedantic
+    -ffunction-sections
+    -fdata-sections
+    -fno-exceptions
+    -fno-unwind-tables
     -O3
     $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-fstrict-volatile-bitfields>
 )
 
 add_link_options(
     -Wl,--section-start,.init=0x80100000
+    -Wl,--gc-sections
 )
 
 add_executable(SimpleApp SimpleApp.cpp)
 add_executable(HardReset HardReset.cpp)
 add_executable(SysConfReader SysConfReader.cpp)
 add_executable(SpecialPurposeRegisters SpecialPurposeRegisters.cpp)
+add_executable(SDCard SDCard.cpp)

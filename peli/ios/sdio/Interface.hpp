@@ -14,15 +14,38 @@
 namespace peli::ios::sdio {
 
 struct Interface : public ios::Interface<Ioctl> {
-  using WriteHostCtrlReg = IoctlDef<Ioctl::SD_IOWHCREG, RegOp, void>;
-  using ReadHostCtrlReg = IoctlDef<Ioctl::SD_IORHCREG, RegOp, u32>;
-  using Reset = IoctlDef<Ioctl::SD_RESET, void, u32>;
-  using SetClock = IoctlDef<Ioctl::SD_SETCLK, u32, void>;
-  using Command = IoctlDef<Ioctl::SD_CMD, Command, u32[4]>;
-  using DataCommand =
-      IoctlVecDef<Ioctl::SD_CMD, In<Command, void *>, Out<u32[4]>>;
-  using GetStatus = IoctlDef<Ioctl::SD_GET_STATUS, void, u32>;
-  using GetOcr = IoctlDef<Ioctl::SD_GET_OCR, void, u32>;
+  using WriteHcReg =                   //
+      IoctlDef<Ioctl::SD_IOWHCREG,     //
+               In<HcRegOp>,            //
+               Out<>>;                 //
+  using ReadHcReg =                    //
+      IoctlDef<Ioctl::SD_IORHCREG,     //
+               In<HcRegOp>,            //
+               Out<u32>>;              //
+  using Reset =                        //
+      IoctlDef<Ioctl::SD_RESET,        //
+               In<>,                   //
+               Out<u32>>;              //
+  using SetClock =                     //
+      IoctlDef<Ioctl::SD_SETCLK,       //
+               In<u32>,                //
+               Out<>>;                 //
+  using ImmCommand =                   //
+      IoctlDef<Ioctl::SD_CMD,          //
+               In<Command>,            //
+               Out<u32[4]>>;           //
+  using BufCommand =                   //
+      IoctlVecDef<Ioctl::SD_CMD,       //
+                  In<Command, void *>, //
+                  Out<u32[4]>>;        //
+  using GetStatus =                    //
+      IoctlDef<Ioctl::SD_GET_STATUS,   //
+               In<>,                   //
+               Out<Status>>;           //
+  using GetOcr =                       //
+      IoctlDef<Ioctl::SD_GET_OCR,      //
+               In<>,                   //
+               Out<u32>>;              //
 };
 
 } // namespace peli::ios::sdio

@@ -10,6 +10,7 @@ namespace peli::hw {
 
 template <class T> class Register : public T {
 public:
+  using ValueType = T;
   using SizeType = T::Size;
 
   SizeType Hex() {
