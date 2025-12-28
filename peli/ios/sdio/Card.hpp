@@ -27,11 +27,11 @@ public:
   ~Card() { m_request.Sync(); }
 
   // Disk interface
-  inline bool Disk_Available() const noexcept;
-  IOSError Disk_Init() noexcept;
-  static inline size_t Disk_GetBlockSize() noexcept { return SectorSize; }
-  IOSError Disk_BlockTransfer(size_t first, size_t count, void *buffer,
-                              bool is_write) noexcept;
+  inline bool Device_Available() const noexcept;
+  IOSError Device_Init() noexcept;
+  static inline size_t Device_GetBlockSize() noexcept { return SectorSize; }
+  IOSError Device_BlockTransfer(size_t first, size_t count, void *buffer,
+                                bool is_write) noexcept;
 
   void ReserveBlockBuffer();
 
@@ -54,7 +54,7 @@ private:
   BufCommand::Request m_request;
 };
 
-inline bool Card::Disk_Available() const noexcept {
+inline bool Card::Device_Available() const noexcept {
   Status status;
   if (Ioctl<GetStatus>() //
           .Sync()

@@ -21,7 +21,7 @@ namespace peli::ios::sdio {
 
 using Sdhc = hw::SDHostController;
 
-IOSError Card::Disk_Init() noexcept {
+IOSError Card::Device_Init() noexcept {
   u32 reset_output;
   auto request_reset = Ioctl<Reset>();
   auto request_get_status = Ioctl<GetStatus>();
@@ -81,7 +81,7 @@ IOSError Card::Disk_Init() noexcept {
   return IOSError::SD_ERROR_OK;
 }
 
-IOSError Card::Disk_BlockTransfer(size_t first, size_t count, void *buffer,
+IOSError Card::Device_BlockTransfer(size_t first, size_t count, void *buffer,
                                   bool is_write) noexcept {
   if (count == 0) {
     return IOSError::SD_ERROR_OK;
@@ -95,7 +95,7 @@ IOSError Card::Disk_BlockTransfer(size_t first, size_t count, void *buffer,
       .cmd_type = 3,
       .response_type = ResponseType::R1,
       .arg = 0,
-      .block_size = Disk_GetBlockSize(),
+      .block_size = Device_GetBlockSize(),
   };
   IOSError error = IOSError::IOS_ERROR_OK;
   bool use_temp_buffer = false;
@@ -163,7 +163,7 @@ IOSError Card::Disk_BlockTransfer(size_t first, size_t count, void *buffer,
 
 void Card::ReserveBlockBuffer() {
   m_block_buffer =
-      host::Alloc(DmaBlockSize, MaxTransferSize * Disk_GetBlockSize());
+      host::Alloc(DmaBlockSize, MaxTransferSize * Device_GetBlockSize());
 }
 
 } // namespace peli::ios::sdio

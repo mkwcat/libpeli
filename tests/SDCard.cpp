@@ -4,6 +4,7 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
+#include "peli/disk/DeviceTable.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <peli/ios/sdio/Card.hpp>
@@ -19,13 +20,14 @@ int main() {
   peli::util::VIConsoleStdOut::Register(console);
 
   peli::ios::sdio::Card card;
+  peli::disk::DeviceTable table = card;
 
-  if (!card.Disk_Available()) {
+  if (!table.m_available(table.m_object)) {
     std::printf("Disk unavailable\n");
     return EXIT_FAILURE;
   }
 
-  if (peli::ios::IOSError error = card.Disk_Init()) {
+  if (int error = table.m_init(table.m_object)) {
     std::printf("Disk_Init() failed: %d\n", error);
     while (true) {
     }
@@ -34,8 +36,7 @@ int main() {
   card.ReserveBlockBuffer();
 
   peli::u8 sector[512];
-  if (peli::ios::IOSError error =
-          card.Disk_BlockTransfer(0, 1, sector, false)) {
+  if (int error = table.m_block_transfer(table.m_object, 0, 1, sector, false)) {
     std::printf("Disk_BlockTransfer() failed: %d\n", error);
     while (true) {
     }
