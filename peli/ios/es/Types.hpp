@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../common/Types.hpp"
+#include "../../cmn/Types.hpp"
 #include "../iosc/Types.hpp"
 
 namespace peli::ios::es {

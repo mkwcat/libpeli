@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../host/Host.hpp"
 #include "Concept.hpp"
 #include "Transform.hpp"

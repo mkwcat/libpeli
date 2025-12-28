@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../host/Config.h"
 
 #if defined(PELI_HOST_PPC)

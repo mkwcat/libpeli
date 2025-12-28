@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "../common/Macro.h"
-#include "../common/Types.hpp"
+#include "../cmn/Macro.h"
+#include "../cmn/Types.hpp"
 #include "../ios/di/Types.hpp"
 
 namespace peli::ios {

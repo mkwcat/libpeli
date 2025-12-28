@@ -4,10 +4,10 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "../common/Asm.h"
-#include "../common/AsmRegisters.h"
-#include "../common/Macro.h"
-#include "../common/Types.hpp"
+#include "../cmn/Asm.h"
+#include "../cmn/AsmRegisters.h"
+#include "../cmn/Macro.h"
+#include "../cmn/Types.hpp"
 #include "../host/Config.h"
 #include "../ios/low/Ipc.hpp"
 #include "../ppc/Bat.hpp"

@@ -1,7 +1,7 @@
 // SysConfReader.cpp - Print all SYSCONF values
 
 #include <cstdio>
-#include <peli/common/Types.hpp>
+#include <peli/cmn/Types.hpp>
 #include <peli/ios/low/Ipc.hpp>
 #include <peli/nand/conf/Ipl.hpp>
 #include <peli/util/VIConsole.hpp>

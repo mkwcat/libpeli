@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../ios/LoMem.hpp"
 
 namespace peli::ppc {

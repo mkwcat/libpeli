@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../common/Types.hpp"
+#include "../../cmn/Types.hpp"
 #include "../../host/Mutex.hpp"
 #include "../../ios/Request.hpp"
 #include "../../util/Concept.hpp"

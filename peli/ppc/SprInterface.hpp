@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "Spr.hpp"
 
 namespace peli::ppc {

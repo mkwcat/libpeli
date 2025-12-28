@@ -4,8 +4,8 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include <peli/common/Macro.h>
-#include <peli/common/Types.hpp>
+#include <peli/cmn/Macro.h>
+#include <peli/cmn/Types.hpp>
 #include <peli/host/Config.h>
 #include <peli/host/Host.hpp>
 #include <peli/host/MessageQueue.hpp>
@@ -94,11 +94,11 @@
 #include <peli/util/VIConsoleStdOut.hpp>
 
 #if defined(PELI_ASM)
-#error "<peli/common/Asm.h> should not be included"
+#error "<peli/cmn/Asm.h> should not be included"
 #endif
 
 #if defined(r0)
-#error "<peli/common/AsmRegisters.h> should not be included"
+#error "<peli/cmn/AsmRegisters.h> should not be included"
 #endif
 
 int main() {}

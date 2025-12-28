@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../util/Halt.hpp"
 #include "../util/NoConstruct.hpp"
 #include "../util/Transform.hpp"

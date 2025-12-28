@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: MIT
 
 #include "Exception.hpp"
-#include "../common/Asm.h"
-#include "../common/AsmRegisters.h"
-#include "../common/Types.hpp"
+#include "../cmn/Asm.h"
+#include "../cmn/AsmRegisters.h"
+#include "../cmn/Types.hpp"
 #include "../host/Config.h"
 #include "../hw/Bit.hpp"
 #include "../hw/Interrupt.hpp"

@@ -1,4 +1,4 @@
-// peli/common/Asm.h
+// peli/cmn/Asm.h
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat

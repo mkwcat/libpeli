@@ -3,8 +3,8 @@
 //   Written by stebler
 //
 // Based on MKW-SP:
-// https://github.com/stblr/mkw-sp/blob/main/common/Console.cc
-// https://github.com/stblr/mkw-sp/blob/main/common/VI.cc
+// https://github.com/stblr/mkw-sp/blob/main/cmn/Console.cc
+// https://github.com/stblr/mkw-sp/blob/main/cmn/VI.cc
 //
 // Copyright (c) 2021-2023 Pablo Stebler
 // Copyright (c) 2025 mkwcat
@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../host/Config.h"
 #include "../util/Address.hpp"
 

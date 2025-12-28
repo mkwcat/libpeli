@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "Memory.hpp"
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../host/Config.h"
 #include "../ios/LoMem.hpp"
 #include "../ppc/Msr.hpp"

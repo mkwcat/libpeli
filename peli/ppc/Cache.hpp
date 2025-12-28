@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../runtime/SystemCall.hpp"
 #include "Hid0.hpp"
 #include "Sync.hpp"

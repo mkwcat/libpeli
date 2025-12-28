@@ -6,7 +6,7 @@
 
 #include <cstdio>
 #include <iterator>
-#include <peli/common/Types.hpp>
+#include <peli/cmn/Types.hpp>
 #include <peli/ppc/Spr.hpp>
 #include <peli/util/VIConsole.hpp>
 #include <peli/util/VIConsoleStdOut.hpp>

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../util/Optimize.hpp"
 #include "Hid2.hpp"
 #include "SprRwCtl.hpp"

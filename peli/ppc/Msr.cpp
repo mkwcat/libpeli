@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "Msr.hpp"
-#include "../common/Asm.h"
-#include "../common/AsmRegisters.h"
+#include "../cmn/Asm.h"
+#include "../cmn/AsmRegisters.h"
 
 namespace peli::ppc {
 

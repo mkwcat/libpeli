@@ -1,4 +1,4 @@
-// peli/common/Types.h
+// peli/cmn/Types.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 
 namespace peli {
 
-namespace common::Types {
+namespace cmn {
 
 using size_t = decltype(sizeof(0));
 
@@ -94,16 +94,20 @@ using f32 = float;
  */
 using f64 = double;
 
-static_assert(sizeof(u8) == 1 && sizeof(s8) == 1, "u8/s8 must be exactly 8 bits");
-static_assert(sizeof(u16) == 2 && sizeof(s16) == 2, "u16/s16 must be exactly 16 bits");
-static_assert(sizeof(u32) == 4 && sizeof(s32) == 4, "u32/s32 must be exactly 32 bits");
-static_assert(sizeof(u64) == 8 && sizeof(s64) == 8, "u64/s64 must be exactly 64 bits");
+static_assert(sizeof(u8) == 1 && sizeof(s8) == 1,
+              "u8/s8 must be exactly 8 bits");
+static_assert(sizeof(u16) == 2 && sizeof(s16) == 2,
+              "u16/s16 must be exactly 16 bits");
+static_assert(sizeof(u32) == 4 && sizeof(s32) == 4,
+              "u32/s32 must be exactly 32 bits");
+static_assert(sizeof(u64) == 8 && sizeof(s64) == 8,
+              "u64/s64 must be exactly 64 bits");
 static_assert(sizeof(f32) == 4, "f32 must be exactly 32 bits");
 static_assert(sizeof(f64) == 8, "f64 must be exactly 64 bits");
 
-} // namespace common::Types
+} // namespace cmn
 
 // Import types into peli namespace
-using namespace common::Types;
+using namespace cmn;
 
 } // namespace peli

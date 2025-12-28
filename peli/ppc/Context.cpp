@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "Context.hpp"
-#include "../common/Asm.h"
-#include "../common/AsmRegisters.h"
+#include "../cmn/Asm.h"
+#include "../cmn/AsmRegisters.h"
 #include "../host/Config.h"
 #include "Spr.hpp"
 

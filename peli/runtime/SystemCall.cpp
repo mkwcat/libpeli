@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "SystemCall.hpp"
-#include "../common/Asm.h"
-#include "../common/AsmRegisters.h"
+#include "../cmn/Asm.h"
+#include "../cmn/AsmRegisters.h"
 #include "../ppc/Spr.hpp"
 
 #define MSR_EE (1 << 31 >> 16)

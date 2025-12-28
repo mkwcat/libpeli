@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/Concept.hpp"

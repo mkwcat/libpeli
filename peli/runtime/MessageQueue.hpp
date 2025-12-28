@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/Types.hpp"
+#include "../cmn/Types.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/NoConstruct.hpp"
 #include "ThreadQueue.hpp"
