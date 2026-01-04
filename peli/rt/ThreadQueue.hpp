@@ -1,4 +1,4 @@
-// peli/runtime/ThreadQueue.hpp
+// peli/rt/ThreadQueue.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 
 #include "Thread.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class ThreadQueue : protected Thread::List {
   friend class Thread;
@@ -31,4 +31,4 @@ public:
   }
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

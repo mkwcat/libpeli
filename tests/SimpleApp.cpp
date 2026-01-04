@@ -3,7 +3,7 @@
 #include <peli/hw/Wood.hpp>
 #include <peli/ios/fs/Interface.hpp>
 #include <peli/ios/low/Ipc.hpp>
-#include <peli/runtime/Thread.hpp>
+#include <peli/rt/Thread.hpp>
 #include <peli/util/VIConsole.hpp>
 #include <peli/util/VIConsoleStdOut.hpp>
 #include <stdio.h>
@@ -32,7 +32,7 @@ int main() {
   // Register the console as stdout
   peli::util::VIConsoleStdOut::Register(console);
 
-  peli::runtime::Thread thread(ThreadEntryTest, nullptr, nullptr, 0x1000, 80,
+  peli::rt::Thread thread(ThreadEntryTest, nullptr, nullptr, 0x1000, 80,
                                false);
   int num = 4;
   thread.Join((void **)&num);

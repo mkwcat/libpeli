@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include "../runtime/Mutex.hpp"
+#include "../rt/Mutex.hpp"
 #include "Config.h"
 
 namespace peli::host {
 
 #if defined(PELI_HOST_PPC)
 
-using Mutex = runtime::Mutex;
-using RecursiveMutex = runtime::RecursiveMutex;
+using Mutex = rt::Mutex;
+using RecursiveMutex = rt::RecursiveMutex;
 
 #endif // PELI_HOST_PPC
 

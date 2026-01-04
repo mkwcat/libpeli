@@ -1,4 +1,4 @@
-// peli/runtime/Mutex.cpp
+// peli/rt/Mutex.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 #include "../ppc/Msr.hpp"
 #include "../util/Halt.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 Mutex::~Mutex() noexcept {
   _PELI_ASSERT(m_lock_count == 0, "Mutex destroyed while locked");
@@ -64,4 +64,4 @@ bool Mutex::TryLock() noexcept {
   return true;
 }
 
-} // namespace peli::runtime
+} // namespace peli::rt

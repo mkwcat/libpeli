@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../runtime/MessageQueue.hpp"
+#include "../rt/MessageQueue.hpp"
 #include "Config.h"
 
 namespace peli::host {
@@ -14,7 +14,7 @@ namespace peli::host {
 #if defined(PELI_HOST_PPC)
 
 template <class MessageType = s32, u32 Count = 0>
-using MessageQueue = runtime::MessageQueue<MessageType, Count>;
+using MessageQueue = rt::MessageQueue<MessageType, Count>;
 
 #endif // PELI_HOST_PPC
 

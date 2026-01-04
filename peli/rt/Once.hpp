@@ -1,4 +1,4 @@
-// peli/runtime/Once.hpp
+// peli/rt/Once.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 
 #include "../cmn/Types.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class OnceControl {
 public:
@@ -39,4 +39,4 @@ private:
   State m_state;
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

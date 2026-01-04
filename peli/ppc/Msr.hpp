@@ -8,7 +8,7 @@
 
 #include "../cmn/Types.hpp"
 #include "SprInterface.hpp"
-#include "../runtime/SystemCall.hpp"
+#include "../rt/SystemCall.hpp"
 
 namespace peli::ppc {
 
@@ -67,7 +67,7 @@ struct Msr : public SprInterface<MsrBits> {
       return false;
     }
     // Call DisableInterrupts syscall to ensure atomic write to MSR
-    runtime::SystemCall::DisableInterrupts();
+    rt::SystemCall::DisableInterrupts();
     return true;
   }
 

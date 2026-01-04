@@ -1,4 +1,4 @@
-// peli/runtime/Memory.cpp
+// peli/rt/Memory.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -16,7 +16,7 @@
 #include <reent.h>
 #endif
 
-namespace peli::runtime {
+namespace peli::rt {
 
 u8 *Memory::Mem1ArenaStart = nullptr;
 u8 *Memory::Mem1ArenaEnd = nullptr;
@@ -176,4 +176,4 @@ extern "C" void *_sbrk_r(struct _reent *r, ptrdiff_t size) {
 
 #endif
 
-} // namespace peli::runtime
+} // namespace peli::rt

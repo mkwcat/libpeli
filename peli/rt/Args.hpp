@@ -1,4 +1,4 @@
-// peli/runtime/Args.hpp
+// peli/rt/Args.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace peli::runtime {
+namespace peli::rt {
 
 struct Args {
   void Build(Args *input_args = nullptr) noexcept;
@@ -23,4 +23,4 @@ struct Args {
 
 void libsysbase_build_argv(Args *argstruct) asm("build_argv");
 
-} // namespace peli::runtime
+} // namespace peli::rt

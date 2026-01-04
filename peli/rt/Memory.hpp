@@ -1,4 +1,4 @@
-// peli/runtime/Memory.hpp
+// peli/rt/Memory.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 
 #include "../cmn/Types.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class Memory {
 public:
@@ -30,4 +30,4 @@ public:
   static u8 *SbrkFree(size_t size);
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

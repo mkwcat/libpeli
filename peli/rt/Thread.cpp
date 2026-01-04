@@ -1,4 +1,4 @@
-// peli/runtime/Thread.cpp
+// peli/rt/Thread.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -15,7 +15,7 @@
 #include "../util/Halt.hpp"
 #include "ThreadQueue.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 #ifndef PELI_THREAD_MIN_STACK_SIZE
 #define PELI_THREAD_MIN_STACK_SIZE 0x1000
@@ -375,4 +375,4 @@ void Thread::updateLoMem() noexcept {
       reinterpret_cast<ios::OSThread *>(s_thread_list.tail);
 }
 
-} // namespace peli::runtime
+} // namespace peli::rt

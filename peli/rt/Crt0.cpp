@@ -1,4 +1,4 @@
-// peli/runtime/Crt0.cpp - Initial program init
+// peli/rt/Crt0.cpp - Initial program init
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -33,9 +33,9 @@
 int main(int argc, char **argv);
 extern "C" [[gnu::noreturn]] void exit(int status);
 
-extern "C" peli::runtime::Args *__system_argv;
+extern "C" peli::rt::Args *__system_argv;
 
-namespace peli::runtime {
+namespace peli::rt {
 
 namespace {
 void peliMain(Args *input_args) noexcept;
@@ -353,6 +353,6 @@ void peliMain(Args *input_args) noexcept {
 }
 
 } // namespace
-} // namespace peli::runtime
+} // namespace peli::rt
 
-constinit peli::runtime::Args *__system_argv = &peli::runtime::s_args;
+constinit peli::rt::Args *__system_argv = &peli::rt::s_args;

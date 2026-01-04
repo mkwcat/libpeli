@@ -1,4 +1,4 @@
-// peli/runtime/GThread.cpp - GNU syscalls for libstdc++
+// peli/rt/GThread.cpp - GNU syscalls for libstdc++
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -11,7 +11,7 @@
 #include <bits/gthr-default.h>
 #include <new>
 
-namespace peli::runtime {
+namespace peli::rt {
 
 extern "C" {
 
@@ -225,4 +225,4 @@ int __GTHR_IMPL(recursive_mutex_trylock)(__gthread_recursive_mutex_t *__mutex) {
 
 } // extern "C"
 
-} // namespace peli::runtime
+} // namespace peli::rt

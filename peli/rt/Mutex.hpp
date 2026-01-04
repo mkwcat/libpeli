@@ -1,4 +1,4 @@
-// peli/runtime/Mutex.hpp
+// peli/rt/Mutex.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -9,7 +9,7 @@
 #include "Thread.hpp"
 #include "ThreadQueue.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class Mutex {
 public:
@@ -37,4 +37,4 @@ public:
   constexpr RecursiveMutex() : Mutex() { m_recursive = true; }
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

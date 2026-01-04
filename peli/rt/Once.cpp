@@ -1,4 +1,4 @@
-// peli/runtime/Once.cpp
+// peli/rt/Once.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 #include "../ppc/Msr.hpp"
 #include "Thread.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 bool OnceControl::Once() noexcept {
   ppc::Msr::NoInterruptsScope int_guard;
@@ -30,4 +30,4 @@ void OnceControl::Done() noexcept {
   }
 }
 
-} // namespace peli::runtime
+} // namespace peli::rt

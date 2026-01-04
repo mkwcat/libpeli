@@ -1,4 +1,4 @@
-// peli/runtime/SystemCall.hpp
+// peli/rt/SystemCall.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -8,7 +8,7 @@
 
 #include "../cmn/Types.hpp"
 
-namespace peli::runtime::SystemCall {
+namespace peli::rt::SystemCall {
 
 namespace detail {
 extern void SystemCallHandler() noexcept;
@@ -29,4 +29,4 @@ inline void DcFlush(u32 hid0_set, u32 hid0_and) noexcept {
                        : "cr7", "r10");
 }
 
-} // namespace peli::runtime::SystemCall
+} // namespace peli::rt::SystemCall

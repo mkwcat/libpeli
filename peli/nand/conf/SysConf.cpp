@@ -121,7 +121,7 @@ SysConf::EntryType SysConf::Get(const char *key, u64 &out,
     return EntryType::None;
   }
 
-  runtime::Mutex *mutex = const_cast<SysConf *>(this)->lock();
+  rt::Mutex *mutex = const_cast<SysConf *>(this)->lock();
   if (mutex == nullptr) {
     return EntryType::None;
   }
@@ -166,7 +166,7 @@ SysConf::EntryType SysConf::Get(const char *key, const u8 *&out,
     return EntryType::None;
   }
 
-  runtime::Mutex *mutex = const_cast<SysConf *>(this)->lock();
+  rt::Mutex *mutex = const_cast<SysConf *>(this)->lock();
   if (mutex == nullptr) {
     return EntryType::None;
   }
@@ -188,7 +188,7 @@ SysConf::EntryType SysConf::Get(size_t index, const u8 *&out_data,
     return EntryType::None;
   }
 
-  runtime::Mutex *mutex = const_cast<SysConf *>(this)->lock();
+  rt::Mutex *mutex = const_cast<SysConf *>(this)->lock();
   if (mutex == nullptr) {
     return EntryType::None;
   }

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../runtime/SystemCall.hpp"
+#include "../rt/SystemCall.hpp"
 
 namespace peli::ppc {
 
@@ -18,7 +18,7 @@ inline void Eieio() noexcept { __asm__ __volatile__("eieio;"); }
 
 inline void SyncBroadcast() {
   // Call sync syscall
-  runtime::SystemCall::Sync();
+  rt::SystemCall::Sync();
 }
 
 } // namespace peli::ppc

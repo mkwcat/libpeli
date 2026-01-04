@@ -1,4 +1,4 @@
-// peli/runtime/MessageQueue.hpp
+// peli/rt/MessageQueue.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -11,7 +11,7 @@
 #include "../util/NoConstruct.hpp"
 #include "ThreadQueue.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 template <class MessageType, u32 Count = 0> class MessageQueue;
 
@@ -182,4 +182,4 @@ private:
   MessageType m_messages_data[Count] = {};
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

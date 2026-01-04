@@ -1,4 +1,4 @@
-// peli/runtime/Args.cpp
+// peli/rt/Args.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -6,8 +6,8 @@
 
 #include "Args.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 void Args::Build([[maybe_unused]] Args *input_args) noexcept {}
 
-} // namespace peli::runtime
+} // namespace peli::rt

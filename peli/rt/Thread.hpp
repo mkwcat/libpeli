@@ -1,4 +1,4 @@
-// peli/runtime/Thread.hpp
+// peli/rt/Thread.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -14,7 +14,7 @@
 #include <sys/reent.h>
 #endif
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class ThreadQueue;
 
@@ -171,4 +171,4 @@ private:
   static size_t s_stray_stack_size;
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

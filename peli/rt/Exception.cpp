@@ -1,4 +1,4 @@
-// peli/runtime/Exception.cpp - PowerPC exception handling
+// peli/rt/Exception.cpp - PowerPC exception handling
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -22,7 +22,7 @@
 #include "../util/VIConsole.hpp"
 #include "SystemCall.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 #define GQR0 912
 #define GQR1 913
@@ -712,4 +712,4 @@ void InitExceptions() noexcept {
   SetInterruptEventHandler(hw::IntCause::Irq, handleIrq);
 }
 
-} // namespace peli::runtime
+} // namespace peli::rt

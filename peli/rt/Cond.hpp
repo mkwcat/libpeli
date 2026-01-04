@@ -1,4 +1,4 @@
-// peli/runtime/Cond.hpp
+// peli/rt/Cond.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -9,7 +9,7 @@
 #include "../ppc/Msr.hpp"
 #include "Mutex.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 class Cond {
 public:
@@ -49,4 +49,4 @@ private:
   ThreadQueue m_wait_queue;
 };
 
-} // namespace peli::runtime
+} // namespace peli::rt

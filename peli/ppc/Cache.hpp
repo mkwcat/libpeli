@@ -7,7 +7,7 @@
 #pragma once
 
 #include "../cmn/Types.hpp"
-#include "../runtime/SystemCall.hpp"
+#include "../rt/SystemCall.hpp"
 #include "Hid0.hpp"
 #include "Sync.hpp"
 
@@ -98,12 +98,12 @@ inline void IcFlashInvalidate() noexcept {
 
 inline void DcFlushAndLock() noexcept {
   // Set DLOCK
-  runtime::SystemCall::DcFlush(1 << 31 >> 19, ~0);
+  rt::SystemCall::DcFlush(1 << 31 >> 19, ~0);
 }
 
 inline void DcFlushAndDisable() noexcept {
   // Clear DCE
-  runtime::SystemCall::DcFlush(0, ~(1 << 31 >> 17));
+  rt::SystemCall::DcFlush(0, ~(1 << 31 >> 17));
 }
 
 } // namespace peli::ppc::Cache

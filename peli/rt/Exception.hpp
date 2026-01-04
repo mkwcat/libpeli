@@ -1,4 +1,4 @@
-// peli/runtime/Exception.hpp
+// peli/rt/Exception.hpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -10,7 +10,7 @@
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
 
-namespace peli::runtime {
+namespace peli::rt {
 
 using ExceptionHandler = void (*)(ppc::Exception, ppc::Context *);
 using InterruptHandler = void (*)(hw::IntCause, ppc::Context *);
@@ -27,4 +27,4 @@ void StubExceptionHandlers() noexcept;
 
 void InitExceptions() noexcept;
 
-} // namespace peli::runtime
+} // namespace peli::rt

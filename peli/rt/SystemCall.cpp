@@ -1,4 +1,4 @@
-// peli/runtime/SystemCall.cpp
+// peli/rt/SystemCall.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -14,7 +14,7 @@
 #define HID0_DCFA (1 << 31 >> 25)
 #define HID0_ABE (1 << 31 >> 28)
 
-namespace peli::runtime::SystemCall::detail {
+namespace peli::rt::SystemCall::detail {
 
 PELI_ASM_METHOD( // clang-format off
   void SystemCallHandler() noexcept,
@@ -70,4 +70,4 @@ PELI_ASM_METHOD( // clang-format off
                  // clang-format on
 );
 
-} // namespace peli::runtime::SystemCall::detail
+} // namespace peli::rt::SystemCall::detail
