@@ -1,7 +1,7 @@
 // peli/rt/Thread.cpp
 //   Written by mkwcat
 //
-// Copyright (c) 2025 mkwcat
+// Copyright (c) 2025-2026 mkwcat
 // SPDX-License-Identifier: MIT
 
 #include "Thread.hpp"
@@ -25,7 +25,10 @@ class Crt0Thread : public Thread {
 public:
   using Thread::Thread;
 
-  ~Crt0Thread() noexcept { m_state = State::Disabled; }
+  ~Crt0Thread() noexcept {
+    ppc::Msr::DisableInterrupts();
+    m_state = State::Disabled;
+  }
 };
 
 namespace {

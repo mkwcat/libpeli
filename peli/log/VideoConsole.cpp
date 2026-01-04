@@ -19,7 +19,7 @@
 #include "../vi/Video.hpp"
 #endif
 
-extern "C" const unsigned char VIConsoleFont[128][16];
+extern "C" constinit const unsigned char VIConsoleFont[128][16];
 
 namespace peli::log {
 

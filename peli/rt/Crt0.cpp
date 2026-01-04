@@ -74,22 +74,22 @@ constinit Args s_args;
 alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
 
 constexpr u32 s_hid0_default = util::BitCast<u32>(ppc::Hid0Bits{
-    .DOZE = true,  // Doze Mode Available
-    .DPM = true,   // Dynamic Power Management
-    .NHR = true,   // Not Hard Reset
-    .ICE = true,   // Instruction Cache Enable
-    .DCE = true,   // Data Cache Enable
-    .ICFI = true,  // Instruction Cache Flash Invalidate
-    .DCFI = false, // Not Data Cache Flash Invalidate
-    .SGE = false,  // Disable Speculation Guard
-    .DCFA = false, // Data Cache Flush Assist
-    .BTIC = true,  // Branch Target Instruction Cache
-    .ABE = false,  // Address Broadcast Disabled
-    .BHT = true,   // Branch History Table
+    .DPM = true,  // Dynamic Power Management
+    .NHR = true,  // Not Hard Reset
+    .ICE = false, // Instruction Cache Disable
+    .DCE = false, // Data Cache Disable
+    .ICFI = true, // Instruction Cache Flash Invalidate
+    .DCFI = true, // Data Cache Flash Invalidate
+    .SGE = false, // Disable Speculation Guard
+    .DCFA = true, // Data Cache Flush Assist
+    .BTIC = true, // Branch Target Instruction Cache
+    .ABE = false, // Address Broadcast Disabled
+    .BHT = true,  // Branch History Table
 });
 
-constexpr u32 s_hid0_dcfi = util::BitCast<u32>(ppc::Hid0Bits{
-    .DCFI = true, // Data Cache Flash Invalidate
+constexpr u32 s_hid0_cache = util::BitCast<u32>(ppc::Hid0Bits{
+    .ICE = true, // Instruction Cache Enable
+    .DCE = true, // Data Cache Enable
 });
 
 constexpr u32 s_hid4_default = util::BitCast<u32>(ppc::Hid4Bits{
@@ -117,7 +117,7 @@ PELI_ASM_METHOD( // clang-format off
    PELI_ASM_IMPORT(i, clearMemory),
 
    PELI_ASM_IMPORT(i, s_hid0_default),
-   PELI_ASM_IMPORT(i, s_hid0_dcfi),
+   PELI_ASM_IMPORT(i, s_hid0_cache),
    PELI_ASM_IMPORT(i, s_hid4_default),
    PELI_ASM_IMPORT(i, s_msr_default),
 
@@ -154,30 +154,48 @@ PELI_ASM_METHOD( // clang-format off
 
   // Set default HID0
   lis     r4, %[s_hid0_default]@h;
+  .if     %[s_hid0_default] & 0xFFFF;
   ori     r4, r4, %[s_hid0_default]@l;
-  // Enable data cache flash invalidate only if data cache is enabled
-  mfspr   r0, PELI_SPR_HID0;
-  rlwimi  r0, r0, 31 - 4, %[s_hid0_dcfi]; // Move DCE to DCFI and insert
+  .endif;
   mtspr   PELI_SPR_HID0, r4;
+  isync;
 
   // Set default HID4
   lis     r4, %[s_hid4_default]@h;
+  .if     %[s_hid4_default] & 0xFFFF;
   ori     r4, r4, %[s_hid4_default]@l;
+  .endif;
   mtspr   PELI_SPR_HID4, r4;
-
   isync;
 
   bl      %[BatClearAll];
   bl      %[BatConfigure];
 
+  // Initialize SRs
+  li      r0, 15;
+  li      r4, 0;
+.L%=SRInitLoop:;
+  mtsrin  r0, r4;
+  subic.  r0, r0, 1;
+  bge+    .L%=SRInitLoop;
+
   li      r3, %[s_msr_default];
   bl      %[ExitRealMode];
   // } // End real mode
+
+  // Enable caches
+  mfspr   r0, PELI_SPR_HID0;
+  ori     r0, r0, %[s_hid0_cache]@l;
+  isync;
+  mtspr   PELI_SPR_HID0, r0;
+  isync;
 
   bl      %[StubExceptionHandlers];
   bl      %[L2CacheInit];
 
   // Clear bss before we use the stack again
+  .extern __bss_start;
+  .extern __bss_end;
   lis     r3, __bss_start@ha;
   la      r3, __bss_start@l(r3);
   lis     r4, __bss_end@ha;
@@ -185,6 +203,8 @@ PELI_ASM_METHOD( // clang-format off
   sub     r4, r3, r4;
   bl      %[clearMemory];
 
+  .extern __sbss_start;
+  .extern __sbss_end;
   lis     r3, __sbss_start@ha;
   la      r3, __sbss_start@l(r3);
   lis     r4, __sbss_end@ha;
@@ -325,6 +345,14 @@ PELI_ASM_METHOD( // clang-format off
 );
 
 void peliMain(Args *input_args) noexcept {
+  // Reset performance monitor registers
+  ppc::MoveTo<ppc::Spr::MMCR0>(0);
+  ppc::MoveTo<ppc::Spr::MMCR1>(0);
+  ppc::MoveTo<ppc::Spr::PMC1>(0);
+  ppc::MoveTo<ppc::Spr::PMC2>(0);
+  ppc::MoveTo<ppc::Spr::PMC3>(0);
+  ppc::MoveTo<ppc::Spr::PMC4>(0);
+
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
   ppc::PairedSingle::Init();
