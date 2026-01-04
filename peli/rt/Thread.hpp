@@ -20,6 +20,7 @@ class ThreadQueue;
 
 class Thread {
   friend class ThreadQueue;
+  friend class Crt0Thread;
 
 public:
   enum class State : u8 {
@@ -160,15 +161,7 @@ private:
   void *m_result = nullptr;
 
 private:
-  static ThreadId s_next_id;
-  static Thread s_main_thread;
   static Thread *s_current;
-  static Thread::List s_thread_list;
-  static Thread::List s_run_queue[64];
-  static u64 s_run_queue_mask;
-  static ppc::Context s_none_context;
-  static u8 *s_stray_stack;
-  static size_t s_stray_stack_size;
 };
 
 } // namespace peli::rt

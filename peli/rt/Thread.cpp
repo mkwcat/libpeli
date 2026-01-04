@@ -21,15 +21,27 @@ namespace peli::rt {
 #define PELI_THREAD_MIN_STACK_SIZE 0x1000
 #endif
 
-constinit Thread::ThreadId Thread::s_next_id = 1;
-constinit Thread Thread::s_main_thread;
+class Crt0Thread : public Thread {
+public:
+  using Thread::Thread;
+
+  ~Crt0Thread() noexcept { m_state = State::Disabled; }
+};
+
+namespace {
+
+constinit Thread::ThreadId s_next_id = 1;
+constinit Crt0Thread s_main_thread;
+constinit Thread::List s_thread_list = {nullptr, nullptr};
+constinit Thread::List s_run_queue[64] = {};
+constinit u64 s_run_queue_mask = 0;
+constinit ppc::Context s_none_context = {};
+constinit u8 *s_stray_stack = nullptr;
+constinit size_t s_stray_stack_size = 0;
+
+} // namespace
+
 constinit Thread *Thread::s_current = nullptr;
-constinit Thread::List Thread::s_thread_list = {nullptr, nullptr};
-constinit Thread::List Thread::s_run_queue[64] = {};
-constinit u64 Thread::s_run_queue_mask = 0;
-constinit ppc::Context Thread::s_none_context = {};
-constinit u8 *Thread::s_stray_stack = nullptr;
-constinit size_t Thread::s_stray_stack_size = 0;
 
 void Thread::SystemInit(void *stack, u32 stackSize) noexcept {
   constinit static bool s_is_init = false;
