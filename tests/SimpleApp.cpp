@@ -4,8 +4,8 @@
 #include <peli/ios/fs/Interface.hpp>
 #include <peli/ios/low/Ipc.hpp>
 #include <peli/rt/Thread.hpp>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,12 +25,12 @@ int testIoctl() {
 }
 
 int main() {
-  peli::util::VIConsole console(false);
+  peli::log::VideoConsole console(false);
 
   console.Print("\nmeow!\n");
 
   // Register the console as stdout
-  peli::util::VIConsoleStdOut::Register(console);
+  peli::log::VideoConsoleStdOut::Register(console);
 
   peli::rt::Thread thread(ThreadEntryTest, nullptr, nullptr, 0x1000, 80,
                                false);

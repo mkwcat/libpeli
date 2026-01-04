@@ -1,4 +1,4 @@
-// peli/util/VIConsole.cpp - Visual debug console shared between PPC and IOS
+// peli/log/VideoConsole.cpp - Visual debug console shared between PPC and IOS
 //   Written by mkwcat
 //   Written by stebler
 //
@@ -16,9 +16,9 @@
 #include "../host/Config.h"
 #include "../util/Address.hpp"
 
-namespace peli::util {
+namespace peli::log {
 
-class VIConsole {
+class VideoConsole {
 public:
   // All values must be 32-bit sized to be compatible with uncached memory.
   struct alignas(32) Share {
@@ -32,7 +32,7 @@ public:
     u32 option;
   };
 
-  static_assert(IsAligned(32, sizeof(Share)));
+  static_assert(util::IsAligned(32, sizeof(Share)));
 
 private:
   Share *m_share_block;
@@ -59,7 +59,7 @@ public:
   /**
    * Create and allocate memory for the debug console.
    */
-  VIConsole(bool sideways = false) noexcept;
+  VideoConsole(bool sideways = false) noexcept;
 
   /**
    * Configure VI for the debug console.
@@ -72,7 +72,7 @@ public:
   /**
    * Recreate the debug console using an existing shared configuration.
    */
-  VIConsole(Share *share) noexcept;
+  VideoConsole(Share *share) noexcept;
 
   /**
    * Set the alignment width of the TAB character. Does not apply retroactively
@@ -179,4 +179,4 @@ private:
   s32 decrementRow() noexcept;
 };
 
-} // namespace peli::util
+} // namespace peli::log

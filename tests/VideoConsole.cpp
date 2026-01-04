@@ -1,16 +1,16 @@
-// VideoConsole.cpp - Testing VIConsole
+// VideoConsole.cpp - Testing VideoConsole
 
 #include <cstdio>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 
 int main(int argc, char **argv) {
-  peli::util::VIConsole console(false);
+  peli::log::VideoConsole console(false);
 
   console.Print("\nMeow! Welcome to libpeli!!!\n");
 
   // Register the console as stdout
-  peli::util::VIConsoleStdOut::Register(console);
+  peli::log::VideoConsoleStdOut::Register(console);
 
   std::printf("Arden's favorite number is %d\n", 4);
 

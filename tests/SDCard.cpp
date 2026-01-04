@@ -8,16 +8,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <peli/ios/sdio/Card.hpp>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 
 int main() {
-  peli::util::VIConsole console(false);
+  peli::log::VideoConsole console(false);
 
   console.Print("\nMeow! SD Card test:\n");
 
   // Register the console as stdout
-  peli::util::VIConsoleStdOut::Register(console);
+  peli::log::VideoConsoleStdOut::Register(console);
 
   peli::ios::sdio::Card card;
   peli::disk::DeviceTable table = card;

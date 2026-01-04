@@ -1,4 +1,4 @@
-// peli/util/VIConsole.cpp - Visual debug console shared between PPC and IOS
+// peli/log/VideoConsole.cpp - Visual debug console shared between PPC and IOS
 //   Written by mkwcat
 //   Written by stebler
 //
@@ -10,7 +10,7 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "VIConsole.hpp"
+#include "VideoConsole.hpp"
 #include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/CpuCache.hpp"
@@ -21,7 +21,7 @@
 
 extern "C" const unsigned char VIConsoleFont[128][16];
 
-namespace peli::util {
+namespace peli::log {
 
 constexpr u8 BgIntensity = 16;
 constexpr u8 FgIntensity = 235;
@@ -42,11 +42,11 @@ enum Option {
 /**
  * Create and configure VI for the debug console.
  */
-VIConsole::VIConsole(bool sideways) noexcept {
+VideoConsole::VideoConsole(bool sideways) noexcept {
   m_share_block = static_cast<Share *>(host::Alloc(32, sizeof(Share)));
   *m_share_block = {};
 
-  CpuCache::DcFlush(m_share_block, sizeof(Share));
+  util::CpuCache::DcFlush(m_share_block, sizeof(Share));
 
   m_share = util::Uncached(m_share_block);
 
@@ -63,7 +63,7 @@ VIConsole::VIConsole(bool sideways) noexcept {
  * Configure VI for the debug console.
  * @param clear Clear the XFB.
  */
-void VIConsole::ConfigureVideo(bool clear) noexcept {
+void VideoConsole::ConfigureVideo(bool clear) noexcept {
   vi::Video video;
 
   m_share->xfb_width = video.GetXfbWidth();
@@ -92,14 +92,14 @@ void VIConsole::ConfigureVideo(bool clear) noexcept {
 /**
  * Recreate the debug console using an existing shared configuration.
  */
-VIConsole::VIConsole(Share *share) noexcept {
+VideoConsole::VideoConsole(Share *share) noexcept {
 #if defined(PELI_HOST_PPC)
   m_share = util::Uncached(share);
 #else
   m_share = share;
 #endif
 
-  CpuCache::DcInvalidate(const_cast<Share *>(share), sizeof(Share));
+  util::CpuCache::DcInvalidate(const_cast<Share *>(share), sizeof(Share));
 
   Print("\n");
 }
@@ -109,7 +109,7 @@ VIConsole::VIConsole(Share *share) noexcept {
  *
  * @param write Flush the block instead of invalidate.
  */
-void VIConsole::syncShare([[maybe_unused]] bool write) noexcept {
+void VideoConsole::syncShare([[maybe_unused]] bool write) noexcept {
 #if defined(PELI_HOST_IOS)
   if (write) {
     CpuCache::DcFlush(const_cast<Share *>(m_share), sizeof(Share));
@@ -125,7 +125,7 @@ void VIConsole::syncShare([[maybe_unused]] bool write) noexcept {
 /**
  * Lock console from other instance.
  */
-void VIConsole::lock() noexcept {
+void VideoConsole::lock() noexcept {
   for (u32 i = 0; i < (MyLock == IosLock ? 8 : 16);) {
     syncShare(false);
 
@@ -146,7 +146,7 @@ void VIConsole::lock() noexcept {
 /**
  * Unlock console for other instance.
  */
-void VIConsole::unlock() noexcept {
+void VideoConsole::unlock() noexcept {
   syncShare(false);
   m_share->lock = 0;
   syncShare(true);
@@ -155,7 +155,7 @@ void VIConsole::unlock() noexcept {
 /**
  * Get the current row for this instance.
  */
-s32 &VIConsole::refMyRow() noexcept {
+s32 &VideoConsole::refMyRow() noexcept {
   return const_cast<s32 &>(MyLock == PpcLock ? m_share->ppc_row
                                              : m_share->ios_row);
 }
@@ -163,7 +163,7 @@ s32 &VIConsole::refMyRow() noexcept {
 /**
  * Get the current row for the other instance.
  */
-s32 &VIConsole::refOtherRow() noexcept {
+s32 &VideoConsole::refOtherRow() noexcept {
   return const_cast<s32 &>(MyLock == PpcLock ? m_share->ios_row
                                              : m_share->ppc_row);
 }
@@ -171,7 +171,7 @@ s32 &VIConsole::refOtherRow() noexcept {
 /**
  * Increment the row for this instance.
  */
-s32 VIConsole::incrementRow() noexcept {
+s32 VideoConsole::incrementRow() noexcept {
   syncShare(false);
 
   refMyRow()++;
@@ -187,7 +187,7 @@ s32 VIConsole::incrementRow() noexcept {
 /**
  * Decrement the row for both instances.
  */
-s32 VIConsole::decrementRow() noexcept {
+s32 VideoConsole::decrementRow() noexcept {
   syncShare(false);
 
   m_share->ios_row -= 1;
@@ -202,7 +202,7 @@ s32 VIConsole::decrementRow() noexcept {
  * Set the alignment width of the TAB character. Does not apply retroactively
  * to previously printed text. Must be between 1 and 16.
  */
-void VIConsole::SetTabWidth(u8 width) noexcept {
+void VideoConsole::SetTabWidth(u8 width) noexcept {
   syncShare(false);
 
   constexpr u32 mask = 0xF << Option::TabWidth;
@@ -215,24 +215,24 @@ void VIConsole::SetTabWidth(u8 width) noexcept {
 /**
  * Get the current TAB alignment width.
  */
-u8 VIConsole::GetTabWidth() const noexcept {
+u8 VideoConsole::GetTabWidth() const noexcept {
   return ((m_share->option >> Option::TabWidth) & 0xF) + 1;
 }
 
 /**
  * Get the width of the console framebuffer.
  */
-u16 VIConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
+u16 VideoConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
 
 /**
  * Get the height of the console framebuffer.
  */
-u16 VIConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
+u16 VideoConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
 
 /**
  * Get column count.
  */
-u8 VIConsole::NumCols() const noexcept {
+u8 VideoConsole::NumCols() const noexcept {
   if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_width / GlyphWidth - 1;
   } else {
@@ -243,7 +243,7 @@ u8 VIConsole::NumCols() const noexcept {
 /**
  * Get row count.
  */
-u8 VIConsole::NumRows() const noexcept {
+u8 VideoConsole::NumRows() const noexcept {
   if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_height / GlyphHeight - 2;
   } else {
@@ -254,7 +254,7 @@ u8 VIConsole::NumRows() const noexcept {
 /**
  * Read from the specified pixel on the framebuffer.
  */
-u8 VIConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
+u8 VideoConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
   if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return 16;
   }
@@ -270,7 +270,7 @@ u8 VIConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
 /**
  * Write to the specified pixel on the framebuffer.
  */
-void VIConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
+void VideoConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
   if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return;
   }
@@ -289,14 +289,14 @@ void VIConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
 /**
  * Move the framebuffer up by the specified height.
  */
-void VIConsole::MoveUp(u16 height) noexcept {
+void VideoConsole::MoveUp(u16 height) noexcept {
   if (!(m_share->option & Option::Sideways)) {
     u32 offset = height * (m_share->xfb_width / 2);
 
-    u32 src = AlignDown(offset, 32);
+    u32 src = util::AlignDown(offset, 32);
     u32 dest = 0;
     u32 totalSize =
-        AlignDown(m_share->xfb_height * (m_share->xfb_width / 2), 32);
+        util::AlignDown(m_share->xfb_height * (m_share->xfb_width / 2), 32);
 
     // Copy 8 words at a time
     while (src < totalSize) {
@@ -332,14 +332,14 @@ void VIConsole::MoveUp(u16 height) noexcept {
 /**
  * Flush the XFB to main memory after writing to it.
  */
-void VIConsole::FlushXfb() noexcept {
-  CpuCache::DcFlush(m_share->xfb, 320 * 574 * sizeof(u32));
+void VideoConsole::FlushXfb() noexcept {
+  util::CpuCache::DcFlush(m_share->xfb, 320 * 574 * sizeof(u32));
 }
 
 /**
  * Print a character. Assumes the resource is already locked.
  */
-void VIConsole::printChar(char c) noexcept {
+void VideoConsole::printChar(char c) noexcept {
   if (c == '\n') {
     if (m_newline) {
       incrementRow();
@@ -361,7 +361,7 @@ void VIConsole::printChar(char c) noexcept {
   }
 
   if (c == '\t') {
-    m_col = AlignUp(GetTabWidth(), m_col + 1);
+    m_col = util::AlignUp(GetTabWidth(), m_col + 1);
   }
 
   if (m_col >= NumCols()) {
@@ -376,7 +376,7 @@ void VIConsole::printChar(char c) noexcept {
   }
 
   while (row >= NumRows()) {
-    VIConsole::MoveUp(GlyphHeight);
+    VideoConsole::MoveUp(GlyphHeight);
     row = decrementRow();
   }
 
@@ -393,10 +393,10 @@ void VIConsole::printChar(char c) noexcept {
                          ? FgIntensity
                          : BgIntensity;
       if (m_share->option & Option::Sideways) {
-        VIConsole::WriteGrayscaleToXfb(y0 + y, m_share->xfb_height - (x0 + x),
-                                       intensity);
+        VideoConsole::WriteGrayscaleToXfb(
+            y0 + y, m_share->xfb_height - (x0 + x), intensity);
       } else {
-        VIConsole::WriteGrayscaleToXfb(x0 + x, y0 + y, intensity);
+        VideoConsole::WriteGrayscaleToXfb(x0 + x, y0 + y, intensity);
       }
     }
   }
@@ -407,7 +407,7 @@ void VIConsole::printChar(char c) noexcept {
 /**
  * Print a string to the visual console.
  */
-void VIConsole::Print(const char *s) noexcept {
+void VideoConsole::Print(const char *s) noexcept {
   lock();
   for (; *s; s++) {
     printChar(*s);
@@ -419,7 +419,7 @@ void VIConsole::Print(const char *s) noexcept {
 /**
  * Print a string to the visual console.
  */
-void VIConsole::Print(const char *s, size_t len) noexcept {
+void VideoConsole::Print(const char *s, size_t len) noexcept {
   lock();
   for (u32 i = 0; i < len; i++) {
     printChar(s[i]);
@@ -428,4 +428,4 @@ void VIConsole::Print(const char *s, size_t len) noexcept {
   unlock();
 }
 
-} // namespace peli::util
+} // namespace peli::log

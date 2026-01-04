@@ -1,4 +1,4 @@
-// peli/util/VIConsoleStdOut.hpp - Pipe stdout to an instance of VIConsole
+// peli/log/VideoConsoleStdOut.hpp - Pipe stdout to an instance of VideoConsole
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
@@ -10,17 +10,17 @@
 
 #if defined(PELI_NEWLIB)
 
-#include "VIConsole.hpp"
+#include "VideoConsole.hpp"
 #include <stdio.h>
 
 struct _reent;
 struct stat;
 
-namespace peli::util {
+namespace peli::log {
 
-class VIConsoleStdOut {
+class VideoConsoleStdOut {
 public:
-  static void Register(VIConsole &console);
+  static void Register(VideoConsole &console);
   static void Deregister();
 
 private:
@@ -28,11 +28,11 @@ private:
                             __SIZE_TYPE__ len);
   static int SysFstat(struct _reent *r, void *fd, struct stat *st);
 
-  static VIConsole *s_console;
+  static VideoConsole *s_console;
   static const void *s_default_stdout;
   static const void *s_default_stderr;
 };
 
-} // namespace peli::util
+} // namespace peli::log
 
 #endif

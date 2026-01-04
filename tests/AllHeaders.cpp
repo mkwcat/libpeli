@@ -90,8 +90,8 @@
 #include <peli/util/String.hpp>
 #include <peli/util/Time.hpp>
 #include <peli/util/Transform.hpp>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 
 #if defined(PELI_ASM)
 #error "<peli/cmn/Asm.h> should not be included"

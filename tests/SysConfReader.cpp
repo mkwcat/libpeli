@@ -4,8 +4,8 @@
 #include <peli/cmn/Types.hpp>
 #include <peli/ios/low/Ipc.hpp>
 #include <peli/nand/conf/Ipl.hpp>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 
 namespace {
 
@@ -16,13 +16,13 @@ template <class T> T error() {
 } // namespace
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-  peli::util::VIConsole console(false);
+  peli::log::VideoConsole console(false);
   console.SetTabWidth(8);
 
   console.Print("\nMeow! Testing the SYSCONF reader!\n");
 
   // Register the console as stdout
-  peli::util::VIConsoleStdOut::Register(console);
+  peli::log::VideoConsoleStdOut::Register(console);
 
   peli::u32 value_u32;
   std::printf("IPL.CB: 0x%08x\t", peli::nand::conf::GetCounterBias(value_u32)
@@ -107,6 +107,6 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     }
   }
 
-  peli::util::VIConsoleStdOut::Deregister();
+  peli::log::VideoConsoleStdOut::Deregister();
   return 0;
 }

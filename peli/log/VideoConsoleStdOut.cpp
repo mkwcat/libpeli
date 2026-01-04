@@ -1,10 +1,10 @@
-// peli/util/VIConsoleStdOut.cpp - Pipe stdout to an instance of VIConsole
+// peli/log/VideoConsoleStdOut.cpp - Pipe stdout to an instance of VideoConsole
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "VIConsoleStdOut.hpp"
+#include "VideoConsoleStdOut.hpp"
 
 #if defined(PELI_NEWLIB)
 
@@ -13,13 +13,13 @@
 #include <sys/reent.h>
 #include <sys/stat.h>
 
-namespace peli::util {
+namespace peli::log {
 
-VIConsole *VIConsoleStdOut::s_console = nullptr;
-const void *VIConsoleStdOut::s_default_stdout = nullptr;
-const void *VIConsoleStdOut::s_default_stderr = nullptr;
+VideoConsole *VideoConsoleStdOut::s_console = nullptr;
+const void *VideoConsoleStdOut::s_default_stdout = nullptr;
+const void *VideoConsoleStdOut::s_default_stderr = nullptr;
 
-void VIConsoleStdOut::Register(VIConsole &console) {
+void VideoConsoleStdOut::Register(VideoConsole &console) {
   bool registered = !!s_console;
   s_console = &console;
 
@@ -28,10 +28,10 @@ void VIConsoleStdOut::Register(VIConsole &console) {
       .structSize = 0,
       .open_r = nullptr,
       .close_r = nullptr,
-      .write_r = VIConsoleStdOut::SysWrite,
+      .write_r = VideoConsoleStdOut::SysWrite,
       .read_r = nullptr,
       .seek_r = nullptr,
-      .fstat_r = VIConsoleStdOut::SysFstat,
+      .fstat_r = VideoConsoleStdOut::SysFstat,
       .stat_r = nullptr,
       .link_r = nullptr,
       .unlink_r = nullptr,
@@ -67,7 +67,7 @@ void VIConsoleStdOut::Register(VIConsole &console) {
   devoptab_list[STD_ERR] = &s_devoptab;
 }
 
-void VIConsoleStdOut::Deregister() {
+void VideoConsoleStdOut::Deregister() {
   if (!s_console) {
     return;
   }
@@ -79,20 +79,20 @@ void VIConsoleStdOut::Deregister() {
   s_console = nullptr;
 }
 
-::ssize_t VIConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
-                                    [[maybe_unused]] void *fd, const char *ptr,
-                                    __SIZE_TYPE__ len) {
+::ssize_t VideoConsoleStdOut::SysWrite([[maybe_unused]] struct _reent *r,
+                                       [[maybe_unused]] void *fd,
+                                       const char *ptr, __SIZE_TYPE__ len) {
   s_console->Print(ptr, len);
   return len;
 }
 
-int VIConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
-                              [[maybe_unused]] void *fd, struct stat *st) {
+int VideoConsoleStdOut::SysFstat([[maybe_unused]] struct _reent *r,
+                                 [[maybe_unused]] void *fd, struct stat *st) {
   *st = {};
   st->st_mode = S_IFCHR;
   return 0;
 }
 
-} // namespace peli::util
+} // namespace peli::log
 
 #endif // PELI_NEWLIB

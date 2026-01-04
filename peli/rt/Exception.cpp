@@ -19,7 +19,7 @@
 #include "../ppc/Spr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Halt.hpp"
-#include "../util/VIConsole.hpp"
+#include "../log/VideoConsole.hpp"
 #include "SystemCall.hpp"
 
 namespace peli::rt {
@@ -493,7 +493,7 @@ u32 *checkStackAddr(u32 stackAddr) {
   return nullptr;
 }
 
-void printHex(util::VIConsole &console, u32 value) noexcept {
+void printHex(log::VideoConsole &console, u32 value) noexcept {
   static constexpr char HexDigits[] = "0123456789ABCDEF";
 
   using CharArray = char[10];
@@ -514,7 +514,7 @@ void printHex(util::VIConsole &console, u32 value) noexcept {
 }
 
 _PELI_GNU_CLANG_ONLY([[gnu::noinline]])
-void printStringList(util::VIConsole &console, size_t count,
+void printStringList(log::VideoConsole &console, size_t count,
                      const char *const *strings, u32 *values) {
   for (size_t i = 0; i < count; i++) {
     if ((i % 2) == 0) {
@@ -528,7 +528,7 @@ void printStringList(util::VIConsole &console, size_t count,
 [[noreturn]]
 void defaultErrorHandler(peli::ppc::Exception type,
                          ppc::Context *context) noexcept {
-  util::VIConsole console;
+  log::VideoConsole console;
 
   console.Print("\n\n  ########### EXCEPTION (");
   console.Print(peli::ppc::GetExceptionName(type));

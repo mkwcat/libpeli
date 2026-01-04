@@ -8,8 +8,8 @@
 #include <iterator>
 #include <peli/cmn/Types.hpp>
 #include <peli/ppc/Spr.hpp>
-#include <peli/util/VIConsole.hpp>
-#include <peli/util/VIConsoleStdOut.hpp>
+#include <peli/log/VideoConsole.hpp>
+#include <peli/log/VideoConsoleStdOut.hpp>
 #include <utility>
 
 namespace {
@@ -108,12 +108,12 @@ constexpr std::pair<peli::u32 (*)(), const char *> s_spr_list[] = {
 } // namespace
 
 int main([[maybe_unused]] int argc, [[maybe_unused]] char **argv) noexcept {
-  peli::util::VIConsole console(false);
+  peli::log::VideoConsole console(false);
 
   console.Print("\nPowerPC SPR listing:\n");
 
   // Register the console as stdout
-  peli::util::VIConsoleStdOut::Register(console);
+  peli::log::VideoConsoleStdOut::Register(console);
 
   for (std::size_t i = 0; i < std::size(s_spr_list); i++) {
     const auto &info = s_spr_list[i];
