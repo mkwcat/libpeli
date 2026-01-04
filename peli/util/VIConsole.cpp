@@ -16,7 +16,7 @@
 #include "../util/CpuCache.hpp"
 
 #if defined(PELI_HOST_PPC)
-#include "../hw/Video.hpp"
+#include "../vi/Video.hpp"
 #endif
 
 extern "C" const unsigned char VIConsoleFont[128][16];
@@ -64,7 +64,7 @@ VIConsole::VIConsole(bool sideways) noexcept {
  * @param clear Clear the XFB.
  */
 void VIConsole::ConfigureVideo(bool clear) noexcept {
-  hw::Video video;
+  vi::Video video;
 
   m_share->xfb_width = video.GetXfbWidth();
   m_share->xfb_height = video.GetXfbHeight();

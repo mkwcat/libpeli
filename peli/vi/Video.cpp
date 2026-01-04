@@ -1,30 +1,29 @@
-// peli/hw/Video.cpp - High level video manager
+// peli/vi/Video.cpp - High level video manager
 //   Written by mkwcat
 //
-// Copyright (c) 2025 mkwcat
+// Copyright (c) 2025-2026 mkwcat
 // SPDX-License-Identifier: MIT
 
 #include "Video.hpp"
 #include "../host/Host.hpp"
+#include "../hw/VideoInterface.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
 #include "../util/Time.hpp"
-#include "VideoInterface.hpp"
 
-namespace peli::hw {
+namespace peli::vi {
 
-Video::Video(const RenderMode &rmode) noexcept
-    : VideoInterface{}, m_changed_framebuffer(false) {
+Video::Video(const RenderMode &rmode) noexcept : m_changed_framebuffer(false) {
   constexpr u16 taps[9] = {496, 476, 430, 372, 297, 219, 142, 70, 12};
   constexpr u8 taps2[14] = {226, 203, 192, 196, 207, 222, 236,
                             252, 8,   15,  19,  19,  15,  12};
   SetTaps(taps, taps2);
   m_changed_taps = true;
 
-  DCR = Dcr{
+  m_dcr = VI::Dcr{
       .FMT = rmode.mode.GetDcrFmt(),
-      .LE1 = Dcr::Le::OFF,
-      .LE0 = Dcr::Le::OFF,
+      .LE1 = VI::Dcr::Le::OFF,
+      .LE0 = VI::Dcr::Le::OFF,
       .DLR = rmode.mode.interlace_mode == InterlaceMode::Progressive3D,
       .NIN = rmode.mode.interlace_mode != InterlaceMode::Interlace,
       .RST = 0,
@@ -37,119 +36,119 @@ Video::Video(const RenderMode &rmode) noexcept
       rmode.mode.interlace_mode == InterlaceMode::Progressive3D;
 
   const Timings &timings = rmode.mode.GetTimings();
-  HTR0 = timings.HTR0;
-  HTR1 = timings.HTR1;
-  BBEI = timings.BBEI;
-  BBOI = timings.BBOI;
-  HBE = timings.HBE;
-  HBS = timings.HBS;
+  m_htr0 = timings.HTR0;
+  m_htr1 = timings.HTR1;
+  m_bbei = timings.BBEI;
+  m_bboi = timings.BBOI;
+  m_hbe = timings.HBE;
+  m_hbs = timings.HBS;
   m_changed_timings = true;
 
-  VTR = Vtr{
+  m_vtr = VI::Vtr{
       .ACV = u16(rmode.xfb_height >> !is_progressive),
       .EQU = timings.VTR.EQU,
   };
-  VTO = Vtoe{
+  m_vto = VI::Vtoe{
       .PSB = timings.VTO.PSB + timings.VTR.ACV -
              u32(rmode.xfb_height >> !is_progressive),
       .PRB = timings.VTO.PRB + u32(rmode.vi_y_origin << is_progressive),
   };
-  VTE = Vtoe{
+  m_vte = VI::Vtoe{
       .PSB = timings.VTE.PSB + timings.VTR.ACV -
              u32(rmode.xfb_height >> !is_progressive),
       .PRB = timings.VTE.PRB + u32(rmode.vi_y_origin << is_progressive),
   };
   if (rmode.vi_y_origin & 1) {
     // Swap even and odd fields
-    auto vto = VTO;
-    VTO = VTE;
-    VTE = vto;
+    auto vto = m_vto;
+    m_vto = m_vte;
+    m_vte = vto;
   }
 
   m_changed_vertical = true;
 
-  HSW = Hsw{
+  m_hsw = VI::Hsw{
       .WPL = u16(rmode.fb_width >> 4),
       .STD = u16(rmode.fb_width >> 3 >> is_progressive),
   };
-  HSR = Hsr{
+  m_hsr = VI::Hsr{
       .HS_EN = false,
       .STP = u16(u32(rmode.fb_width) * 256u / rmode.vi_width),
   };
   m_changed_scaling = true;
 
-  DI0 = DI0 = timings.DI;
-  DI1 = DI1 = {.ENB = 1, .HCT = 1};
-  DI2 = DI2 = 0;
+  m_di[0] = timings.DI;
+  m_di[1] = {.ENB = 1, .HCT = 1};
+  m_di[2] = {};
   m_changed_interrupts = true;
 
   // TODO: Initialize A/V encoder
 }
 
 void Video::Flush() noexcept {
-  if (!VI->DCR.ENB || (m_changed_config && VI->DCR.FMT != DCR.FMT)) {
+  if (!hw::VI->DCR.ENB || (m_changed_config && hw::VI->DCR.FMT != m_dcr.FMT)) {
     // Reset VI
-    VI->DCR = Dcr{.RST = 1};
+    hw::VI->DCR = VI::Dcr{.RST = 1};
     util::BusDelay(100);
-    VI->DCR = Dcr{.RST = 0};
+    hw::VI->DCR = VI::Dcr{.RST = 0};
   }
 
   if (m_changed_taps) {
     m_changed_taps = false;
-    VI->FCT0 = FCT0;
-    VI->FCT1 = FCT1;
-    VI->FCT2 = FCT2;
-    VI->FCT3 = FCT3;
-    VI->FCT4 = FCT4;
-    VI->FCT5 = FCT5;
-    VI->FCT6 = FCT6;
+    hw::VI->FCT0 = m_fct0;
+    hw::VI->FCT1 = m_fct1;
+    hw::VI->FCT2 = m_fct2;
+    hw::VI->FCT3 = m_fct3;
+    hw::VI->FCT4 = m_fct4;
+    hw::VI->FCT5 = m_fct5;
+    hw::VI->FCT6 = m_fct6;
   }
 
   if (m_changed_vertical) {
     m_changed_vertical = false;
-    VI->VTR = VTR;
-    VI->VTO = VTO;
-    VI->VTE = VTE;
+    hw::VI->VTR = m_vtr;
+    hw::VI->VTO = m_vto;
+    hw::VI->VTE = m_vte;
   }
 
   if (m_changed_timings) {
     m_changed_timings = false;
-    VI->HTR0 = HTR0;
-    VI->HTR1 = HTR1;
-    VI->BBEI = BBEI;
-    VI->BBOI = BBOI;
-    VI->HBE = HBE;
-    VI->HBS = HBS;
+    hw::VI->HTR0 = m_htr0;
+    hw::VI->HTR1 = m_htr1;
+    hw::VI->BBEI = m_bbei;
+    hw::VI->BBOI = m_bboi;
+    hw::VI->HBE = m_hbe;
+    hw::VI->HBS = m_hbs;
   }
 
   if (m_changed_scaling) {
     m_changed_scaling = false;
-    VI->HSW = HSW;
-    VI->HSR = HSR;
+    hw::VI->HSW = m_hsw;
+    hw::VI->HSR = m_hsr;
   }
 
   if (m_changed_interrupts) {
     m_changed_interrupts = false;
-    VI->DI0 = DI0;
-    VI->DI1 = DI1;
-    VI->DI2 = DI2;
+    hw::VI->DI0 = m_di[0];
+    hw::VI->DI1 = m_di[1];
+    hw::VI->DI2 = m_di[2];
   }
 
   if (m_changed_config) {
     m_changed_config = false;
-    VI->DCR = DCR;
+    hw::VI->DCR = m_dcr;
   }
 
   if (m_changed_framebuffer) {
     m_changed_framebuffer = false;
-    VI->TFBL = TFBL;
-    VI->BFBL = BFBL;
+    hw::VI->TFBL = m_tfbl;
+    hw::VI->BFBL = m_bfbl;
   }
 }
 
 namespace {
 
-void *getFramebuffer(VideoInterface::Fbl tfbl) {
+void *getFramebuffer(hw::VideoInterface::Fbl tfbl) {
   u32 fbb = tfbl.FBB << 9;
   if (tfbl.POFF) {
     fbb <<= 5;
@@ -161,7 +160,10 @@ void *getFramebuffer(VideoInterface::Fbl tfbl) {
   return reinterpret_cast<void *>(util::Effective(fbb));
 }
 
-void setFramebuffer(VideoInterface *vi, void *top_framebuffer,
+void setFramebuffer(const hw::VideoInterface::Dcr dcr,
+                    const hw::VideoInterface::Hsw hsw,
+                    hw::VideoInterface::Fbl &tfbl,
+                    hw::VideoInterface::Fbl &bfbl, void *top_framebuffer,
                     void *bottom_framebuffer) {
   u32 fbb_top = reinterpret_cast<u32>(util::Physical(top_framebuffer)) >> 5;
   u32 fbb_bottom;
@@ -169,19 +171,19 @@ void setFramebuffer(VideoInterface *vi, void *top_framebuffer,
     fbb_bottom = reinterpret_cast<u32>(util::Physical(bottom_framebuffer)) >> 5;
   } else {
     fbb_bottom = fbb_top;
-    if (!vi->DCR.NIN) {
-      fbb_bottom += vi->HSW.WPL;
+    if (!dcr.NIN) {
+      fbb_bottom += hsw.WPL;
     }
   }
 
   ppc::Msr::NoInterruptsScope guard;
 
-  vi->TFBL = VideoInterface::Fbl{
+  tfbl = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
       .FBB = fbb_top,
   };
-  vi->BFBL = VideoInterface::Fbl{
+  bfbl = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
       .FBB = fbb_bottom,
@@ -191,32 +193,37 @@ void setFramebuffer(VideoInterface *vi, void *top_framebuffer,
 } // namespace
 
 void *Video::GetFramebuffer(bool bottom_field) noexcept {
-  return getFramebuffer(bottom_field ? VI->BFBL : VI->TFBL);
+  return getFramebuffer(bottom_field ? hw::VI->BFBL : hw::VI->TFBL);
 }
 
 void Video::SetFramebuffer(void *top_framebuffer,
                            void *bottom_framebuffer) noexcept {
-  setFramebuffer(VI, top_framebuffer, bottom_framebuffer);
+  VI::Fbl tfbl, bfbl;
+  setFramebuffer(hw::VI->DCR, hw::VI->HSW, tfbl, bfbl, top_framebuffer,
+                 bottom_framebuffer);
+  hw::VI->TFBL = tfbl;
+  hw::VI->BFBL = bfbl;
 }
 
 void *Video::GetNextFramebuffer(bool bottom_field) const noexcept {
-  return getFramebuffer(bottom_field ? VI->BFBL : VI->TFBL);
+  return getFramebuffer(bottom_field ? hw::VI->BFBL : hw::VI->TFBL);
 }
 
 void Video::SetNextFramebuffer(void *top_framebuffer,
                                void *bottom_framebuffer) noexcept {
-  setFramebuffer(this, top_framebuffer, bottom_framebuffer);
+  setFramebuffer(m_dcr, m_hsw, m_tfbl, m_bfbl, top_framebuffer,
+                 bottom_framebuffer);
   m_changed_framebuffer = true;
 }
 
-u16 Video::GetXfbWidth() const noexcept { return HSW.WPL << 4; }
+u16 Video::GetXfbWidth() const noexcept { return m_hsw.WPL << 4; }
 
 u16 Video::GetXfbHeight() const noexcept {
-  return VTR.ACV << !(DCR.NIN & VISEL.VISEL & 1);
+  return m_vtr.ACV << !(m_dcr.NIN & m_visel.VISEL & 1);
 }
 
 void *Video::AllocateXfb() noexcept {
   return host::Alloc(XfbAlignment, GetXfbSize());
 }
 
-} // namespace peli::hw
+} // namespace peli::vi

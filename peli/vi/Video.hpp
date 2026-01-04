@@ -1,19 +1,21 @@
-// peli/hw/Video.hpp - High level video manager
+// peli/vi/Video.hpp - High level video manager
 //   Written by mkwcat
 //
-// Copyright (c) 2025 mkwcat
+// Copyright (c) 2025-2026 mkwcat
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
-#include "VideoInterface.hpp"
+#include "../hw/VideoInterface.hpp"
 
-namespace peli::hw {
+namespace peli::vi {
 
 /**
  * High-level video manager.
  */
-class Video : private VideoInterface {
+class Video {
+  using VI = hw::VideoInterface;
+
 public:
   static constexpr u32 XfbAlignment = 0x4000;
 
@@ -49,16 +51,16 @@ public:
   };
 
   struct Timings {
-    Htr0 HTR0;
-    Htr1 HTR1;
-    Vtr VTR;
-    Vtoe VTO;
-    Vtoe VTE;
-    Bbei BBEI;
-    Bboi BBOI;
-    Hbe HBE;
-    Hbs HBS;
-    Di DI;
+    hw::VideoInterface::Htr0 HTR0;
+    VI::Htr1 HTR1;
+    VI::Vtr VTR;
+    VI::Vtoe VTO;
+    VI::Vtoe VTE;
+    VI::Bbei BBEI;
+    VI::Bboi BBOI;
+    VI::Hbe HBE;
+    VI::Hbs HBS;
+    VI::Di DI;
   };
 
   struct RenderMode;
@@ -69,7 +71,9 @@ public:
 
     const Timings &GetTimings() const noexcept;
     const RenderMode &GetRenderMode() const noexcept;
-    Dcr::Fmt GetDcrFmt() const noexcept { return Video::GetDcrFmt(standard); }
+    VI::Dcr::Fmt GetDcrFmt() const noexcept {
+      return Video::GetDcrFmt(standard);
+    }
 
     static TVMode Detect() noexcept;
   };
@@ -87,7 +91,7 @@ public:
     u8 sample_pattern[12][2];
     u8 vertical_filter[7];
   };
-    
+
   static const struct {
     struct {
       Timings NtscEurgb60, Pal, PalM, Gca;
@@ -107,80 +111,80 @@ public:
     } Ntsc, Pal, PalM, Eurgb60;
   } RenderModes;
 
-  static Dcr::Fmt GetDcrFmt(Standard standard) noexcept {
+  static VI::Dcr::Fmt GetDcrFmt(Standard standard) noexcept {
     switch (standard) {
     default:
-      return Dcr::Fmt::NTSC;
+      return VI::Dcr::Fmt::NTSC;
     case Standard::Pal:
-      return Dcr::Fmt::PAL;
+      return VI::Dcr::Fmt::PAL;
     case Standard::PalM:
-      return Dcr::Fmt::MPAL;
+      return VI::Dcr::Fmt::MPAL;
     case Standard::Debug:
-      return Dcr::Fmt::DEBUG;
+      return VI::Dcr::Fmt::DEBUG;
     }
   }
 
   void GetTaps(u16 taps[9], u8 taps2[14]) const noexcept {
-    taps[0] = FCT0.T0;
-    taps[1] = FCT0.T1;
-    taps[2] = FCT0.T2;
-    taps[3] = FCT1.T3;
-    taps[4] = FCT1.T4;
-    taps[5] = FCT1.T5;
-    taps[6] = FCT2.T6;
-    taps[7] = FCT2.T7;
-    taps[8] = FCT2.T8;
-    taps2[0] = FCT3.T9;
-    taps2[1] = FCT3.T10;
-    taps2[2] = FCT3.T11;
-    taps2[3] = FCT3.T12;
-    taps2[4] = FCT4.T13;
-    taps2[5] = FCT4.T14;
-    taps2[6] = FCT4.T15;
-    taps2[7] = FCT4.T16;
-    taps2[8] = FCT5.T17;
-    taps2[9] = FCT5.T18;
-    taps2[10] = FCT5.T19;
-    taps2[11] = FCT5.T20;
-    taps2[12] = FCT6.T21;
-    taps2[13] = FCT6.T22;
+    taps[0] = m_fct0.T0;
+    taps[1] = m_fct0.T1;
+    taps[2] = m_fct0.T2;
+    taps[3] = m_fct1.T3;
+    taps[4] = m_fct1.T4;
+    taps[5] = m_fct1.T5;
+    taps[6] = m_fct2.T6;
+    taps[7] = m_fct2.T7;
+    taps[8] = m_fct2.T8;
+    taps2[0] = m_fct3.T9;
+    taps2[1] = m_fct3.T10;
+    taps2[2] = m_fct3.T11;
+    taps2[3] = m_fct3.T12;
+    taps2[4] = m_fct4.T13;
+    taps2[5] = m_fct4.T14;
+    taps2[6] = m_fct4.T15;
+    taps2[7] = m_fct4.T16;
+    taps2[8] = m_fct5.T17;
+    taps2[9] = m_fct5.T18;
+    taps2[10] = m_fct5.T19;
+    taps2[11] = m_fct5.T20;
+    taps2[12] = m_fct6.T21;
+    taps2[13] = m_fct6.T22;
   }
 
   void SetTaps(const u16 taps[9], const u8 taps2[14]) noexcept {
-    FCT0 = {
+    m_fct0 = {
         .T2 = taps[2],
         .T1 = taps[1],
         .T0 = taps[0],
     };
-    FCT1 = {
+    m_fct1 = {
         .T5 = taps[5],
         .T4 = taps[4],
         .T3 = taps[3],
     };
-    FCT2 = {
+    m_fct2 = {
         .T8 = taps[8],
         .T7 = taps[7],
         .T6 = taps[6],
     };
-    FCT3 = {
+    m_fct3 = {
         .T12 = taps2[3],
         .T11 = taps2[2],
         .T10 = taps2[1],
         .T9 = taps2[0],
     };
-    FCT4 = {
+    m_fct4 = {
         .T16 = taps2[7],
         .T15 = taps2[6],
         .T14 = taps2[5],
         .T13 = taps2[4],
     };
-    FCT5 = {
+    m_fct5 = {
         .T20 = taps2[11],
         .T19 = taps2[10],
         .T18 = taps2[9],
         .T17 = taps2[8],
     };
-    FCT6 = {
+    m_fct6 = {
         .T23 = taps2[13],
         .T22 = taps2[12],
         .T21 = taps2[11],
@@ -192,13 +196,8 @@ public:
 
   void Flush() noexcept;
   void FlushAll() noexcept {
-    m_changed_config = true;
-    m_changed_vertical = true;
-    m_changed_timings = true;
-    m_changed_taps = true;
-    m_changed_scaling = true;
-    m_changed_interrupts = true;
-    m_changed_framebuffer = true;
+    m_changed_config = m_changed_vertical = m_changed_timings = m_changed_taps =
+        m_changed_scaling = m_changed_interrupts = m_changed_framebuffer = true;
     Flush();
   }
 
@@ -221,13 +220,38 @@ public:
   void SetupEncoder() noexcept;
 
 private:
-  bool m_changed_config;
-  bool m_changed_vertical;
-  bool m_changed_timings;
-  bool m_changed_taps;
-  bool m_changed_scaling;
-  bool m_changed_interrupts;
-  bool m_changed_framebuffer;
+  bool m_changed_config, m_changed_vertical, m_changed_timings, m_changed_taps,
+      m_changed_scaling, m_changed_interrupts, m_changed_framebuffer;
+
+  VI::Dcr m_dcr;
+
+  VI::Di m_di[3];
+
+  VI::Fbl m_tfbl;
+  VI::Fbl m_bfbl;
+
+  VI::Fct0 m_fct0;
+  VI::Fct1 m_fct1;
+  VI::Fct2 m_fct2;
+  VI::Fct3 m_fct3;
+  VI::Fct4 m_fct4;
+  VI::Fct5 m_fct5;
+  VI::Fct6 m_fct6;
+
+  VI::Vtr m_vtr;
+  VI::Vtoe m_vto;
+  VI::Vtoe m_vte;
+  VI::ViSel m_visel;
+
+  VI::Htr0 m_htr0;
+  VI::Htr1 m_htr1;
+  VI::Bbei m_bbei;
+  VI::Bboi m_bboi;
+  VI::Hbe m_hbe;
+  VI::Hbs m_hbs;
+
+  VI::Hsw m_hsw;
+  VI::Hsr m_hsr;
 };
 
-} // namespace peli::hw
+} // namespace peli::vi

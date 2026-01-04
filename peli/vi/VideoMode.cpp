@@ -1,12 +1,13 @@
-// peli/hw/VideoMode.cpp - Video mode definitions
+// peli/vi/VideoMode.cpp - Video mode definitions
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
 #include "Video.hpp"
+#include "peli/cmn/Macro.h"
 
-namespace peli::hw {
+namespace peli::vi {
 
 constinit const decltype(Video::TimingSets) Video::TimingSets = {
     .Interlaced{
@@ -149,6 +150,9 @@ constinit const decltype(Video::TimingSets) Video::TimingSets = {
     },
 };
 
+_PELI_DIAGNOSTIC_CLANG(push)
+_PELI_DIAGNOSTIC_CLANG(ignored "-Wmissing-braces")
+
 constinit const decltype(Video::RenderModes) Video::RenderModes = {
     .Ntsc{
         .Interlaced{
@@ -201,6 +205,8 @@ constinit const decltype(Video::RenderModes) Video::RenderModes = {
         .Progressive{},
     },
 };
+
+_PELI_DIAGNOSTIC_CLANG(pop)
 
 const Video::Timings &Video::TVMode::GetTimings() const noexcept {
   if (interlace_mode == InterlaceMode::Interlace) {
@@ -259,24 +265,24 @@ Video::TVMode Video::TVMode::Detect() noexcept {
   // previous video configuration)
   Video::TVMode mode;
 
-  switch (VI->DCR.FMT) {
+  switch (hw::VI->DCR.FMT) {
   default:
     mode.standard = Standard::Ntsc;
     break;
-  case Dcr::Fmt::PAL:
+  case VI::Dcr::Fmt::PAL:
     mode.standard = Standard::Pal;
     break;
-  case Dcr::Fmt::MPAL:
+  case VI::Dcr::Fmt::MPAL:
     mode.standard = Standard::PalM;
     break;
-  case Dcr::Fmt::DEBUG:
+  case VI::Dcr::Fmt::DEBUG:
     mode.standard = Standard::Debug;
     break;
   }
 
-  if (VI->VISEL.VISEL & 1) {
+  if (hw::VI->VISEL.VISEL & 1) {
     mode.interlace_mode = InterlaceMode::Progressive;
-  } else if (VI->DCR.NIN) {
+  } else if (hw::VI->DCR.NIN) {
     mode.interlace_mode = InterlaceMode::NonInterlace;
   } else {
     mode.interlace_mode = InterlaceMode::Interlace;
@@ -285,4 +291,4 @@ Video::TVMode Video::TVMode::Detect() noexcept {
   return mode;
 }
 
-} // namespace peli::hw
+} // namespace peli::vi
