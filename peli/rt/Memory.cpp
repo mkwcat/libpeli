@@ -10,6 +10,7 @@
 #include "../ios/LoMem.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
+#include "Linker.hpp"
 
 #if defined(PELI_NEWLIB)
 #include <errno.h>
@@ -18,54 +19,10 @@
 
 namespace peli::rt {
 
-u8 *Memory::Mem1ArenaStart = nullptr;
-u8 *Memory::Mem1ArenaEnd = nullptr;
-u8 *Memory::Mem2ArenaStart = nullptr;
-u8 *Memory::Mem2ArenaEnd = nullptr;
-u8 *Memory::IpcHeapStart = nullptr;
-u8 *Memory::IpcHeapEnd = nullptr;
-
-void Memory::InitArena() {
-  extern u8 LdArena1Lo[] asm("__Arena1Lo");
-  extern u8 LdArena1Hi[] asm("__Arena1Hi");
-  extern u8 LdArena2Lo[] asm("__Arena2Lo");
-  extern u8 LdArena2Hi[] asm("__Arena2Hi");
-  extern u8 LdIpcBufferLo[] asm("__ipcbufferLo");
-  extern u8 LdIpcBufferHi[] asm("__ipcbufferHi");
-
-  Mem1ArenaStart =
-      reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.mem1_arena_start);
-  Mem1ArenaEnd =
-      reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.mem1_arena_end);
-  Mem2ArenaStart =
-      reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.mem2_arena_start);
-  Mem2ArenaEnd =
-      reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.mem2_arena_end);
-  IpcHeapStart =
-      reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.ipc_heap_start);
-  IpcHeapEnd = reinterpret_cast<u8 *>(ios::g_lo_mem.os_globals.ipc_heap_end);
-
-  if (Mem1ArenaStart == nullptr) {
-    Mem1ArenaStart = LdArena1Lo;
-  }
-  if (Mem1ArenaEnd == nullptr) {
-    Mem1ArenaEnd = LdArena1Hi;
-  }
-
-  if (Mem2ArenaStart == nullptr) {
-    Mem2ArenaStart = LdArena2Lo;
-  }
-  if (Mem2ArenaEnd == nullptr) {
-    Mem2ArenaEnd = LdArena2Hi;
-  }
-
-  if (IpcHeapStart == nullptr) {
-    IpcHeapStart = LdIpcBufferLo;
-  }
-  if (IpcHeapEnd == nullptr) {
-    IpcHeapEnd = LdIpcBufferHi;
-  }
-}
+constinit u8 *Memory::Mem1ArenaStart = ld::__mem1_arena_start;
+constinit u8 *Memory::Mem1ArenaEnd = ld::__mem1_arena_end;
+constinit u8 *Memory::Mem2ArenaStart = ld::__mem2_arena_start;
+constinit u8 *Memory::Mem2ArenaEnd = ld::__mem2_arena_end;
 
 u8 *Memory::AllocFromMem1ArenaLo(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;

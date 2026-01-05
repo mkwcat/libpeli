@@ -18,10 +18,6 @@ link_libraries(
     "-Wl,--no-whole-archive"
 )
 
-add_link_options(
-    -T${DEVKITPPC}/powerpc-eabi/lib/rvl.ld
-)
-
 set(CMAKE_EXECUTABLE_SUFFIX ".elf")
 
 add_compile_options(
@@ -42,6 +38,7 @@ add_compile_options(
 add_link_options(
     -Wl,--section-start,.init=0x80100000
     -Wl,--gc-sections
+    -T../peli-ppc.ld
 )
 
 add_executable(SimpleApp SimpleApp.cpp)
@@ -49,3 +46,4 @@ add_executable(HardReset HardReset.cpp)
 add_executable(SysConfReader SysConfReader.cpp)
 add_executable(SpecialPurposeRegisters SpecialPurposeRegisters.cpp)
 add_executable(SDCard SDCard.cpp)
+add_executable(VideoConsole VideoConsole.cpp)

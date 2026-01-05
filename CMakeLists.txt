@@ -17,6 +17,7 @@ target_compile_options(peli PRIVATE
     ${MACHDEP}
 
     -g
+    -msdata=eabi
     -Wall
     -Wextra
     -Wpedantic

@@ -16,10 +16,6 @@ public:
   static u8 *Mem1ArenaEnd;
   static u8 *Mem2ArenaStart;
   static u8 *Mem2ArenaEnd;
-  static u8 *IpcHeapStart;
-  static u8 *IpcHeapEnd;
-
-  static void InitArena();
 
   static u8 *AllocFromMem1ArenaLo(size_t size, size_t align);
   static u8 *AllocFromMem1ArenaHi(size_t size, size_t align);

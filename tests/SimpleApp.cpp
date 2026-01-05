@@ -58,8 +58,5 @@ int main() {
 
   printf("peli::ios::fs::Interface::ReadDir::Request %d\n", testIoctl());
 
-  while (true) {
-  }
-
   return 0;
 }

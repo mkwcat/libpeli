@@ -1,7 +1,7 @@
 // peli/rt/Crt0.cpp - Initial program init
 //   Written by mkwcat
 //
-// Copyright (c) 2025 mkwcat
+// Copyright (c) 2025-2026 mkwcat
 // SPDX-License-Identifier: MIT
 
 #include "../cmn/Asm.h"
@@ -11,15 +11,11 @@
 #include "../host/Config.h"
 #include "../ios/low/Ipc.hpp"
 #include "../ppc/Bat.hpp"
-#include "../ppc/Cache.hpp"
 #include "../ppc/Hid0.hpp"
 #include "../ppc/Hid4.hpp"
 #include "../ppc/L2Cache.hpp"
 #include "../ppc/Msr.hpp"
 #include "../ppc/PairedSingle.hpp"
-#include "../ppc/SprRwCtl.hpp"
-#include "../ppc/Sync.hpp"
-#include "../util/Address.hpp"
 #include "../util/Bit.hpp"
 #include "Args.hpp"
 #include "Exception.hpp"
@@ -129,19 +125,65 @@ PELI_ASM_METHOD( // clang-format off
    PELI_ASM_IMPORT(i, StubExceptionHandlers)
   ),
 
+  // Clear all GPRs
+  li      r0, 0;
+  li      r1, 0;
+  li      r2, 0;
+  li      r3, 0;
+  li      r4, 0;
+  li      r5, 0;
+  li      r6, 0;
+  li      r7, 0;
+  li      r8, 0;
+  li      r9, 0;
+  li      r10, 0;
+  li      r11, 0;
+  li      r12, 0;
+  li      r13, 0;
+  li      r14, 0;
+  li      r15, 0;
+  li      r16, 0;
+  li      r17, 0;
+  li      r18, 0;
+  li      r19, 0;
+  li      r20, 0;
+  li      r21, 0;
+  li      r22, 0;
+  li      r23, 0;
+  li      r24, 0;
+  li      r25, 0;
+  li      r26, 0;
+  li      r27, 0;
+  li      r28, 0;
+  li      r29, 0;
+  li      r30, 0;
+  li      r31, 0;
+
+
+  // Reset a ton of SPRs
+  mtspr   PELI_SPR_MMCR0, r0;
+  mtspr   PELI_SPR_MMCR1, r0;
+  mtspr   PELI_SPR_PMC1, r0;
+  mtspr   PELI_SPR_PMC2, r0;
+  mtspr   PELI_SPR_PMC3, r0;
+  mtspr   PELI_SPR_PMC4, r0;
+
+  mtspr   PELI_SPR_IABR, r0;
+  mtspr   PELI_SPR_DABR, r0;
+
   // Set stack pointer
   lis     r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@ha;
   la      r1, (%[s_crt0_stack] + PELI_CRT0_STACK_SIZE - 0x8)@l(r1);
 
   // Set the read-only Small Data Area 2 (SDA2) base pointer
-  .extern _SDA2_BASE_;
-  lis     r2, _SDA2_BASE_@ha;
-  la      r2, _SDA2_BASE_@l(r2);
+  .extern __sdata2_start;
+  lis     r2, (__sdata2_start + 0x8000)@ha;
+  la      r2, (__sdata2_start + 0x8000)@l(r2);
 
   // Set the read-write Small Data Area (SDA) base pointer
-  .extern _SDA_BASE_;
-  lis     r13, _SDA_BASE_@ha;
-  la      r13, _SDA_BASE_@l(r13);
+  .extern __sdata_start;
+  lis     r13, (__sdata_start + 0x8000)@ha;
+  la      r13, (__sdata_start + 0x8000)@l(r13);
 
   // Load the return address this way as we don't know what kind of address
   // mapping we're running in right now
@@ -345,22 +387,12 @@ PELI_ASM_METHOD( // clang-format off
 );
 
 void peliMain(Args *input_args) noexcept {
-  // Reset performance monitor registers
-  ppc::MoveTo<ppc::Spr::MMCR0>(0);
-  ppc::MoveTo<ppc::Spr::MMCR1>(0);
-  ppc::MoveTo<ppc::Spr::PMC1>(0);
-  ppc::MoveTo<ppc::Spr::PMC2>(0);
-  ppc::MoveTo<ppc::Spr::PMC3>(0);
-  ppc::MoveTo<ppc::Spr::PMC4>(0);
-
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
   ppc::PairedSingle::Init();
 #else
   ppc::PairedSingle::Disable();
 #endif
-
-  Memory::InitArena();
 
   s_args.Build(input_args);
 
