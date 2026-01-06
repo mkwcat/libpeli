@@ -242,7 +242,7 @@ PELI_ASM_METHOD( // clang-format off
   la      r3, __bss_start@l(r3);
   lis     r4, __bss_end@ha;
   la      r4, __bss_end@l(r4);
-  sub     r4, r3, r4;
+  sub     r4, r4, r3;
   bl      %[clearMemory];
 
   .extern __sbss_start;
@@ -251,7 +251,16 @@ PELI_ASM_METHOD( // clang-format off
   la      r3, __sbss_start@l(r3);
   lis     r4, __sbss_end@ha;
   la      r4, __sbss_end@l(r4);
-  sub     r4, r3, r4;
+  sub     r4, r4, r3;
+  bl      %[clearMemory];
+
+  .extern __sbss2_start;
+  .extern __sbss2_end;
+  lis     r3, __sbss2_start@ha;
+  la      r3, __sbss2_start@l(r3);
+  lis     r4, __sbss2_end@ha;
+  la      r4, __sbss2_end@l(r4);
+  sub     r4, r4, r3;
   bl      %[clearMemory];
 
   // Set first parameter to homebrew loader args

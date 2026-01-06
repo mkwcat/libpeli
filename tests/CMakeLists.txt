@@ -36,7 +36,6 @@ add_compile_options(
 )
 
 add_link_options(
-    -Wl,--section-start,.init=0x80100000
     -Wl,--gc-sections
     -T../peli-ppc.ld
 )
