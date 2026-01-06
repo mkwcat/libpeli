@@ -4,7 +4,7 @@
 #include <peli/log/VideoConsole.hpp>
 #include <peli/log/VideoConsoleStdOut.hpp>
 
-int main(int argc, char **argv) {
+int main() {
   peli::log::VideoConsole console(false);
 
   console.Print("\nMeow! Welcome to libpeli!!!\n");

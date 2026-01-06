@@ -1,10 +1,10 @@
-// peli/rt/Exception.cpp - PowerPC exception handling
+// peli/rt/Exceptions.cpp - PowerPC exception handling
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "Exception.hpp"
+#include "Exceptions.hpp"
 #include "../cmn/Asm.h"
 #include "../cmn/AsmRegisters.h"
 #include "../cmn/Types.hpp"
@@ -13,13 +13,14 @@
 #include "../hw/Interrupt.hpp"
 #include "../hw/ProcessorInterface.hpp"
 #include "../hw/Wood.hpp"
+#include "../log/VideoConsole.hpp"
 #include "../ppc/Cache.hpp"
 #include "../ppc/Context.hpp"
 #include "../ppc/Exception.hpp"
 #include "../ppc/Spr.hpp"
 #include "../ppc/Sync.hpp"
 #include "../util/Halt.hpp"
-#include "../log/VideoConsole.hpp"
+#include "Arena.hpp"
 #include "SystemCall.hpp"
 
 namespace peli::rt {
@@ -44,8 +45,8 @@ using ExceptionHandler = void (*)(peli::ppc::Exception, ppc::Context *);
 
 namespace {
 
-constinit InterruptHandler s_interrupt_handlers[32];
-constinit IrqHandler s_irq_handlers[32];
+constinit Exceptions::InterruptHandler s_interrupt_handlers[32];
+constinit Exceptions::IrqHandler s_irq_handlers[32];
 constinit bool s_use_simple_irq = false;
 constinit u8 s_exception_stack[EXCEPTION_STACK_SIZE];
 
@@ -513,7 +514,7 @@ void printHex(log::VideoConsole &console, u32 value) noexcept {
       10);
 }
 
-_PELI_GNU_CLANG_ONLY([[gnu::noinline]])
+[[gnu::noinline]]
 void printStringList(log::VideoConsole &console, size_t count,
                      const char *const *strings, u32 *values) {
   for (size_t i = 0; i < count; i++) {
@@ -525,9 +526,13 @@ void printStringList(log::VideoConsole &console, size_t count,
   }
 }
 
+} // namespace
+
 [[noreturn]]
-void defaultErrorHandler(peli::ppc::Exception type,
-                         ppc::Context *context) noexcept {
+void Exceptions::DefaultErrorHandler(peli::ppc::Exception type,
+                                     ppc::Context *context) noexcept {
+  Arena::Reset();
+
   log::VideoConsole console;
 
   console.Print("\n\n  ########### EXCEPTION (");
@@ -582,9 +587,7 @@ void defaultErrorHandler(peli::ppc::Exception type,
   util::Halt();
 }
 
-} // namespace
-
-void StubExceptionHandlers() noexcept {
+void Exceptions::StubHandlers() noexcept {
   u32 stubInst = 0x48000000; // b +0
   auto &handlers = ios::g_lo_mem_uncached.exception_handlers;
 
@@ -606,8 +609,8 @@ void StubExceptionHandlers() noexcept {
   handlers.thermal_management[0] = stubInst;
 }
 
-void SetExceptionHandler(peli::ppc::Exception type,
-                         ExceptionHandler handler) noexcept {
+void Exceptions::SetHandler(peli::ppc::Exception type,
+                            ExceptionHandler handler) noexcept {
   if (type > peli::ppc::Exception::ThermalManagement) {
     return;
   }
@@ -616,8 +619,8 @@ void SetExceptionHandler(peli::ppc::Exception type,
       reinterpret_cast<u32>(handler);
 }
 
-void SetInterruptEventHandler(hw::IntCause type,
-                              InterruptHandler handler) noexcept {
+void Exceptions::SetInterruptEventHandler(hw::IntCause type,
+                                          InterruptHandler handler) noexcept {
   if (type >= hw::IntCause::Count) {
     return;
   }
@@ -627,7 +630,7 @@ void SetInterruptEventHandler(hw::IntCause type,
   hw::PI->INTMR |= (1 << static_cast<u32>(type));
 }
 
-void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
+void Exceptions::SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
   if (type >= hw::Irq::Count) {
     return;
   }
@@ -643,7 +646,7 @@ void SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
   }
 }
 
-void InitExceptions() noexcept {
+void Exceptions::Init() noexcept {
   // Initialize decrementer
   ppc::MoveTo<ppc::Spr::DEC>(-1);
 
@@ -652,7 +655,7 @@ void InitExceptions() noexcept {
        i < sizeof(ios::g_lo_mem.os_globals.os_interrupt_table) / sizeof(u32);
        i++) {
     ios::g_lo_mem.os_globals.os_interrupt_table[i] =
-        reinterpret_cast<u32>(defaultErrorHandler);
+        reinterpret_cast<u32>(DefaultErrorHandler);
   }
 
   constexpr ppc::Exception types[] = {

@@ -30,4 +30,4 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(MACHDEP -Wa,-mbroadway -mrvl -mcpu=750 -meabi -mhard-float)
+set(MACHDEP -D__POWERPC__ -Wa,-mbroadway -mrvl -mcpu=750 -meabi -mhard-float)

@@ -10,7 +10,7 @@
 #include "../../hw/Wood.hpp"
 #include "../../ppc/Msr.hpp"
 #include "../../ppc/Sync.hpp"
-#include "../../rt/Exception.hpp"
+#include "../../rt/Exceptions.hpp"
 #include "../../util/Address.hpp"
 #include "../../util/CpuCache.hpp"
 #include "../../util/String.hpp"
@@ -404,7 +404,7 @@ void Init() noexcept {
   static host::MessageQueue<IPCCommandBlock *, 1> s_local_queue_send;
   s_queue_send = &s_local_queue_send;
 
-  rt::SetIrqHandler(hw::Irq::IpcPpc, ipcHandleInterrupt);
+  rt::Exceptions::SetIrqHandler(hw::Irq::IpcPpc, ipcHandleInterrupt);
 
   hw::WOOD->IPCPPCCTRL = Y1 | Y2;
 }

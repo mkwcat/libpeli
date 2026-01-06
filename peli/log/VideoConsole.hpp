@@ -40,7 +40,7 @@ private:
   volatile Share *m_share;
 
   u8 m_col;
-  bool m_newline;
+  bool m_newline = false;
 
   static constexpr u32 PpcLock = 0x1;
   static constexpr u32 IosLock = 0x2;

@@ -1,13 +1,12 @@
-// peli/rt/Memory.cpp
+// peli/rt/Arena.cpp
 //   Written by mkwcat
 //
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "Memory.hpp"
+#include "Arena.hpp"
 #include "../cmn/Types.hpp"
 #include "../host/Config.h"
-#include "../ios/LoMem.hpp"
 #include "../ppc/Msr.hpp"
 #include "../util/Address.hpp"
 #include "Linker.hpp"
@@ -19,76 +18,83 @@
 
 namespace peli::rt {
 
-constinit u8 *Memory::Mem1ArenaStart = ld::__mem1_arena_start;
-constinit u8 *Memory::Mem1ArenaEnd = ld::__mem1_arena_end;
-constinit u8 *Memory::Mem2ArenaStart = ld::__mem2_arena_start;
-constinit u8 *Memory::Mem2ArenaEnd = ld::__mem2_arena_end;
+constinit u8 *Arena::Mem1Start = ld::__mem1_arena_start;
+constinit u8 *Arena::Mem1End = ld::__mem1_arena_end;
+constinit u8 *Arena::Mem2Start = ld::__mem2_arena_start;
+constinit u8 *Arena::Mem2End = ld::__mem2_arena_end;
 
-u8 *Memory::AllocFromMem1ArenaLo(size_t size, size_t align) {
+void Arena::Reset() {
+  Mem1Start = ld::__mem1_arena_start;
+  Mem1End = ld::__mem1_arena_end;
+  Mem2Start = ld::__mem2_arena_start;
+  Mem2End = ld::__mem2_arena_end;
+}
+
+u8 *Arena::AllocFromMem1Lo(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
-  u8 *ptr = util::AlignUp(align, Mem1ArenaStart);
+  u8 *ptr = util::AlignUp(align, Mem1Start);
   u8 *end = ptr + size;
 
-  if (end > Mem1ArenaEnd) {
+  if (end > Mem1End) {
     return nullptr;
   }
 
-  Mem1ArenaStart = end;
+  Mem1Start = end;
   return ptr;
 }
 
-u8 *Memory::AllocFromMem1ArenaHi(size_t size, size_t align) {
+u8 *Arena::AllocFromMem1Hi(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
-  u8 *ptr = util::AlignDown(align, Mem1ArenaEnd - size);
-  if (ptr < Mem1ArenaStart) {
+  u8 *ptr = util::AlignDown(align, Mem1End - size);
+  if (ptr < Mem1Start) {
     return nullptr;
   }
 
-  Mem1ArenaEnd = ptr;
+  Mem1End = ptr;
   return ptr;
 }
 
-u8 *Memory::AllocFromMem2ArenaLo(size_t size, size_t align) {
+u8 *Arena::AllocFromMem2Lo(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
-  u8 *ptr = util::AlignUp(align, Mem2ArenaStart);
+  u8 *ptr = util::AlignUp(align, Mem2Start);
   u8 *end = ptr + size;
 
-  if (end > Mem2ArenaEnd) {
+  if (end > Mem2End) {
     return nullptr;
   }
 
-  Mem2ArenaStart = end;
+  Mem2Start = end;
   return ptr;
 }
 
-u8 *Memory::AllocFromMem2ArenaHi(size_t size, size_t align) {
+u8 *Arena::AllocFromMem2Hi(size_t size, size_t align) {
   ppc::Msr::NoInterruptsScope nis;
 
-  u8 *ptr = util::AlignDown(align, Mem2ArenaEnd - size);
-  if (ptr < Mem2ArenaStart) {
+  u8 *ptr = util::AlignDown(align, Mem2End - size);
+  if (ptr < Mem2Start) {
     return nullptr;
   }
 
-  Mem2ArenaEnd = ptr;
+  Mem2End = ptr;
   return ptr;
 }
 
-u8 *Memory::SbrkAlloc(size_t size) {
+u8 *Arena::SbrkAlloc(size_t size) {
   ppc::Msr::NoInterruptsScope nis;
 
   // Check if the requested size exceeds the available memory
-  if (Mem1ArenaStart + size <= Mem1ArenaEnd) {
+  if (Mem1Start + size <= Mem1End) {
     // In MEM1
-    u8 *ptr = Mem1ArenaStart;
-    Mem1ArenaStart += size;
+    u8 *ptr = Mem1Start;
+    Mem1Start += size;
     return ptr;
-  } else if (Mem2ArenaStart + size <= Mem2ArenaEnd) {
+  } else if (Mem2Start + size <= Mem2End) {
     // In MEM2
-    u8 *ptr = Mem2ArenaStart;
-    Mem2ArenaStart += size;
+    u8 *ptr = Mem2Start;
+    Mem2Start += size;
     return ptr;
   } else {
     // Not enough memory available
@@ -96,10 +102,10 @@ u8 *Memory::SbrkAlloc(size_t size) {
   }
 }
 
-u8 *Memory::SbrkFree(size_t size) {
+u8 *Arena::SbrkFree(size_t size) {
   // TODO
-  Mem1ArenaStart -= size;
-  return Mem1ArenaStart;
+  Mem1Start -= size;
+  return Mem1Start;
 }
 
 #if defined(PELI_NEWLIB)
@@ -113,7 +119,7 @@ extern "C" void *_sbrk_r(struct _reent *r, ptrdiff_t size) {
 
   if (size < 0) {
     // Free memory
-    u8 *ptr = Memory::SbrkFree(-size);
+    u8 *ptr = Arena::SbrkFree(-size);
     if (ptr == nullptr) {
       r->_errno = ENOMEM;
       return reinterpret_cast<void *>(-1);
@@ -122,7 +128,7 @@ extern "C" void *_sbrk_r(struct _reent *r, ptrdiff_t size) {
   }
 
   // Allocate memory using SbrkMemory
-  u8 *ptr = Memory::SbrkAlloc(size);
+  u8 *ptr = Arena::SbrkAlloc(size);
   if (ptr == nullptr) {
     r->_errno = ENOMEM;
     return reinterpret_cast<void *>(-1);

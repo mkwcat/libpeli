@@ -4,9 +4,9 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
-#include "peli/disk/DeviceTable.hpp"
 #include <cstdio>
 #include <cstdlib>
+#include <peli/disk/DeviceTable.hpp>
 #include <peli/ios/sdio/Card.hpp>
 #include <peli/log/VideoConsole.hpp>
 #include <peli/log/VideoConsoleStdOut.hpp>

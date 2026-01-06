@@ -4,8 +4,8 @@
 // Copyright (c) 2025 mkwcat
 // SPDX-License-Identifier: MIT
 
+#include "../cmn/Macro.h"
 #include "Video.hpp"
-#include "peli/cmn/Macro.h"
 
 namespace peli::vi {
 

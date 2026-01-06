@@ -1,4 +1,4 @@
-// peli/rt/Crt0.cpp - Initial program init
+// peli/rt/Start.cpp - Initial program startup
 //   Written by mkwcat
 //
 // Copyright (c) 2025-2026 mkwcat
@@ -17,10 +17,10 @@
 #include "../ppc/Msr.hpp"
 #include "../ppc/PairedSingle.hpp"
 #include "../util/Bit.hpp"
-#include "Args.hpp"
-#include "Exception.hpp"
-#include "Memory.hpp"
+#include "Arguments.hpp"
+#include "Exceptions.hpp"
 #include "Thread.hpp"
+#include "peli/rt/Arguments.hpp"
 
 #ifndef PELI_CRT0_STACK_SIZE
 #define PELI_CRT0_STACK_SIZE 0x8000
@@ -29,13 +29,13 @@
 int main(int argc, char **argv);
 extern "C" [[gnu::noreturn]] void exit(int status);
 
-extern "C" peli::rt::Args *__system_argv;
+extern "C" peli::rt::Arguments *__system_argv;
 
 namespace peli::rt {
 
 namespace {
-void peliMain(Args *input_args) noexcept;
-void peliCrt0() noexcept;
+void peliMain(Arguments *input_args) noexcept;
+void peliStart() noexcept;
 void clearMemory(void *start, u32 size) noexcept;
 } // namespace
 
@@ -44,9 +44,9 @@ PELI_ASM_METHOD( // clang-format off
   [[gnu::weak]]
   void _start() noexcept,
 
-  (PELI_ASM_IMPORT(i, peliCrt0)),
+  (PELI_ASM_IMPORT(i, peliStart)),
 
-  bl      %[peliCrt0];
+  bl      %[peliStart];
 
   // Homebrew loader arguments
   .ascii  "_arg"; // Indicator
@@ -58,14 +58,14 @@ PELI_ASM_METHOD( // clang-format off
   .long   0;      // Argv End
 
   // Workaround for HBC loader_reloc.c:27 patch_crt0
-  .long   0x40000000;
+  .long   0x41000000;
                  // clang-format on
 );
 } // extern "C"
 
 namespace {
 
-constinit Args s_args;
+constinit Arguments s_args;
 
 alignas(32) u8 s_crt0_stack[PELI_CRT0_STACK_SIZE];
 
@@ -106,7 +106,7 @@ constexpr ppc::BatConfig s_bats_default =
     ppc::BatConfig(s_mem1_size, s_mem2_size, false, false, false);
 
 PELI_ASM_METHOD( // clang-format off
-  void peliCrt0() noexcept,
+  void peliStart() noexcept,
 
   (PELI_ASM_IMPORT(i, s_crt0_stack),
    PELI_ASM_IMPORT(i, peliMain), 
@@ -122,7 +122,7 @@ PELI_ASM_METHOD( // clang-format off
    PELI_ASM_IMPORT_AS(i, ppc::BatClearAll, BatClearAll),
    PELI_ASM_IMPORT_AS(i, ppc::BatConfigure<s_bats_default>, BatConfigure),
    PELI_ASM_IMPORT_AS(i, ppc::L2Cache::Init, L2CacheInit),
-   PELI_ASM_IMPORT(i, StubExceptionHandlers)
+   PELI_ASM_IMPORT_AS(i, Exceptions::StubHandlers, StubExceptionHandlers)
   ),
 
   // Clear all GPRs
@@ -158,7 +158,6 @@ PELI_ASM_METHOD( // clang-format off
   li      r29, 0;
   li      r30, 0;
   li      r31, 0;
-
 
   // Reset a ton of SPRs
   mtspr   PELI_SPR_MMCR0, r0;
@@ -264,8 +263,8 @@ PELI_ASM_METHOD( // clang-format off
   bl      %[clearMemory];
 
   // Set first parameter to homebrew loader args
-  lis     r3, (_start + 4)@ha;
-  la      r3, (_start + 4)@l(r3);
+  lis     r3, (_start + 8)@ha;
+  la      r3, (_start + 8)@l(r3);
 
   // Call the main init function
   bl      %[peliMain];
@@ -395,7 +394,7 @@ PELI_ASM_METHOD( // clang-format off
                  // clang-format on
 );
 
-void peliMain(Args *input_args) noexcept {
+void peliMain(Arguments *input_args) noexcept {
   // Init Paired Singles
 #if defined(PELI_ENABLE_PAIRED_SINGLE)
   ppc::PairedSingle::Init();
@@ -409,19 +408,19 @@ void peliMain(Args *input_args) noexcept {
   Thread::SystemInit(s_crt0_stack, PELI_CRT0_STACK_SIZE);
 
   // Initialize exception handlers
-  InitExceptions();
+  Exceptions::Init();
 
-  // Initialize Inter-process Communication with IOS
+  // Initialize inter-process communication with IOS
   ios::low::Init();
 
   _PELI_DIAGNOSTIC(push)
   // Ignore the warning on use of ::main
   _PELI_DIAGNOSTIC(ignored "-Wpedantic")
-  ::exit(::main(s_args.argc, s_args.argv));
+  ::exit(::main(s_args.m_argc, s_args.m_argv));
   _PELI_DIAGNOSTIC(pop)
 }
 
 } // namespace
 } // namespace peli::rt
 
-constinit peli::rt::Args *__system_argv = &peli::rt::s_args;
+constinit peli::rt::Arguments *__system_argv = &peli::rt::s_args;

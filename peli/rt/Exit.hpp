@@ -14,4 +14,6 @@ constexpr inline int ExitFailure = 1;
 [[noreturn]]
 void Exit(int status = 0) noexcept;
 
+void PrepareExit() noexcept;
+
 } // namespace peli::rt

@@ -9,8 +9,8 @@
 #include "../cmn/Types.hpp"
 #include "../util/Optimize.hpp"
 #include "Hid2.hpp"
+#include "Spr.hpp"
 #include "SprRwCtl.hpp"
-#include "peli/ppc/Spr.hpp"
 
 namespace peli::ppc::PairedSingle {
 

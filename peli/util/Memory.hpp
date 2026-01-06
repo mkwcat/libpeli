@@ -85,7 +85,7 @@ void ImmWrite(const auto *ptr, size_t offset,
 template <class T, host::Endian TEndian = host::Endian::Native>
 typename Transform<T>::T ImmReadMisaligned(MemoryAddressType auto const ptr,
                                            size_t offset = 0) noexcept {
-#if defined(__POWERPC__)
+#if defined(__powerpc__)
   return ImmRead<T, TEndian>(ptr, offset);
 #else
   T value = 0;
