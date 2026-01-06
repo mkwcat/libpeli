@@ -88,37 +88,37 @@ public:
   /**
    * Get the width of the console framebuffer.
    */
-  u16 GetXfbWidth() const noexcept;
+  u32 GetXfbWidth() const noexcept;
 
   /**
    * Get the height of the console framebuffer.
    */
-  u16 GetXfbHeight() const noexcept;
+  u32 GetXfbHeight() const noexcept;
 
   /**
    * Get column count.
    */
-  u8 NumCols() const noexcept;
+  u32 NumCols() const noexcept;
 
   /**
    * Get row count.
    */
-  u8 NumRows() const noexcept;
+  u32 NumRows() const noexcept;
 
   /**
    * Read from the specified pixel on the framebuffer.
    */
-  u8 ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept;
+  u8 ReadGrayscaleFromXfb(u32 x, u32 y) const noexcept;
 
   /**
    * Write to the specified pixel on the framebuffer.
    */
-  void WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept;
+  void WriteGrayscaleToXfb(u32 x, u32 y, u8 intensity) noexcept;
 
   /**
    * Move the framebuffer up by the specified height.
    */
-  void MoveUp(u16 height) noexcept;
+  void MoveUp(u32 height) noexcept;
 
   /**
    * Flush the XFB to main memory after writing to it.

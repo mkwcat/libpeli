@@ -206,7 +206,7 @@ void VideoConsole::SetTabWidth(u8 width) noexcept {
   syncShare(false);
 
   constexpr u32 mask = 0xF << Option::TabWidth;
-  width = (width - 1) << Option::TabWidth;
+  width = static_cast<u8>((width - 1) << Option::TabWidth);
   m_share->option = (m_share->option & ~mask) | (width & mask);
 
   syncShare(true);
@@ -222,17 +222,17 @@ u8 VideoConsole::GetTabWidth() const noexcept {
 /**
  * Get the width of the console framebuffer.
  */
-u16 VideoConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
+u32 VideoConsole::GetXfbWidth() const noexcept { return m_share->xfb_width; }
 
 /**
  * Get the height of the console framebuffer.
  */
-u16 VideoConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
+u32 VideoConsole::GetXfbHeight() const noexcept { return m_share->xfb_height; }
 
 /**
  * Get column count.
  */
-u8 VideoConsole::NumCols() const noexcept {
+u32 VideoConsole::NumCols() const noexcept {
   if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_width / GlyphWidth - 1;
   } else {
@@ -243,7 +243,7 @@ u8 VideoConsole::NumCols() const noexcept {
 /**
  * Get row count.
  */
-u8 VideoConsole::NumRows() const noexcept {
+u32 VideoConsole::NumRows() const noexcept {
   if (!(m_share->option & Option::Sideways)) {
     return m_share->xfb_height / GlyphHeight - 2;
   } else {
@@ -254,49 +254,49 @@ u8 VideoConsole::NumRows() const noexcept {
 /**
  * Read from the specified pixel on the framebuffer.
  */
-u8 VideoConsole::ReadGrayscaleFromXfb(u16 x, u16 y) const noexcept {
+u8 VideoConsole::ReadGrayscaleFromXfb(u32 x, u32 y) const noexcept {
   if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return 16;
   }
 
   u32 val = m_share->xfb[y * (m_share->xfb_width / 2) + x / 2];
   if (x & 1) {
-    return val >> 8;
+    return u8(val >> 8);
   } else {
-    return val >> 24;
+    return u8(val >> 24);
   }
 }
 
 /**
  * Write to the specified pixel on the framebuffer.
  */
-void VideoConsole::WriteGrayscaleToXfb(u16 x, u16 y, u8 intensity) noexcept {
+void VideoConsole::WriteGrayscaleToXfb(u32 x, u32 y, u8 intensity) noexcept {
   if (x > m_share->xfb_width || y > m_share->xfb_height) {
     return;
   }
 
   u32 *val = &m_share->xfb[y * (m_share->xfb_width / 2) + x / 2];
-  u8 y0 = *val >> 24;
-  u8 y1 = *val >> 8;
+  u32 y0 = (*val >> 24) & 0xFF;
+  u32 y1 = (*val >> 8) & 0xFF;
   if (x & 1) {
     y1 = intensity;
   } else {
     y0 = intensity;
   }
-  *val = y0 << 24 | 127 << 16 | y1 << 8 | 127;
+  *val = y0 << 24 | 127u << 16 | y1 << 8 | 127u;
 }
 
 /**
  * Move the framebuffer up by the specified height.
  */
-void VideoConsole::MoveUp(u16 height) noexcept {
+void VideoConsole::MoveUp(u32 height) noexcept {
   if (!(m_share->option & Option::Sideways)) {
     u32 offset = height * (m_share->xfb_width / 2);
 
-    u32 src = util::AlignDown(offset, 32);
+    u32 src = util::AlignDown(offset, 32u);
     u32 dest = 0;
     u32 totalSize =
-        util::AlignDown(m_share->xfb_height * (m_share->xfb_width / 2), 32);
+        util::AlignDown(m_share->xfb_height * (m_share->xfb_width / 2), 32u);
 
     // Copy 8 words at a time
     while (src < totalSize) {
@@ -361,7 +361,7 @@ void VideoConsole::printChar(char c) noexcept {
   }
 
   if (c == '\t') {
-    m_col = util::AlignUp(GetTabWidth(), m_col + 1);
+    m_col = util::AlignUp<u8>(GetTabWidth(), m_col + 1);
   }
 
   if (m_col >= NumCols()) {
@@ -369,15 +369,15 @@ void VideoConsole::printChar(char c) noexcept {
     m_col = 0;
   }
 
-  s32 row = refMyRow();
-
-  if (row < 0) {
+  if (refMyRow() < 0) {
     return;
   }
+  u32 row = static_cast<u32>(refMyRow());
 
   while (row >= NumRows()) {
     VideoConsole::MoveUp(GlyphHeight);
-    row = decrementRow();
+    decrementRow();
+    row--;
   }
 
   const u8 *glyph = VIConsoleFont[' '];
@@ -385,10 +385,10 @@ void VideoConsole::printChar(char c) noexcept {
     glyph = VIConsoleFont[u32(c)];
   }
 
-  u16 y0 = row * GlyphHeight + GlyphHeight / 2;
-  for (u16 y = 0; y < GlyphHeight; y++) {
-    u16 x0 = m_col * GlyphWidth + GlyphWidth / 2;
-    for (u16 x = 0; x < GlyphWidth; x++) {
+  u32 y0 = row * GlyphHeight + GlyphHeight / 2;
+  for (u32 y = 0; y < GlyphHeight; y++) {
+    u32 x0 = m_col * GlyphWidth + GlyphWidth / 2;
+    for (u32 x = 0; x < GlyphWidth; x++) {
       u8 intensity = glyph[(y * GlyphWidth + x) / 8] & (1 << (8 - (x % 8)))
                          ? FgIntensity
                          : BgIntensity;

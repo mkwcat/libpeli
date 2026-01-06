@@ -16,35 +16,36 @@ namespace peli::util {
 template <host::Endian TEndian = host::Endian::Native, class T> T SwapTo(T v) {
   if constexpr (TEndian == host::Endian::Native || sizeof(T) <= 1) {
     return v;
-  }
+  } else {
 
 #if defined(__GNUC__)
-  if constexpr (IntegralType<T>) {
-    if constexpr (sizeof(T) == 2) {
-      return static_cast<T>(__builtin_bswap16(static_cast<u16>(v)));
-    } else if constexpr (sizeof(T) == 4) {
-      return static_cast<T>(__builtin_bswap16(static_cast<u32>(v)));
-    } else if constexpr (sizeof(T) == 8) {
-      return static_cast<T>(__builtin_bswap16(static_cast<u64>(v)));
+    if constexpr (IntegralType<T>) {
+      if constexpr (sizeof(T) == 2) {
+        return static_cast<T>(__builtin_bswap16(static_cast<u16>(v)));
+      } else if constexpr (sizeof(T) == 4) {
+        return static_cast<T>(__builtin_bswap32(static_cast<u32>(v)));
+      } else if constexpr (sizeof(T) == 8) {
+        return static_cast<T>(__builtin_bswap64(static_cast<u64>(v)));
+      }
     }
-  }
 #endif
 
-  T out;
-  for (size_t i = 0; i < sizeof(T) >> 1; i++) {
-    size_t lower = i * 8;
-    size_t upper = (sizeof(T) * 8 - 8) - lower;
-    size_t shift = upper - lower;
+    T out;
+    for (size_t i = 0; i < sizeof(T) >> 1; i++) {
+      size_t lower = i * 8;
+      size_t upper = (sizeof(T) * 8 - 8) - lower;
+      size_t shift = upper - lower;
 
-    out |= ((v & (T(0xFF) << upper)) >> shift) |
-           ((v & (T(0xFF) << lower)) << shift);
+      out |= T((v & (T(0xFF) << upper)) >> shift) |
+             T((v & (T(0xFF) << lower)) << shift);
+    }
+
+    if (sizeof(T) & 1) {
+      out = out | (v & (T(0xFF) << ((sizeof(T) >> 1) * 8)));
+    }
+
+    return out;
   }
-
-  if (sizeof(T) & 1) {
-    out = out | (v & (T(0xFF) << ((sizeof(T) >> 1) * 8)));
-  }
-
-  return out;
 }
 
 template <class T, host::Endian TEndian = host::Endian::Native>

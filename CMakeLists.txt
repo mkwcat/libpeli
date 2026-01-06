@@ -18,14 +18,16 @@ target_compile_options(peli PRIVATE
 
     -g
     -msdata=eabi
+    -Werror
     -Wall
     -Wextra
+    -Wconversion
     -Wpedantic
+    $<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast>
     -ffunction-sections
     -fdata-sections
-    -O3
+    -Os
     $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>
-    $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-finline-limit=1400>
 )
     
 target_compile_options(peli PUBLIC

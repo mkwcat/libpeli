@@ -20,8 +20,8 @@
 
 #pragma once
 
+#include "../cmn/Types.hpp"
 #include "Config.hpp"
-#include <peli/cmn/Types.hpp>
 
 namespace peli::fat {
 

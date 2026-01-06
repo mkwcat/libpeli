@@ -44,19 +44,21 @@ Video::Video(const RenderMode &rmode) noexcept : m_changed_framebuffer(false) {
   m_hbs = timings.HBS;
   m_changed_timings = true;
 
+  u16 acv = u16((rmode.xfb_height >> !is_progressive) & 0x3FF);
+  [[assume(acv < 0x400)]];
   m_vtr = VI::Vtr{
-      .ACV = u16(rmode.xfb_height >> !is_progressive),
-      .EQU = timings.VTR.EQU,
+      .ACV = u16(acv & 0x3FFu),
+      .EQU = u16(timings.VTR.EQU & 0xFu),
   };
   m_vto = VI::Vtoe{
-      .PSB = timings.VTO.PSB + timings.VTR.ACV -
-             u32(rmode.xfb_height >> !is_progressive),
-      .PRB = timings.VTO.PRB + u32(rmode.vi_y_origin << is_progressive),
+      .PSB = (timings.VTO.PSB + u32(timings.VTR.ACV) - acv) & 0x3FFu,
+      .PRB =
+          (timings.VTO.PRB + u32(rmode.vi_y_origin << is_progressive)) & 0x3FFu,
   };
   m_vte = VI::Vtoe{
-      .PSB = timings.VTE.PSB + timings.VTR.ACV -
-             u32(rmode.xfb_height >> !is_progressive),
-      .PRB = timings.VTE.PRB + u32(rmode.vi_y_origin << is_progressive),
+      .PSB = (timings.VTE.PSB + u32(timings.VTR.ACV) - acv) & 0x3FFu,
+      .PRB =
+          (timings.VTE.PRB + u32(rmode.vi_y_origin << is_progressive)) & 0x3FFu,
   };
   if (rmode.vi_y_origin & 1) {
     // Swap even and odd fields
@@ -68,12 +70,12 @@ Video::Video(const RenderMode &rmode) noexcept : m_changed_framebuffer(false) {
   m_changed_vertical = true;
 
   m_hsw = VI::Hsw{
-      .WPL = u16(rmode.fb_width >> 4),
-      .STD = u16(rmode.fb_width >> 3 >> is_progressive),
+      .WPL = u16((rmode.fb_width >> 4) & 0x7Fu),
+      .STD = u8(rmode.fb_width >> 3 >> is_progressive),
   };
   m_hsr = VI::Hsr{
       .HS_EN = false,
-      .STP = u16(u32(rmode.fb_width) * 256u / rmode.vi_width),
+      .STP = u16((u32(rmode.fb_width) * 256u / rmode.vi_width) & 0x1FFu),
   };
   m_changed_scaling = true;
 
@@ -149,7 +151,7 @@ void Video::Flush() noexcept {
 namespace {
 
 void *getFramebuffer(hw::VideoInterface::Fbl tfbl) {
-  u32 fbb = tfbl.FBB << 9;
+  u32 fbb = u32(tfbl.FBB << 9);
   if (tfbl.POFF) {
     fbb <<= 5;
   }
@@ -181,12 +183,12 @@ void setFramebuffer(const hw::VideoInterface::Dcr dcr,
   tfbl = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
-      .FBB = fbb_top,
+      .FBB = fbb_top & 0xFFFFFF,
   };
   bfbl = hw::VideoInterface::Fbl{
       .POFF = true,
       .XOF = 0,
-      .FBB = fbb_bottom,
+      .FBB = fbb_bottom & 0xFFFFFF,
   };
 }
 
@@ -216,10 +218,16 @@ void Video::SetNextFramebuffer(void *top_framebuffer,
   m_changed_framebuffer = true;
 }
 
-u16 Video::GetXfbWidth() const noexcept { return m_hsw.WPL << 4; }
+u16 Video::GetXfbWidth() const noexcept {
+  int value = m_hsw.WPL << 4;
+  [[assume(u16(value) == value)]];
+  return u16(value);
+}
 
 u16 Video::GetXfbHeight() const noexcept {
-  return m_vtr.ACV << !(m_dcr.NIN & m_visel.VISEL & 1);
+  int value = m_vtr.ACV << !(m_dcr.NIN & m_visel.VISEL & 1);
+  [[assume(u16(value) == value)]];
+  return u16(value);
 }
 
 void *Video::AllocateXfb() noexcept {

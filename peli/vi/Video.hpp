@@ -152,19 +152,19 @@ public:
 
   void SetTaps(const u16 taps[9], const u8 taps2[14]) noexcept {
     m_fct0 = {
-        .T2 = taps[2],
-        .T1 = taps[1],
-        .T0 = taps[0],
+        .T2 = taps[2] & 0x3FFu,
+        .T1 = taps[1] & 0x3FFu,
+        .T0 = taps[0] & 0x3FFu,
     };
     m_fct1 = {
-        .T5 = taps[5],
-        .T4 = taps[4],
-        .T3 = taps[3],
+        .T5 = taps[5] & 0x3FFu,
+        .T4 = taps[4] & 0x3FFu,
+        .T3 = taps[3] & 0x3FFu,
     };
     m_fct2 = {
-        .T8 = taps[8],
-        .T7 = taps[7],
-        .T6 = taps[6],
+        .T8 = taps[8] & 0x3FFu,
+        .T7 = taps[7] & 0x3FFu,
+        .T6 = taps[6] & 0x3FFu,
     };
     m_fct3 = {
         .T12 = taps2[3],

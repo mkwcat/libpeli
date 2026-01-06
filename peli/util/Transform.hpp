@@ -32,7 +32,6 @@ public:
    */
   using Identity = typename identity<T>::X;
 
-
   /**
    * Remove reference from type.
    */

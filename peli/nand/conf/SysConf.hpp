@@ -63,18 +63,18 @@ public:
   void Open() noexcept;
   void Flush() noexcept;
 
-  EntryType Get(const char *key, u64 &out, size_t lookup = -1) noexcept;
+  EntryType Get(const char *key, s64 &out, size_t lookup = -1u) noexcept;
 
   EntryType Get(const char *key, const u8 *&out, size_t &out_size,
-                size_t lookup = -1) noexcept;
+                size_t lookup = -1u) noexcept;
 
   EntryType Get(size_t index, const u8 *&out_data, size_t &out_size,
                 const char *&out_key, size_t &out_key_length) noexcept;
 
   template <class T>
-  EntryType Get(const char *key, T &out, size_t lookup = -1) noexcept {
+  EntryType Get(const char *key, T &out, size_t lookup = -1u) noexcept {
     if constexpr (util::IntegralType<T> || util::EnumType<T>) {
-      u64 value;
+      s64 value;
       EntryType result = Get(key, value, lookup);
       out = static_cast<T>(value);
       return result;
@@ -119,7 +119,7 @@ private:
   u16 getCount() const noexcept {
     return util::ImmRead<u16, host::Endian::Big>(m_data, 0x4);
   }
-  u16 getHeaderSize() const noexcept { return 0x8 + getCount() * 0x2; }
+  u32 getHeaderSize() const noexcept { return 0x8u + getCount() * 0x2u; }
 
 private:
   alignas(ios::low::Alignment) u8 m_data[Size];

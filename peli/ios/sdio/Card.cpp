@@ -31,7 +31,7 @@ IOSError Card::Device_Init() noexcept {
                            .GetError()) {
     return error;
   }
-  m_relative_card_address = reset_output >> 16;
+  m_relative_card_address = u16(reset_output >> 16);
 
   Status status;
   if (IOSError error = request_get_status //
@@ -61,7 +61,7 @@ IOSError Card::Device_Init() noexcept {
   BufCommand::Request cmd_request[4];
   Select(cmd_request[0]);
   SetBlockLength(cmd_request[1], SectorSize);
-  AppCommand(cmd_request[2], m_relative_card_address << 16);
+  AppCommand(cmd_request[2], u32(m_relative_card_address) << 16);
   SetBusWidth(cmd_request[3], 2);
   Deselect(m_request);
 
@@ -82,7 +82,7 @@ IOSError Card::Device_Init() noexcept {
 }
 
 IOSError Card::Device_BlockTransfer(size_t first, size_t count, void *buffer,
-                                  bool is_write) noexcept {
+                                    bool is_write) noexcept {
   if (count == 0) {
     return IOSError::SD_ERROR_OK;
   }

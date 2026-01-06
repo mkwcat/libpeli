@@ -23,6 +23,9 @@
 #include "FatFs.hpp"			/* Basic definitions and declarations of API */
 #include "IO.hpp"		/* Declarations of MAI */
 
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+
 namespace peli::fat {
 
 /*--------------------------------------------------------------------------

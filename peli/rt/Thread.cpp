@@ -338,7 +338,8 @@ void Thread::dispatchAny() noexcept {
   }
 
   // Find the next thread to run
-  int priority = util::CountLeadingZero(s_run_queue_mask);
+  Priority priority =
+      static_cast<Priority>(util::CountLeadingZero(s_run_queue_mask));
 
   if (current && current->m_state == State::Running) {
     if (!yield && current->m_priority < priority) {

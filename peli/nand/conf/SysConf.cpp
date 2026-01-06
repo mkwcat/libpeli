@@ -56,7 +56,7 @@ host::Mutex *SysConf::lock() noexcept {
     if (util::ImmRead<u32, host::Endian::Big>(m_data + Size - 4) != EndMagic) {
       return nullptr;
     }
-    if (u16 size = getHeaderSize(); size < 8 || size > LookupTableOffset) {
+    if (u32 size = getHeaderSize(); size < 8 || size > LookupTableOffset) {
       return nullptr;
     }
 
@@ -115,7 +115,7 @@ size_t SysConf::findEntryOffset(const char *key, size_t lookup) const noexcept {
   return 0;
 }
 
-SysConf::EntryType SysConf::Get(const char *key, u64 &out,
+SysConf::EntryType SysConf::Get(const char *key, s64 &out,
                                 size_t lookup) noexcept {
   if (key == nullptr) {
     return EntryType::None;
@@ -243,7 +243,8 @@ SysConf::EntryType SysConf::getEntry(size_t offset, const u8 *&out_data,
 
   case EntryType::BigArray:
     array_size =
-        (util::ImmRead<u8, host::Endian::Big>(m_data, data_offset++) << 1) + 1;
+        u16(util::ImmRead<u8, host::Endian::Big>(m_data, data_offset++) << 1) +
+        1u;
     [[fallthrough]];
   case EntryType::SmallArray:
     if (!testEntryLength(offset, key_length, 2)) {

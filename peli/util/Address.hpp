@@ -6,22 +6,26 @@
 
 #pragma once
 
+#include "../cmn/Macro.h"
 #include "../cmn/Types.hpp"
 
 namespace peli::util {
 
-template <class T> constexpr T AlignUp(unsigned int align, T num) noexcept {
+_PELI_DIAGNOSTIC(push)
+_PELI_DIAGNOSTIC(ignored "-Wold-style-cast")
+
+template <class T> constexpr T AlignUp(size_t align, T num) noexcept {
   size_t raw = (size_t)num;
-  return (T)((raw + align - 1) - (raw % align));
+  raw += align - 1;
+  return (T)(raw - (raw % align));
 }
 
-template <class T> constexpr T AlignDown(unsigned int align, T num) noexcept {
+template <class T> constexpr T AlignDown(size_t align, T num) noexcept {
   size_t raw = (size_t)num;
   return (T)(raw - (raw % align));
 }
 
-template <class T>
-constexpr bool IsAligned(unsigned int align, T num) noexcept {
+template <class T> constexpr bool IsAligned(size_t align, T num) noexcept {
   size_t raw = (size_t)num;
   return (raw % align) == 0;
 }
@@ -34,8 +38,7 @@ constexpr bool CheckBounds(T1 bounds, size_t boundLen, T2 buffer,
   size_t inside = (size_t)buffer;
   size_t insidehi = inside + len;
 
-  return (high >= low) && (insidehi >= inside) && (inside >= low) &&
-         (insidehi <= high);
+  return high >= low && insidehi >= inside && inside >= low && insidehi <= high;
 }
 
 template <class T> constexpr bool InMEM1(T addr) noexcept {
@@ -69,5 +72,7 @@ template <class T> constexpr T Physical(T addr) noexcept {
 template <class T> constexpr T Uncached(T addr) noexcept {
   return (T)((u32)addr | 0xC0000000);
 }
+
+_PELI_DIAGNOSTIC(pop)
 
 } // namespace peli::util

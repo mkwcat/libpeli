@@ -40,7 +40,7 @@ constexpr u32 BitMask(EnumType auto left, EnumType auto right) noexcept {
   return BitMask<BigEndian>(static_cast<int>(left), static_cast<int>(right));
 }
 
-constexpr size_t CountLeadingZero(IntegralType auto value) {
+constexpr int CountLeadingZero(IntegralType auto value) {
 #if defined(__GNUC__)
   return __builtin_clzg(value);
 #else // __GNUC__

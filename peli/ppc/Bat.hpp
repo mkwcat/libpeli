@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "Sync.hpp"
 #include "SprInterface.hpp"
+#include "Sync.hpp"
 
 namespace peli::ppc {
 
@@ -160,7 +160,7 @@ struct BatConfig {
       m_dbat[0] = m_ibat[0] = {
           {
               .BEPI = 0x80000000 >> BatBits::AddressShift,
-              .BL = (block_size - 1) >> BatBits::AddressShift,
+              .BL = ((block_size - 1) >> BatBits::AddressShift) & 0x7FFu,
               .VS = 1,
               .VP = 1,
           },
@@ -199,13 +199,15 @@ struct BatConfig {
         // BAT2 - Extra MEM1 Cached
         m_dbat[2] = m_ibat[2] = {
             {
-                .BEPI = (0x80000000 + block_address) >> BatBits::AddressShift,
-                .BL = (block_size - 1) >> BatBits::AddressShift,
+                .BEPI =
+                    u16((0x80000000 + block_address) >> BatBits::AddressShift) &
+                    0x7FFFu,
+                .BL = ((block_size - 1) >> BatBits::AddressShift) & 0x7FFu,
                 .VS = 1,
                 .VP = 1,
             },
             {
-                .BRPN = block_address >> BatBits::AddressShift,
+                .BRPN = u16(block_address >> BatBits::AddressShift) & 0x7FFFu,
                 .WIMG = 0b0000,
                 .PP = 2,
             },
@@ -222,7 +224,7 @@ struct BatConfig {
       m_dbat[4] = {
           {
               .BEPI = 0x90000000 >> BatBits::AddressShift,
-              .BL = (block_size - 1) >> BatBits::AddressShift,
+              .BL = u16((block_size - 1) >> BatBits::AddressShift) & 0x7FFu,
               .VS = 1,
               .VP = 1,
           },
@@ -242,7 +244,8 @@ struct BatConfig {
       m_dbat[5] = {
           {
               .BEPI = 0xD0000000 >> BatBits::AddressShift,
-              .BL = (bit_ceil(mem2_size) - 1) >> BatBits::AddressShift,
+              .BL = u16((bit_ceil(mem2_size) - 1) >> BatBits::AddressShift) &
+                    0x7FFu,
               .VS = 1,
               .VP = 1,
           },
@@ -265,13 +268,17 @@ struct BatConfig {
         // BAT6 - MEM2 Cached Block 2
         m_dbat[6] = {
             {
-                .BEPI = (0x90000000 + block_address) >> BatBits::AddressShift,
-                .BL = (block_size - 1) >> BatBits::AddressShift,
+                .BEPI =
+                    u16((0x90000000 + block_address) >> BatBits::AddressShift) &
+                    0x7FFFu,
+                .BL = ((block_size - 1) >> BatBits::AddressShift) & 0x7FFu,
                 .VS = 1,
                 .VP = 1,
             },
             {
-                .BRPN = (0x10000000 + block_address) >> BatBits::AddressShift,
+                .BRPN =
+                    u16((0x10000000 + block_address) >> BatBits::AddressShift) &
+                    0x7FFFu,
                 .WIMG = 0b0000,
                 .PP = 2,
             },
@@ -288,13 +295,17 @@ struct BatConfig {
         if (block_size >= BatBits::MinSize) {
           m_dbat[7] = {
               {
-                  .BEPI = (0x90000000 + block_address) >> BatBits::AddressShift,
-                  .BL = (block_size - 1) >> BatBits::AddressShift,
+                  .BEPI = u16((0x90000000 + block_address) >>
+                              BatBits::AddressShift) &
+                          0x7FFFu,
+                  .BL = ((block_size - 1) >> BatBits::AddressShift) & 0x7FFu,
                   .VS = 1,
                   .VP = 1,
               },
               {
-                  .BRPN = (0x10000000 + block_address) >> BatBits::AddressShift,
+                  .BRPN = u16((0x10000000 + block_address) >>
+                              BatBits::AddressShift) &
+                          0x7FFFu,
                   .WIMG = 0b0000,
                   .PP = 2,
               },

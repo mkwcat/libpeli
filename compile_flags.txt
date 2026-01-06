@@ -12,7 +12,10 @@
 -nostdinc++
 -Wall
 -Wextra
+-Wconversion
 -Wpedantic
+-ffunction-sections
+-fdata-sections
 -std=gnu++23
 -x
 c++
