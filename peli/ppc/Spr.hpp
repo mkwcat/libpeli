@@ -415,10 +415,12 @@ template <Spr Reg> inline u32 MoveTo(u32 value) noexcept {
 template <Spr Reg> inline u32 MoveFrom() noexcept {
   u32 value;
   if (Reg == Spr::MSR) {
-    __asm__("mfmsr %0" : "=r"(value));
+    __asm__ __volatile__("mfmsr %0" : "=r"(value));
     return value;
   } else {
-    __asm__("mfspr %0, %1" : "=r"(value) : "i"(static_cast<u32>(Reg)));
+    __asm__ __volatile__("mfspr %0, %1"
+                         : "=r"(value)
+                         : "i"(static_cast<u32>(Reg)));
   }
   return value;
 }

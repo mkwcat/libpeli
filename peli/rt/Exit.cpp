@@ -6,6 +6,7 @@
 
 #include "Exit.hpp"
 #include "../cmn/Types.hpp"
+#include "../hw/VideoInterface.hpp"
 #include "../hw/Wood.hpp"
 #include "../ppc/Cache.hpp"
 #include "../util/Halt.hpp"
@@ -34,6 +35,9 @@ void PrepareExit() noexcept {
       .IY2 = 1,
       .IY1 = 1,
   };
+
+  // Disable video interface
+  hw::VI->DCR.ENB = 0;
 
   ppc::Cache::DcFlush();
 }
