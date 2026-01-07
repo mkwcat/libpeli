@@ -2,7 +2,7 @@
 
 #include "../cmn/Types.hpp"
 #include "../util/Halt.hpp"
-#include "../util/NoConstruct.hpp"
+#include "../util/Constructor.hpp"
 #include "../util/Transform.hpp"
 #include "Error.hpp"
 #include "low/Ipc.hpp"

@@ -648,7 +648,7 @@ void Exceptions::SetIrqHandler(hw::Irq type, IrqHandler handler) noexcept {
 
 void Exceptions::Init() noexcept {
   // Initialize decrementer
-  ppc::MoveTo<ppc::Spr::DEC>(-1);
+  ppc::MoveTo<ppc::Spr::DEC>(-1u);
 
   // Set all default exception handlers
   for (size_t i = 0;

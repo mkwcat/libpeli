@@ -10,24 +10,24 @@
 
 namespace peli::hw {
 
-constexpr u32 BitMask(u32 value) noexcept {
+constexpr u32 BitMask(int value) noexcept {
   return util::BitMask<false>(value);
 }
 
-constexpr u32 BitMask(u32 left, u32 right) noexcept {
+constexpr u32 BitMask(int left, int right) noexcept {
   return util::BitMask<false>(left, right);
 }
 
 template <class Enum>
   requires(__is_enum(Enum))
 constexpr u32 BitMask(Enum value) noexcept {
-  return util::BitMask<false>(static_cast<u32>(value));
+  return util::BitMask<false>(static_cast<int>(value));
 }
 
 template <class Enum>
   requires(__is_enum(Enum))
 constexpr u32 BitMask(Enum left, Enum right) noexcept {
-  return util::BitMask<false>(static_cast<u32>(left), static_cast<u32>(right));
+  return util::BitMask<false>(static_cast<int>(left), static_cast<int>(right));
 }
 
 } // namespace peli::hw

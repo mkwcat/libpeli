@@ -96,14 +96,16 @@ inline void IcFlashInvalidate() noexcept {
   Sync();
 }
 
+inline void DcFlush() noexcept { rt::SystemCall::DcFlush(0u, ~0u); }
+
 inline void DcFlushAndLock() noexcept {
   // Set DLOCK
-  rt::SystemCall::DcFlush(1 << 31 >> 19, ~0);
+  rt::SystemCall::DcFlush(1u << 31 >> 19, ~0u);
 }
 
 inline void DcFlushAndDisable() noexcept {
   // Clear DCE
-  rt::SystemCall::DcFlush(0, ~(1 << 31 >> 17));
+  rt::SystemCall::DcFlush(0, ~(1u << 31 >> 17));
 }
 
 } // namespace peli::ppc::Cache

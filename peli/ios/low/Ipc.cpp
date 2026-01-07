@@ -12,6 +12,7 @@
 #include "../../ppc/Sync.hpp"
 #include "../../rt/Exceptions.hpp"
 #include "../../util/Address.hpp"
+#include "../../util/Constructor.hpp"
 #include "../../util/CpuCache.hpp"
 #include "../../util/String.hpp"
 #include "../Error.hpp"
@@ -22,7 +23,8 @@ namespace peli::ios::low {
 
 namespace {
 
-constinit host::MessageQueue<IPCCommandBlock *> *s_queue_send;
+constinit host::MessageQueue<IPCCommandBlock *, 1> s_queue_send =
+    util::NoConstruct{};
 constinit bool s_waiting_ack = false;
 
 enum IpcBit {
@@ -88,7 +90,7 @@ void handleAck() {
 
   // Send the next request if available
   IPCCommandBlock *request;
-  if (s_queue_send->TryReceive(request)) {
+  if (s_queue_send.TryReceive(request)) {
     ipcAcrSend(request);
   }
 }
@@ -145,7 +147,7 @@ void handleReply() {
   }
 }
 
-void ipcHandleInterrupt(hw::Irq, ppc::Context *) {
+[[maybe_unused]] void ipcHandleInterrupt(hw::Irq, ppc::Context *) {
   u32 ctrl = hw::WOOD->IPCPPCCTRL;
 
   if (ctrl & Y2) {
@@ -164,7 +166,7 @@ void ipcAsync(IPCCommandBlock *request) {
     ipcAcrSend(request);
   } else {
     // Enqueue the request to send once the ack is received
-    s_queue_send->Send(request);
+    s_queue_send.Send(request);
   }
 }
 
@@ -305,7 +307,7 @@ s32 IOS_ReadAsync(s32 fd, void *data, s32 size,
   block->cmd = IOS_CMD_READ;
   block->fd = fd;
   block->read.data = util::Physical(data);
-  block->read.size = size;
+  block->read.size = static_cast<u32>(size);
   block->queue = &queue;
 
   ipcAsync(block);
@@ -325,10 +327,10 @@ s32 IOS_WriteAsync(s32 fd, void *data, s32 size,
   block->cmd = IOS_CMD_WRITE;
   block->fd = fd;
   block->write.data = util::Physical(data);
-  block->write.size = size;
+  block->write.size = static_cast<u32>(size);
   block->queue = &queue;
 
-  util::CpuCache::DcFlush(data, size);
+  util::CpuCache::DcFlush(data, static_cast<u32>(size));
 
   ipcAsync(block);
 
@@ -396,13 +398,7 @@ s32 IOS_IoctlvAsync(s32 fd, u32 command, u32 in_count, u32 out_count,
 }
 
 void Init() noexcept {
-  // TODO: It would be nice if MessageQueue had a (stub) constexpr constructor,
-  // so we could have a constinit object and then reconstruct it here. Note
-  // host::MessageQueue constructor cannot be constexpr due to incompatibilities
-  // with other hosts (such as IOS) which need a syscall to create a message
-  // queue. On the other paw, this code is only really for PPC isn't it?
-  static host::MessageQueue<IPCCommandBlock *, 1> s_local_queue_send;
-  s_queue_send = &s_local_queue_send;
+  util::Construct(s_queue_send);
 
   rt::Exceptions::SetIrqHandler(hw::Irq::IpcPpc, ipcHandleInterrupt);
 

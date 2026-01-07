@@ -85,7 +85,7 @@
 #include <peli/util/Halt.hpp>
 #include <peli/util/List.hpp>
 #include <peli/util/Memory.hpp>
-#include <peli/util/NoConstruct.hpp>
+#include <peli/util/Constructor.hpp>
 #include <peli/util/Optimize.hpp>
 #include <peli/util/String.hpp>
 #include <peli/util/Time.hpp>

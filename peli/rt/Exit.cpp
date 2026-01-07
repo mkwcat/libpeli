@@ -6,6 +6,8 @@
 
 #include "Exit.hpp"
 #include "../cmn/Types.hpp"
+#include "../hw/Wood.hpp"
+#include "../ppc/Cache.hpp"
 #include "../util/Halt.hpp"
 #include "../util/Memory.hpp"
 #include "../util/Optimize.hpp"
@@ -26,6 +28,14 @@ void Exit(int status) noexcept {
   util::Halt();
 }
 
-void PrepareExit() noexcept {}
+void PrepareExit() noexcept {
+  // HBC stub requires these bits to be set
+  hw::WOOD->IPCPPCCTRL = {
+      .IY2 = 1,
+      .IY1 = 1,
+  };
+
+  ppc::Cache::DcFlush();
+}
 
 } // namespace peli::rt

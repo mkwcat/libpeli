@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../util/NoConstruct.hpp"
+#include "../../util/Constructor.hpp"
 #include "../Error.hpp"
 #include "../Resource.hpp"
 #include "Interface.hpp"

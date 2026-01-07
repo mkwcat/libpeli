@@ -8,7 +8,7 @@
 
 #include "../cmn/Types.hpp"
 #include "../ppc/Msr.hpp"
-#include "../util/NoConstruct.hpp"
+#include "../util/Constructor.hpp"
 #include "ThreadQueue.hpp"
 
 namespace peli::rt {

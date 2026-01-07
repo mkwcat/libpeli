@@ -4,7 +4,7 @@
 #include "../host/Host.hpp"
 #include "../util/Address.hpp"
 #include "../util/Concept.hpp"
-#include "../util/NoConstruct.hpp"
+#include "../util/Constructor.hpp"
 #include "Request.hpp"
 #include "low/Ipc.hpp"
 
